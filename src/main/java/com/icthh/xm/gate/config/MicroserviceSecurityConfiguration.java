@@ -1,9 +1,7 @@
 package com.icthh.xm.gate.config;
 
-import com.icthh.xm.gate.security.AuthoritiesConstants;
-
+import com.icthh.xm.commons.permission.constants.RoleConstant;
 import io.github.jhipster.config.JHipsterProperties;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -63,7 +61,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .antMatchers("/api/profile-info").permitAll()
             .antMatchers("/api/**").authenticated()
             .antMatchers("/management/health").permitAll()
-            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
+            .antMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
             .antMatchers("/swagger-resources/configuration/ui").permitAll();
     }
 

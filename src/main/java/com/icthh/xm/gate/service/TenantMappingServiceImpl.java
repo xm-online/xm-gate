@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.service;
 
 import static com.fasterxml.jackson.databind.type.TypeFactory.defaultInstance;
+import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 
@@ -11,8 +12,10 @@ import com.icthh.xm.commons.config.client.repository.TenantListRepository;
 import com.icthh.xm.commons.config.domain.TenantState;
 import com.icthh.xm.commons.gen.model.Tenant;
 import com.icthh.xm.gate.config.ApplicationProperties;
+import com.icthh.xm.gate.repository.TenantDomainRepository;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,12 +34,15 @@ public class TenantMappingServiceImpl implements TenantMappingService {
     private volatile Map<String, String> tenants = new HashMap<>();
 
     private final TenantListRepository tenantListRepository;
+    private final TenantDomainRepository tenantDomainRepository;
 
     public TenantMappingServiceImpl(ApplicationProperties applicationProperties,
                                     TenantListRepository tenantListRepository,
+                                    TenantDomainRepository tenantDomainRepository,
                                     @Value("${spring.application.name}") String applicationName) {
         this.hosts = unmodifiableList(applicationProperties.getHosts());
         this.tenantListRepository = tenantListRepository;
+        this.tenantDomainRepository = tenantDomainRepository;
         this.applicationName = applicationName;
     }
 
@@ -66,6 +72,19 @@ public class TenantMappingServiceImpl implements TenantMappingService {
     @SneakyThrows
     public void manageTenant(String tenantDomain, String state) {
         tenantListRepository.updateTenant(tenantDomain, state);
+    }
+
+    @Override
+    public String getTenantKey(final String domain) {
+
+        String tenantKey = Optional.ofNullable(tenantDomainRepository.getTenantKey(domain))
+                                   .orElse(getTenants().get(domain));
+
+        if (StringUtils.isBlank(tenantKey)) {
+            log.warn("No mapping for domain: [{}]. default tenant applied: {}", domain, DEFAULT_TENANT);
+            tenantKey = DEFAULT_TENANT;
+        }
+        return tenantKey;
     }
 
     @SneakyThrows

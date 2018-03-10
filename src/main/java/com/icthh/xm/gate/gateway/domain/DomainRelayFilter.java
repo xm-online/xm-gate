@@ -9,15 +9,16 @@ import static com.icthh.xm.gate.config.Constants.HEADER_WEBAPP_URL;
 import com.icthh.xm.gate.service.TenantMappingService;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
+
+import java.net.URI;
+import java.net.URL;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Zuul filter to proxy subdomain to UAA.
@@ -27,37 +28,41 @@ import org.springframework.stereotype.Component;
 @Component
 public class DomainRelayFilter extends ZuulFilter {
 
-    private static final String DEFAULT_TENANT = "XM";
-
     private final TenantMappingService tenantMappingService;
 
     @Override
     public Object run() {
-        RequestContext ctx = RequestContext.getCurrentContext();
-        String protocol = ctx.getRequest().getScheme();
-        ctx.addZuulRequestHeader(HEADER_SCHEME, protocol);
-        String domain = ctx.getRequest().getServerName();
-        ctx.addZuulRequestHeader(HEADER_DOMAIN, domain);
-        String port = String.valueOf(ctx.getRequest().getServerPort());
-        ctx.addZuulRequestHeader(HEADER_PORT, port);
-
-        String tenant = tenantMappingService.getTenants().get(domain);
-        if (StringUtils.isBlank(tenant)) {
-            log.debug("Domain Proxy Filter: no mapping for domain: {}", domain);
-            tenant = DEFAULT_TENANT;
-        }
-        ctx.addZuulRequestHeader(HEADER_TENANT, tenant);
-        String referer = ctx.getRequest().getHeader("referer");
-        String webapp = null;
         try {
-            URL url = new URL(referer);
-            URI uri = new URI(url.getProtocol(), url.getAuthority(), null, null, null);
-            webapp = uri.toString();
-        } catch (Exception e) {
-            log.debug("Error while running", e);
-        }
-        ctx.addZuulRequestHeader(HEADER_WEBAPP_URL, webapp);
 
+            RequestContext ctx = RequestContext.getCurrentContext();
+            String protocol = ctx.getRequest().getScheme();
+            ctx.addZuulRequestHeader(HEADER_SCHEME, protocol);
+            String domain = ctx.getRequest().getServerName();
+            ctx.addZuulRequestHeader(HEADER_DOMAIN, domain);
+            String port = String.valueOf(ctx.getRequest().getServerPort());
+            ctx.addZuulRequestHeader(HEADER_PORT, port);
+
+            ctx.addZuulRequestHeader(HEADER_TENANT, tenantMappingService.getTenantKey(domain));
+            ctx.addZuulRequestHeader(HEADER_WEBAPP_URL, getRefererUri(ctx.getRequest()));
+
+            return null;
+        } catch (Exception e) {
+            log.error("Exception during filtering", e);
+            return null;
+        }
+    }
+
+    private static String getRefererUri(HttpServletRequest request) {
+        String referer = request.getHeader(HttpHeaders.REFERER);
+        if (StringUtils.isNotBlank(referer)) {
+            try {
+                URL url = new URL(referer);
+                URI uri = new URI(url.getProtocol(), url.getAuthority(), null, null, null);
+                return uri.toString();
+            } catch (Exception e) {
+                log.debug("Error while converting referer header to URI, referer={}", referer, e);
+            }
+        }
         return null;
     }
 
@@ -75,4 +80,5 @@ public class DomainRelayFilter extends ZuulFilter {
     public int filterOrder() {
         return 0;
     }
+
 }

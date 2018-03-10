@@ -1,6 +1,12 @@
 package com.icthh.xm.gate.gateway.domain;
 
-import com.google.common.collect.ImmutableMap;
+import static com.icthh.xm.gate.config.Constants.HEADER_DOMAIN;
+import static com.icthh.xm.gate.config.Constants.HEADER_PORT;
+import static com.icthh.xm.gate.config.Constants.HEADER_SCHEME;
+import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+
 import com.icthh.xm.gate.service.TenantMappingService;
 import com.netflix.zuul.ExecutionStatus;
 import com.netflix.zuul.ZuulFilterResult;
@@ -13,9 +19,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.servlet.http.HttpServletRequest;
-
-import static com.icthh.xm.gate.config.Constants.*;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests DomainRelayFilter class.
@@ -40,7 +43,7 @@ public class DomainRelayFilterUnitTest {
         MockitoAnnotations.initMocks(this);
         MonitoringHelper.initMocks();
         filter = new DomainRelayFilter(tenantMappingService);
-        when(tenantMappingService.getTenants()).thenReturn(ImmutableMap.<String, String>builder().put(SERVER_NAME, TENANT).build());
+        when(tenantMappingService.getTenantKey(any())).thenReturn(TENANT);
     }
 
     @Test

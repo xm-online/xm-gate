@@ -1,18 +1,22 @@
 package com.icthh.xm.gate.gateway;
 
-
 import com.icthh.xm.commons.logging.util.LogObjectPrinter;
-import com.icthh.xm.commons.logging.util.MDCUtil;
-import com.icthh.xm.gate.service.TenantMappingService;
+import com.icthh.xm.commons.logging.util.MdcUtils;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantContextUtils;
+import java.io.IOException;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Filter for logging all HTTP requests and set MDC context RID variable.
@@ -22,7 +26,7 @@ import java.io.IOException;
 @Component
 public class LoggingFilter implements Filter {
 
-    private final TenantMappingService tenantMappingService;
+    private final TenantContextHolder tenantContextHolder;
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
@@ -31,7 +35,7 @@ public class LoggingFilter implements Filter {
 
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
-    throws IOException, ServletException {
+        throws IOException, ServletException {
 
         StopWatch stopWatch = StopWatch.createStarted();
 
@@ -39,7 +43,7 @@ public class LoggingFilter implements Filter {
         String remoteAddr = request.getRemoteAddr();
         Long contentLength = request.getContentLengthLong();
 
-        String tenant = tenantMappingService != null ? tenantMappingService.getTenants().get(domain) : null;
+        String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
 
         String method = null;
         String userLogin = null;
@@ -54,7 +58,7 @@ public class LoggingFilter implements Filter {
                 requestUri = req.getRequestURI();
             }
 
-            MDCUtil.putRid(MDCUtil.generateRid() + ":" + userLogin + ":" + tenant);
+            MdcUtils.putRid(MdcUtils.generateRid() + ":" + userLogin + ":" + tenant);
 
             log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri,
                      contentLength);
@@ -76,7 +80,7 @@ public class LoggingFilter implements Filter {
                       LogObjectPrinter.printException(e), stopWatch.getTime());
             throw e;
         } finally {
-            MDCUtil.clear();
+            MdcUtils.clear();
         }
 
     }

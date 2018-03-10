@@ -1,11 +1,10 @@
 package com.icthh.xm.gate.config;
 
-import io.github.jhipster.config.JHipsterProperties;
-
-import com.icthh.xm.gate.gateway.ratelimiting.RateLimitingFilter;
+import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
 import com.icthh.xm.gate.gateway.accesscontrol.AccessControlFilter;
+import com.icthh.xm.gate.gateway.ratelimiting.RateLimitingFilter;
 import com.icthh.xm.gate.gateway.responserewriting.SwaggerBasePathRewritingFilter;
-
+import io.github.jhipster.config.JHipsterProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +17,7 @@ public class GatewayConfiguration {
     public static class SwaggerBasePathRewritingConfiguration {
 
         @Bean
-        public SwaggerBasePathRewritingFilter swaggerBasePathRewritingFilter(){
+        public SwaggerBasePathRewritingFilter swaggerBasePathRewritingFilter() {
             return new SwaggerBasePathRewritingFilter();
         }
     }
@@ -27,7 +26,7 @@ public class GatewayConfiguration {
     public static class AccessControlFilterConfiguration {
 
         @Bean
-        public AccessControlFilter accessControlFilter(RouteLocator routeLocator, JHipsterProperties jHipsterProperties){
+        public AccessControlFilter accessControlFilter(RouteLocator routeLocator, JHipsterProperties jHipsterProperties) {
             return new AccessControlFilter(routeLocator, jHipsterProperties);
         }
     }
@@ -48,8 +47,8 @@ public class GatewayConfiguration {
         }
 
         @Bean
-        public RateLimitingFilter rateLimitingFilter() {
-            return new RateLimitingFilter(jHipsterProperties);
+        public RateLimitingFilter rateLimitingFilter(XmAuthenticationContextHolder authenticationContextHolder) {
+            return new RateLimitingFilter(jHipsterProperties, authenticationContextHolder);
         }
     }
 }

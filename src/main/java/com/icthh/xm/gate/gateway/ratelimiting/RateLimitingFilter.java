@@ -1,6 +1,6 @@
 package com.icthh.xm.gate.gateway.ratelimiting;
 
-import com.icthh.xm.gate.security.SecurityUtils;
+import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import io.github.bucket4j.*;
@@ -37,8 +37,12 @@ public class RateLimitingFilter extends ZuulFilter {
 
     private ProxyManager<String> buckets;
 
-    public RateLimitingFilter(JHipsterProperties jHipsterProperties) {
+    private final XmAuthenticationContextHolder authenticationContextHolder;
+
+    public RateLimitingFilter(JHipsterProperties jHipsterProperties,
+                              XmAuthenticationContextHolder authenticationContextHolder) {
         this.jHipsterProperties = jHipsterProperties;
+        this.authenticationContextHolder = authenticationContextHolder;
 
         CachingProvider cachingProvider = Caching.getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
@@ -109,12 +113,7 @@ public class RateLimitingFilter extends ZuulFilter {
     /**
      * The ID that will identify the limit: the user login or the user IP address.
      */
-    private static String getId(HttpServletRequest httpServletRequest) {
-        String login = SecurityUtils.getCurrentUserLogin();
-        if (login != null) {
-            return login;
-        } else {
-            return httpServletRequest.getRemoteAddr();
-        }
+    private String getId(HttpServletRequest httpServletRequest) {
+        return authenticationContextHolder.getContext().getLogin().orElse(httpServletRequest.getRemoteAddr());
     }
 }

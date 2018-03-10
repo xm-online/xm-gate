@@ -65,6 +65,10 @@ spring:
         multipart:
             max-file-size: 20MB
             max-request-size: 20MB
+    kafka:
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 security:
     basic:
@@ -119,7 +123,7 @@ xm-config:
     xm-config-url: http://config
     hazelcast:
         hazelcast-config-url: classpath:./config/hazelcast-consul.xml
-        interfaces:
+#        interfaces:
         consul-host: ${spring.cloud.consul.host}
         consul-port: ${spring.cloud.consul.port}
         consul-service-name: xm-tenant-config-hazelcast-cluster
@@ -127,7 +131,7 @@ xm-config:
         consul-service-tags: 'hazelcast'
         consul-discovery-delay-ms: 10000
         group-name: xm-tenant-config-hazelcast-cluster
-        group-pass:
+#        group-pass:
 
 aspects:
     rest-call-logging: true
@@ -145,3 +149,5 @@ application:
     hosts:
         - localhost
         - local
+    kafka-enabled: true
+    kafka-system-queue: system_queue

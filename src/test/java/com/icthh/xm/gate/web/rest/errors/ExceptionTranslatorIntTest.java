@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.icthh.xm.commons.exceptions.ErrorConstants;
+import com.icthh.xm.commons.exceptions.spring.web.ExceptionTranslator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,8 +17,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.icthh.xm.commons.errors.ErrorConstants;
-import com.icthh.xm.commons.errors.ExceptionTranslator;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 
@@ -46,12 +46,13 @@ public class ExceptionTranslatorIntTest {
 
     @Test
     public void testMethodArgumentNotValid() throws Exception {
-         mockMvc.perform(post("/test/method-argument").content("{}").contentType(MediaType.APPLICATION_JSON))
-             .andExpect(status().isBadRequest())
-             .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_VALIDATION))
-             .andExpect(jsonPath("$.fieldErrors.[0].objectName").value("testDTO"))
-             .andExpect(jsonPath("$.fieldErrors.[0].field").value("test"))
-             .andExpect(jsonPath("$.fieldErrors.[0].message").value("NotNull"));
+        mockMvc.perform(post("/test/method-argument").content("{}").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_VALIDATION))
+            .andExpect(jsonPath("$.error_description").value("Input parameters error"))
+            .andExpect(jsonPath("$.fieldErrors.[0].objectName").value("testDTO"))
+            .andExpect(jsonPath("$.fieldErrors.[0].field").value("test"))
+            .andExpect(jsonPath("$.fieldErrors.[0].message").value("NotNull"));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class ExceptionTranslatorIntTest {
         mockMvc.perform(get("/test/parameterized-error"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_BUSINESS))
-            .andExpect(jsonPath("$.error_description").value("Business logic error occurred, please contact support"))
+            .andExpect(jsonPath("$.error_description").value("test parameterized error"))
             .andExpect(jsonPath("$.params.param0").value("param0_value"))
             .andExpect(jsonPath("$.params.param1").value("param1_value"));
     }
@@ -69,7 +70,7 @@ public class ExceptionTranslatorIntTest {
         mockMvc.perform(get("/test/parameterized-error2"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_BUSINESS))
-            .andExpect(jsonPath("$.error_description").value("Business logic error occurred, please contact support"))
+            .andExpect(jsonPath("$.error_description").value("test parameterized error"))
             .andExpect(jsonPath("$.params.foo").value("foo_value"))
             .andExpect(jsonPath("$.params.bar").value("bar_value"));
     }

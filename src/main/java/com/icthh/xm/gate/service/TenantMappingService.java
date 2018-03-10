@@ -14,4 +14,6 @@ public interface TenantMappingService extends RefreshableConfiguration {
     void deleteTenant(String tenantDomain);
 
     void manageTenant(String tenantDomain, String state);
+
+    String getTenantKey(String domain);
 }

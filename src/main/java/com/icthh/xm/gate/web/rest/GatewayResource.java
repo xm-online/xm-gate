@@ -1,26 +1,36 @@
 package com.icthh.xm.gate.web.rest;
 
 import com.codahale.metrics.annotation.Timed;
-import com.icthh.xm.gate.security.SecurityUtils;
+import com.icthh.xm.commons.security.XmAuthenticationContext;
+import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
 import com.icthh.xm.gate.web.rest.vm.RouteVM;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.netflix.zuul.filters.Route;
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * REST controller for managing Gateway configuration.
@@ -28,9 +38,12 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/gateway")
 @Slf4j
+@RequiredArgsConstructor
 public class GatewayResource {
 
     private static final String STATUS = "status";
+
+    private static final String[] EXCLUDE_SERVICE = {"xm-tenant-config-hazelcast-cluster"};
 
     private final RouteLocator routeLocator;
 
@@ -38,14 +51,9 @@ public class GatewayResource {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private final HttpHeaders headers;
+    private final HttpHeaders headers = new HttpHeaders();
 
-    public GatewayResource(RouteLocator routeLocator, DiscoveryClient discoveryClient) {
-        this.routeLocator = routeLocator;
-        this.discoveryClient = discoveryClient;
-
-        headers = new HttpHeaders();
-    }
+    private final XmAuthenticationContextHolder authContextHolder;
 
     /**
      * GET  /routes : get the active routes.
@@ -54,20 +62,23 @@ public class GatewayResource {
      */
     @GetMapping("/routes")
     @Timed
-    public ResponseEntity<List<RouteVM>> activeRoutes() {
+    @PostFilter("hasPermission({'returnObject': filterObject, 'log': false}, 'ROUTE.GET_LIST')")
+    public List<RouteVM> activeRoutes() {
         List<Route> routes = routeLocator.getRoutes();
         List<RouteVM> routeVMs = new ArrayList<>();
-        routes.forEach(route -> {
-            RouteVM routeVM = new RouteVM();
-            routeVM.setPath(route.getFullPath());
-            routeVM.setServiceId(route.getId());
-            List<ServiceInstance> serviceInstances = discoveryClient.getInstances(route.getId());
-            routeVM.setServiceInstances(serviceInstances);
-            routeVM.setServiceInstancesStatus(receiveServiceStatus(serviceInstances));
-            routeVM.setServiceMetadata(extractServiceMetaData(routeVM));
-            routeVMs.add(routeVM);
-        });
-        return new ResponseEntity<>(routeVMs, HttpStatus.OK);
+        routes.stream()
+            .filter(this::routeFilter)
+            .forEach(route -> {
+                RouteVM routeVm = new RouteVM();
+                routeVm.setPath(route.getFullPath());
+                routeVm.setServiceId(route.getId());
+                List<ServiceInstance> serviceInstances = discoveryClient.getInstances(route.getId());
+                routeVm.setServiceInstances(serviceInstances);
+                routeVm.setServiceInstancesStatus(receiveServiceStatus(serviceInstances));
+                routeVm.setServiceMetadata(extractServiceMetaData(routeVm));
+                routeVMs.add(routeVm);
+            });
+        return routeVMs;
     }
 
     private Map<String, Object> extractServiceMetaData(RouteVM routeVM) {
@@ -96,8 +107,15 @@ public class GatewayResource {
     }
 
     private Map getInstanceInfo(String uri) {
+
+        XmAuthenticationContext authContext = authContextHolder.getContext();
+        Optional<String> tokenValue = authContext.getTokenValue();
+        Optional<String> tokenType = authContext.getTokenType();
+        if (!tokenValue.isPresent() || !tokenType.isPresent()) {
+            throw new IllegalStateException("Authentication not initialized yet, can't create request");
+        }
         headers.clear();
-        headers.set("Authorization", "Bearer " + SecurityUtils.extractCurrentToken());
+        headers.set("Authorization", tokenType.get() + " " + tokenValue.get());
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         try {
@@ -134,5 +152,9 @@ public class GatewayResource {
                 instancesStatus.put(uri, status);
             });
         return instancesStatus;
+    }
+
+    private boolean routeFilter(Route route) {
+        return !ArrayUtils.contains(EXCLUDE_SERVICE, route.getId());
     }
 }
