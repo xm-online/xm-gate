@@ -1,7 +1,7 @@
 package com.icthh.xm.gate.web.rest;
 
-import com.icthh.xm.commons.errors.ErrorConstants;
-import com.icthh.xm.commons.errors.vm.ErrorVM;
+import com.icthh.xm.commons.exceptions.ErrorConstants;
+import com.icthh.xm.commons.exceptions.domain.vm.ErrorVM;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.web.ErrorController;

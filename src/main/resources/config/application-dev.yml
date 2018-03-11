@@ -13,6 +13,10 @@
 # http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 # ===================================================================
 
+logging:
+    level:
+        com.hazelcast: INFO
+
 spring:
     profiles:
         active: dev
@@ -30,7 +34,8 @@ spring:
                prefer-ip-address: true
             host: localhost
             port: 8500
-    data:
+    kafka:
+        bootstrap-servers: localhost:9093
     mail:
         host: localhost
         port: 25
