@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/xm-online/xm-gate.svg?branch=master)](https://travis-ci.org/xm-online/xm-gate)
+
 # gate
 This application was generated using JHipster 4.6.1, you can find documentation and help at [https://jhipster.github.io/documentation-archive/v4.6.1](https://jhipster.github.io/documentation-archive/v4.6.1).
 
