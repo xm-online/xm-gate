@@ -27,7 +27,7 @@ public class TenantMappingServiceImpl implements TenantMappingService {
 
     public static final String TENANTS_LIST_CONFIG_KEY = "/config/tenants/tenants-list.json";
 
-    private final List<String> hosts;
+    private final List<String> hosts = new ArrayList<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String applicationName;
 
