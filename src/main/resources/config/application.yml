@@ -147,6 +147,7 @@ aspects:
 
 application:
     hosts:
+        - test.xm-online.com
         - localhost
         - local
     kafka-enabled: true
