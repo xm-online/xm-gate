@@ -25,6 +25,7 @@ import java.util.*;
 @Component
 public class TenantMappingServiceImpl implements TenantMappingService {
 
+    public static final String IP_REGEX = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
     public static final String TENANTS_LIST_CONFIG_KEY = "/config/tenants/tenants-list.json";
 
     private final List<String> hosts;
@@ -81,10 +82,16 @@ public class TenantMappingServiceImpl implements TenantMappingService {
                                    .orElse(getTenants().get(domain));
 
         if (StringUtils.isBlank(tenantKey)) {
-            log.warn("No mapping for domain: [{}]. default tenant applied: {}", domain, DEFAULT_TENANT);
+            printWarnIfNotIpAddress(domain);
             tenantKey = DEFAULT_TENANT;
         }
         return tenantKey;
+    }
+
+    private void printWarnIfNotIpAddress(String domain) {
+        if (StringUtils.isNotEmpty(domain) && !domain.matches(IP_REGEX)) {
+            log.warn("No mapping for domain: [{}]. default tenant applied: {}", domain, DEFAULT_TENANT);
+        }
     }
 
     @SneakyThrows
@@ -101,6 +108,8 @@ public class TenantMappingServiceImpl implements TenantMappingService {
                 tenants.put(tenant.getName() + "." + host, tenant.getName().toUpperCase());
             }
         }
+
+        log.info("Tenants sub-domain mapping configured by $application.hosts: {}", hosts);
 
         this.tenants = tenants;
     }
