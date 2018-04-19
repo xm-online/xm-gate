@@ -43,8 +43,6 @@ public class GatewayResource {
 
     private static final String STATUS = "status";
 
-    private static final String[] EXCLUDE_SERVICE = {"xm-tenant-config-hazelcast-cluster"};
-
     private final RouteLocator routeLocator;
 
     private final DiscoveryClient discoveryClient;

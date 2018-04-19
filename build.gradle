@@ -270,7 +270,6 @@ dependencies {
     compile "com.icthh.xm.commons:xm-commons-logging-web:${xm_commons_version}"
     compile "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
     compile "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
-    compile 'org.bitsofinfo:hazelcast-consul-discovery-spi:1.0-RC7'
 }
 
 checkstyle {
