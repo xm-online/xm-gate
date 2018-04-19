@@ -53,6 +53,7 @@ public class GatewayResource {
 
     private final XmAuthenticationContextHolder authContextHolder;
 
+    private static final String[] EXCLUDE_SERVICE = {};
     /**
      * GET  /routes : get the active routes.
      *
