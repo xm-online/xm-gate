@@ -11,6 +11,8 @@ import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
@@ -29,19 +31,14 @@ import org.springframework.web.filter.CorsFilter;
  * Configuration of web application with Servlet 3.0 APIs.
  */
 @Slf4j
+@RequiredArgsConstructor
 @Configuration
 public class WebConfigurer implements ServletContextInitializer, EmbeddedServletContainerCustomizer {
 
     private final Environment env;
-
     private final JHipsterProperties jHipsterProperties;
 
     private MetricRegistry metricRegistry;
-
-    public WebConfigurer(Environment env, JHipsterProperties jHipsterProperties) {
-        this.env = env;
-        this.jHipsterProperties = jHipsterProperties;
-    }
 
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
