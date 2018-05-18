@@ -43,8 +43,6 @@ public class GatewayResource {
 
     private static final String STATUS = "status";
 
-    private static final String[] EXCLUDE_SERVICE = {"xm-tenant-config-hazelcast-cluster"};
-
     private final RouteLocator routeLocator;
 
     private final DiscoveryClient discoveryClient;
@@ -55,6 +53,7 @@ public class GatewayResource {
 
     private final XmAuthenticationContextHolder authContextHolder;
 
+    private static final String[] EXCLUDE_SERVICE = {};
     /**
      * GET  /routes : get the active routes.
      *
