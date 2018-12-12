@@ -4,8 +4,8 @@
 # This configuration will be overridden by the Spring profile you use,
 # for example application-dev.yml if you use the "dev" profile.
 #
-# More information on profiles: https://jhipster.github.io/profiles/
-# More information on configuration properties: https://jhipster.github.io/common-application-properties/
+# More information on profiles: https://www.jhipster.tech/profiles/
+# More information on configuration properties: https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
 # ===================================================================
@@ -16,6 +16,7 @@
 
 # See http://cloud.spring.io/spring-cloud-netflix/spring-cloud-netflix.html
 zuul: # those values must be configured depending on the application specific needs
+    sensitive-headers: Cookie,Set-Cookie #see https://github.com/spring-cloud/spring-cloud-netflix/issues/3126
     host:
         connect-timeout-millis: 5000
         socket-timeout-millis: 60000
@@ -38,12 +39,23 @@ hystrix:
                         timeoutInMilliseconds: 60000
 
 management:
-    security:
-        roles: ADMIN
-    context-path: /management
+    endpoints:
+        web:
+            base-path: /management
+            exposure:
+                include: ["configprops", "env", "health", "info", "threaddump", "logfile" ]
+    endpoint:
+        health:
+            show-details: when_authorized
+    info:
+        git:
+            mode: full
     health:
         mail:
             enabled: false # When using the MailService, configure an SMTP server and set this to true
+    metrics:
+        enabled: false # http://micrometer.io/ is disabled by default, as we use http://metrics.dropwizard.io/ instead
+
 spring:
     application:
         name: gate
@@ -56,6 +68,9 @@ spring:
             discovery:
                 healthCheckPath: /management/health
                 instanceId: ${spring.application.name}:${spring.application.instance-id:${random.value}}
+            config:
+                watch:
+                    enabled: false
     jackson:
         serialization.write_dates_as_timestamps: false
     messages:
@@ -74,24 +89,19 @@ spring:
             key-serializer: org.apache.kafka.common.serialization.StringSerializer
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-security:
-    basic:
-        enabled: false
-    oauth2:
-        resource:
-            filter-order: 3
-
 server:
-    session:
-        cookie:
-            http-only: true
+    servlet:
+        session:
+            cookie:
+                http-only: true
 
 
 # ===================================================================
 # JHipster specific properties
 #
-# Full reference is available at: https://jhipster.github.io/common-application-properties/
+# Full reference is available at: https://www.jhipster.tech/common-application-properties/
 # ===================================================================
+
 jhipster:
     async:
         core-pool-size: 2
@@ -100,9 +110,9 @@ jhipster:
     # By default CORS is disabled. Uncomment to enable.
     #cors:
         #allowed-origins: "*"
-        #allowed-methods: GET, PUT, POST, DELETE, OPTIONS
+        #allowed-methods: "*"
         #allowed-headers: "*"
-        #exposed-headers:
+        #exposed-headers: "Authorization,Link,X-Total-Count"
         #allow-credentials: true
         #max-age: 1800
     mail:
@@ -118,8 +128,6 @@ jhipster:
         contact-email:
         license:
         license-url:
-    ribbon:
-        display-on-active-profiles: dev
 
 xm-config:
     enabled: true
@@ -135,7 +143,7 @@ aspects:
 # to have type-safe configuration, like in the JHipsterProperties above
 #
 # More documentation is available at:
-# https://jhipster.github.io/common-application-properties/
+# https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
 application:
