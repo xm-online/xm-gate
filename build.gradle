@@ -251,9 +251,12 @@ dependencies {
         exclude group: 'com.vaadin.external.google', module: 'android-json'
     }
     //jhipster-needle-gradle-dependency - JHipster will add additional dependencies here
-    compile "com.icthh.xm.commons:xm-commons-logging-web:${xm_commons_version}"
-    compile "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
+    compile ("com.icthh.xm.commons:xm-commons-ms-web:${xm_commons_version}") {
+        exclude group: "io.github.jhipster", module: "jhipster"
+    }
     compile "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
+    compile "com.icthh.xm.commons:xm-commons-i18n:${xm_commons_version}"
+    compile "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
 }
 
 checkstyle {
