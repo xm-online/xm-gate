@@ -16,6 +16,7 @@ import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.core.env.Environment;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -52,6 +53,14 @@ public class GateApp {
             log.error("You have misconfigured your application! It should not " +
                 "run with both the 'dev' and 'cloud' profiles at the same time.");
         }
+    }
+
+    @PreDestroy
+    public void destroyApplication() {
+        log.info("\n----------------------------------------------------------\n\t"
+                + "Application {} is closing"
+                + "\n----------------------------------------------------------",
+            env.getProperty("spring.application.name"));
     }
 
     /**
