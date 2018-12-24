@@ -14,6 +14,9 @@ def profiles = 'dev'
 if (project.hasProperty('no-liquibase')) {
     profiles += ',no-liquibase'
 }
+if (project.hasProperty('tls')) {
+    profiles += ',tls'
+}
 
 bootRun {
     args = []
@@ -27,6 +30,14 @@ processResources {
         }
     }
     filesMatching('**/bootstrap.yml') {
+        filter {
+            it.replace('#spring.profiles.active#', profiles)
+        }
+        filter {
+            it.replace('#project.version#', version)
+        }
+    }
+    filesMatching('**/application.yml') {
         filter {
             it.replace('#spring.profiles.active#', profiles)
         }

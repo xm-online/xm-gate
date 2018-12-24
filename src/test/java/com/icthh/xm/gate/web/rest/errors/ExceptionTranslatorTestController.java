@@ -1,13 +1,10 @@
 package com.icthh.xm.gate.web.rest.errors;
 
 import com.icthh.xm.commons.exceptions.BusinessException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -17,13 +14,17 @@ import java.util.Map;
 @RestController
 public class ExceptionTranslatorTestController {
 
+    @GetMapping("/test/concurrency-failure")
+    public void concurrencyFailure() {
+        throw new ConcurrencyFailureException("test concurrency failure");
+    }
+
     @PostMapping("/test/method-argument")
     public void methodArgument(@Valid @RequestBody TestDTO testDTO) {
     }
 
     @GetMapping("/test/parameterized-error")
     public void parameterizedError() {
-
         throw new BusinessException("test parameterized error").withParams("param0_value", "param1_value");
     }
 

@@ -6,7 +6,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.icthh.xm.commons.exceptions.ErrorConstants;
-import com.icthh.xm.commons.exceptions.spring.web.ExceptionTranslator;
+import com.icthh.xm.commons.i18n.error.web.ExceptionTranslator;
+import com.icthh.xm.gate.GateApp;
+import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
+import com.icthh.xm.gate.config.TenantConfigMockConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,16 +20,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.icthh.xm.gate.GateApp;
-import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
-
 /**
  * Test class for the ExceptionTranslator controller advice.
  *
  * @see ExceptionTranslator
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {GateApp.class, SecurityBeanOverrideConfiguration.class})
+@SpringBootTest(classes = {GateApp.class, SecurityBeanOverrideConfiguration.class, TenantConfigMockConfiguration.class})
 public class ExceptionTranslatorIntTest {
 
     @Autowired
@@ -45,6 +45,13 @@ public class ExceptionTranslatorIntTest {
     }
 
     @Test
+    public void testConcurrencyFailure() throws Exception {
+        mockMvc.perform(get("/test/concurrency-failure"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_CONCURRENCY_FAILURE));
+    }
+
+    @Test
     public void testMethodArgumentNotValid() throws Exception {
         mockMvc.perform(post("/test/method-argument").content("{}").contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest())
@@ -59,7 +66,7 @@ public class ExceptionTranslatorIntTest {
     public void testParameterizedError() throws Exception {
         mockMvc.perform(get("/test/parameterized-error"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_BUSINESS))
+            .andExpect(jsonPath("$.error").value("error.business"))
             .andExpect(jsonPath("$.error_description").value("test parameterized error"))
             .andExpect(jsonPath("$.params.param0").value("param0_value"))
             .andExpect(jsonPath("$.params.param1").value("param1_value"));
@@ -69,7 +76,7 @@ public class ExceptionTranslatorIntTest {
     public void testParameterizedError2() throws Exception {
         mockMvc.perform(get("/test/parameterized-error2"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_BUSINESS))
+            .andExpect(jsonPath("$.error").value("error.business"))
             .andExpect(jsonPath("$.error_description").value("test parameterized error"))
             .andExpect(jsonPath("$.params.foo").value("foo_value"))
             .andExpect(jsonPath("$.params.bar").value("bar_value"));

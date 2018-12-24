@@ -1,6 +1,6 @@
 {
   "generator-jhipster": {
-    "jhipsterVersion": "4.6.1",
+    "jhipsterVersion": "5.7.0",
     "baseName": "gate",
     "packageName": "com.icthh.xm.gate",
     "packageFolder": "com/icthh/xm/gate",
@@ -35,6 +35,9 @@
     ],
     "promptValues": {
       "microservicePath": "../xm-ms-entity"
-    }
+    },
+    "cacheProvider": "hazelcast",
+    "enableHibernateCache": false,
+    "otherModules": []
   }
 }

@@ -1,7 +1,12 @@
 package com.icthh.xm.gate.config.cassandra;
 
+import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.ReconnectionPolicy;
+import com.datastax.driver.core.policies.RetryPolicy;
+import com.datastax.driver.extras.codecs.jdk8.LocalDateCodec;
 import io.github.jhipster.config.JHipsterConstants;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,16 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.util.StringUtils;
 
-import com.codahale.metrics.MetricRegistry;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ProtocolVersion;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SocketOptions;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.datastax.driver.core.policies.ReconnectionPolicy;
-import com.datastax.driver.core.policies.RetryPolicy;
-import com.datastax.driver.extras.codecs.jdk8.LocalDateCodec;
+import java.util.List;
 
 @Slf4j
 @Configuration
@@ -68,8 +64,8 @@ public class CassandraConfiguration {
         if (properties.isSsl()) {
             builder.withSSL();
         }
-        String points = properties.getContactPoints();
-        builder.addContactPoints(StringUtils.commaDelimitedListToStringArray(points));
+        List<String> contactPoints = properties.getContactPoints();
+        builder.addContactPoints(contactPoints.toArray(new String[0]));
 
         Cluster cluster = builder.build();
 
@@ -107,8 +103,8 @@ public class CassandraConfiguration {
 
     private static SocketOptions getSocketOptions(CassandraProperties properties) {
         SocketOptions options = new SocketOptions();
-        options.setConnectTimeoutMillis(properties.getConnectTimeoutMillis());
-        options.setReadTimeoutMillis(properties.getReadTimeoutMillis());
+        options.setConnectTimeoutMillis((int) properties.getConnectTimeout().toMillis());
+        options.setReadTimeoutMillis((int) properties.getReadTimeout().toMillis());
         return options;
     }
 
