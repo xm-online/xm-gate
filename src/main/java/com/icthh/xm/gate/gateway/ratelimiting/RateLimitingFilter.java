@@ -1,7 +1,8 @@
 package com.icthh.xm.gate.gateway.ratelimiting;
 
 import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
-import com.icthh.xm.gate.config.ApplicationProperties;
+import com.icthh.xm.gate.domain.properties.TenantProperties;
+import com.icthh.xm.gate.service.TenantPropertiesService;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import io.github.bucket4j.*;
@@ -9,7 +10,10 @@ import io.github.bucket4j.grid.GridBucketState;
 import io.github.bucket4j.grid.ProxyManager;
 import io.github.bucket4j.grid.jcache.JCache;
 import io.github.jhipster.config.JHipsterProperties;
+
 import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -18,6 +22,7 @@ import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import javax.servlet.http.HttpServletRequest;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.http.HttpStatus;
@@ -40,18 +45,16 @@ public class RateLimitingFilter extends ZuulFilter {
 
     private final XmAuthenticationContextHolder authenticationContextHolder;
 
-    private final ApplicationProperties applicationProperties;
+    private final TenantPropertiesService tenantPropertiesService;
 
     private ProxyManager<String> buckets;
 
-    private boolean byClientId = false;
-
     public RateLimitingFilter(JHipsterProperties jhipsterProperties,
                               XmAuthenticationContextHolder authenticationContextHolder,
-                              ApplicationProperties applicationProperties) {
+                              TenantPropertiesService tenantPropertiesService) {
         this.jhipsterProperties = jhipsterProperties;
         this.authenticationContextHolder = authenticationContextHolder;
-        this.applicationProperties = applicationProperties;
+        this.tenantPropertiesService = tenantPropertiesService;
 
         CachingProvider cachingProvider = Caching.getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
@@ -103,17 +106,18 @@ public class RateLimitingFilter extends ZuulFilter {
             long limit = rateLimitingProperties.getLimit();
             int duration = rateLimitingProperties.getDurationInSeconds();
 
-            if (byClientId) {
-                limit = applicationProperties.getRateLimiting().get(clientId).getLimit();
-                duration = applicationProperties.getRateLimiting().get(clientId).getDurationInSeconds();
+            if (applyOauth2ClientRule()) {
+                limit = getTenantRateLimitingConfig().get(clientId).getLimit();
+                duration = getTenantRateLimitingConfig().get(clientId).getDurationInSeconds();
             }
 
             return Bucket4j.configurationBuilder()
                 .addLimit(Bandwidth.simple(limit,
                     Duration.ofSeconds(duration)))
-                .buildConfiguration();
+                .build();
         };
     }
+
 
     /**
      * Create a Zuul response error when the API limit is exceeded.
@@ -131,17 +135,43 @@ public class RateLimitingFilter extends ZuulFilter {
      * The ID that will identify the limit: the client id or the user IP address.
      */
     private String getId(HttpServletRequest httpServletRequest) {
+        String id = authenticationContextHolder.getContext().getLogin().orElse(httpServletRequest.getRemoteAddr());
+        Optional<String> client = getClientId();
 
-        Authentication a = SecurityContextHolder.getContext().getAuthentication();
-        if (a instanceof OAuth2Authentication) {
-            String clientId = ((OAuth2Authentication) a).getOAuth2Request().getClientId();
-            if (MapUtils.isNotEmpty(applicationProperties.getRateLimiting())
-                && applicationProperties.getRateLimiting().containsKey(clientId)) {
-                byClientId = true;
-                return clientId;
+        if (applyOauth2ClientRule() && client.isPresent()) {
+            id = client.get();
+        }
+
+        return id;
+    }
+
+    private boolean applyOauth2ClientRule() {
+        boolean apply = false;
+
+        Optional<String> client = getClientId();
+        if (client.isPresent()) {
+            if (MapUtils.isNotEmpty(getTenantRateLimitingConfig())
+                && getTenantRateLimitingConfig().containsKey(client.get())) {
+                apply = true;
             }
         }
-        return authenticationContextHolder.getContext().getLogin().orElse(httpServletRequest.getRemoteAddr());
+
+        return apply;
+    }
+
+    private Optional<String> getClientId() {
+        Authentication a = SecurityContextHolder.getContext().getAuthentication();
+
+        if (a instanceof OAuth2Authentication) {
+            String clientId = ((OAuth2Authentication) a).getOAuth2Request().getClientId();
+            return Optional.of(clientId);
+        }
+
+        return Optional.empty();
+    }
+
+    private Map<String, TenantProperties.RateLimiting> getTenantRateLimitingConfig() {
+        return tenantPropertiesService.getTenantProps().getRateLimiting();
     }
 
 }

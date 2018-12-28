@@ -5,9 +5,7 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Properties specific to JHipster.
@@ -25,7 +23,8 @@ public class ApplicationProperties {
     private boolean kafkaEnabled;
     private String kafkaSystemQueue;
     private boolean cassandraEnabled;
-    private Map<String, RateLimiting> rateLimiting = new HashMap<>();
+    private String tenantPropertiesPathPattern;
+    private String tenantPropertiesName;
 
     @Getter
     @Setter
@@ -34,13 +33,5 @@ public class ApplicationProperties {
         private int maxAttempts;
         private long delay;
         private int multiplier;
-    }
-
-    @Getter
-    @Setter
-    public static class RateLimiting {
-
-        private long limit;
-        private int durationInSeconds;
     }
 }

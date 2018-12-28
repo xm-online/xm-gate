@@ -4,7 +4,9 @@ import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
 import com.icthh.xm.gate.gateway.accesscontrol.AccessControlFilter;
 import com.icthh.xm.gate.gateway.ratelimiting.RateLimitingFilter;
 import com.icthh.xm.gate.gateway.responserewriting.SwaggerBasePathRewritingFilter;
+import com.icthh.xm.gate.service.TenantPropertiesService;
 import io.github.jhipster.config.JHipsterProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
 import org.springframework.context.annotation.Bean;
@@ -38,21 +40,16 @@ public class GatewayConfiguration {
      */
     @Configuration
     @ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")
+    @RequiredArgsConstructor
     public static class RateLimitingConfiguration {
 
         private final JHipsterProperties jHipsterProperties;
 
-        private final ApplicationProperties applicationProperties;
-
-        public RateLimitingConfiguration(JHipsterProperties jHipsterProperties,
-                                         ApplicationProperties applicationProperties) {
-            this.jHipsterProperties = jHipsterProperties;
-            this.applicationProperties = applicationProperties;
-        }
+        private final TenantPropertiesService tenantPropertiesService;
 
         @Bean
         public RateLimitingFilter rateLimitingFilter(XmAuthenticationContextHolder authenticationContextHolder) {
-            return new RateLimitingFilter(jHipsterProperties, authenticationContextHolder, applicationProperties);
+            return new RateLimitingFilter(jHipsterProperties, authenticationContextHolder, tenantPropertiesService);
         }
     }
 }
