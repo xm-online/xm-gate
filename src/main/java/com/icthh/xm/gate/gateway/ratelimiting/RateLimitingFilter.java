@@ -10,7 +10,6 @@ import io.github.bucket4j.grid.ProxyManager;
 import io.github.bucket4j.grid.jcache.JCache;
 import io.github.jhipster.config.JHipsterProperties;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Supplier;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -20,7 +19,7 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,10 +36,6 @@ public class RateLimitingFilter extends ZuulFilter {
 
     private static final String GATEWAY_RATE_LIMITING_CACHE_NAME = "gateway-rate-limiting";
 
-    private static final long BASE_REQUESTS_LIMIT = 100000;
-
-    private static final int BASE_DURATION_IN_SECONDS = 3600;
-
     private final JHipsterProperties jhipsterProperties;
 
     private final XmAuthenticationContextHolder authenticationContextHolder;
@@ -48,6 +43,8 @@ public class RateLimitingFilter extends ZuulFilter {
     private final ApplicationProperties applicationProperties;
 
     private ProxyManager<String> buckets;
+
+    private boolean byClientId = false;
 
     public RateLimitingFilter(JHipsterProperties jhipsterProperties,
                               XmAuthenticationContextHolder authenticationContextHolder,
@@ -85,33 +82,30 @@ public class RateLimitingFilter extends ZuulFilter {
 
     @Override
     public Object run() {
-        boolean byClientId = false;
-        if (StringUtils.isNotBlank(applicationProperties.getClientId())) {
-            byClientId = true;
-        }
-        String bucketId = getId(RequestContext.getCurrentContext().getRequest(), byClientId);
-        Bucket bucket = buckets.getProxy(bucketId, getConfigSupplier(byClientId));
+
+        String bucketId = getId(RequestContext.getCurrentContext().getRequest());
+        Bucket bucket = buckets.getProxy(bucketId, getConfigSupplier(bucketId));
         if (bucket.tryConsume(1)) {
             // the limit is not exceeded
-            log.debug("API rate limit OK for client id {}", bucketId);
+            log.debug("API rate limit OK for id {}", bucketId);
         } else {
             // limit is exceeded
-            log.info("API rate limit exceeded for client id {}", bucketId);
+            log.info("API rate limit exceeded for id {}", bucketId);
             apiLimitExceeded();
         }
         return null;
     }
 
-    private Supplier<BucketConfiguration> getConfigSupplier(boolean byClientId) {
+    private Supplier<BucketConfiguration> getConfigSupplier(String clientId) {
         return () -> {
-            long limit = BASE_REQUESTS_LIMIT;
-            int duration = BASE_DURATION_IN_SECONDS;
+            JHipsterProperties.Gateway.RateLimiting rateLimitingProperties =
+                jhipsterProperties.getGateway().getRateLimiting();
+            long limit = rateLimitingProperties.getLimit();
+            int duration = rateLimitingProperties.getDurationInSeconds();
 
             if (byClientId) {
-                JHipsterProperties.Gateway.RateLimiting rateLimitingProperties =
-                    jhipsterProperties.getGateway().getRateLimiting();
-                limit = rateLimitingProperties.getLimit();
-                duration = rateLimitingProperties.getDurationInSeconds();
+                limit = applicationProperties.getRateLimiting().get(clientId).getLimit();
+                duration = applicationProperties.getRateLimiting().get(clientId).getDurationInSeconds();
             }
 
             return Bucket4j.configurationBuilder()
@@ -136,13 +130,15 @@ public class RateLimitingFilter extends ZuulFilter {
     /**
      * The ID that will identify the limit: the client id or the user IP address.
      */
-    private String getId(HttpServletRequest httpServletRequest, boolean byClientId) {
+    private String getId(HttpServletRequest httpServletRequest) {
 
-        if (byClientId) {
-            Authentication a = SecurityContextHolder.getContext().getAuthentication();
-            if (a instanceof OAuth2Authentication) {
-                Optional<String> clientId = Optional.of(((OAuth2Authentication) a).getOAuth2Request().getClientId());
-                return clientId.orElse(httpServletRequest.getRemoteAddr());
+        Authentication a = SecurityContextHolder.getContext().getAuthentication();
+        if (a instanceof OAuth2Authentication) {
+            String clientId = ((OAuth2Authentication) a).getOAuth2Request().getClientId();
+            if (MapUtils.isNotEmpty(applicationProperties.getRateLimiting())
+                && applicationProperties.getRateLimiting().containsKey(clientId)) {
+                byClientId = true;
+                return clientId;
             }
         }
         return authenticationContextHolder.getContext().getLogin().orElse(httpServletRequest.getRemoteAddr());

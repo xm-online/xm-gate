@@ -22,7 +22,8 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 
 @Slf4j
-@ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")
+@Configuration
+@ConditionalOnProperty("application.cassandra-enabled")
 @EnableConfigurationProperties(CassandraProperties.class)
 @Profile({JHipsterConstants.SPRING_PROFILE_DEVELOPMENT, JHipsterConstants.SPRING_PROFILE_PRODUCTION})
 public class CassandraConfiguration {

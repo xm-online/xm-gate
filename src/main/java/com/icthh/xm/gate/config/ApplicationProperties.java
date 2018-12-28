@@ -1,12 +1,13 @@
 package com.icthh.xm.gate.config;
 
-
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Properties specific to JHipster.
@@ -24,6 +25,8 @@ public class ApplicationProperties {
     private boolean kafkaEnabled;
     private String kafkaSystemQueue;
     private String clientId;
+    private boolean cassandraEnabled;
+    private Map<String, RateLimiting> rateLimiting = new HashMap<>();
 
     @Getter
     @Setter
@@ -32,5 +35,13 @@ public class ApplicationProperties {
         private int maxAttempts;
         private long delay;
         private int multiplier;
+    }
+
+    @Getter
+    @Setter
+    public static class RateLimiting {
+
+        private long limit = 100_000L;
+        private int durationInSeconds = 3_600;
     }
 }

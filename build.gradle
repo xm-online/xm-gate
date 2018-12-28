@@ -229,7 +229,7 @@ dependencies {
     compile "io.springfox:springfox-bean-validators"
     compile "org.mapstruct:mapstruct-jdk8:${mapstruct_version}"
     compile "org.apache.httpcomponents:httpclient"
-    compile "com.hazelcast:hazelcast-spring:3.7.4"
+    compile "com.hazelcast:hazelcast-spring:${hazelcast_version}"
     compile "org.springframework.social:spring-social-security:${spring_social_security_version}"
     compile "org.springframework.social:spring-social-google:${spring_social_google_version}"
     compile "org.springframework.social:spring-social-facebook:${spring_social_facebook_version}"
