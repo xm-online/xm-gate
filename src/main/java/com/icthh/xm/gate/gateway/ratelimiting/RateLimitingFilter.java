@@ -170,8 +170,7 @@ public class RateLimitingFilter extends ZuulFilter {
         return Optional.empty();
     }
 
-    private Map<String, TenantProperties.RateLimiting> getTenantRateLimitingConfig() {
-        return tenantPropertiesService.getTenantProps().getRateLimiting();
+    private Map<String, TenantProperties.RateLimiting.RateLimitingConf> getTenantRateLimitingConfig() {
+        return tenantPropertiesService.getTenantProps().getRateLimiting().getOauth2Client();
     }
-
 }

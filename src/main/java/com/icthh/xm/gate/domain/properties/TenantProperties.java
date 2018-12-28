@@ -14,13 +14,19 @@ import java.util.Map;
 @Setter
 public class TenantProperties {
 
-    private Map<String, RateLimiting> rateLimiting = new HashMap<>();
+    private RateLimiting rateLimiting = new RateLimiting();
 
     @Getter
     @Setter
     public static class RateLimiting {
 
-        private long limit;
-        private int durationInSeconds;
+        private Map<String, RateLimitingConf> oauth2Client = new HashMap<>();
+
+        @Getter
+        @Setter
+        public static class RateLimitingConf {
+            private long limit;
+            private int durationInSeconds;
+        }
     }
 }
