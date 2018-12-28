@@ -157,7 +157,4 @@ application:
         delay: 1000 #in milliseconds
         multiplier: 2
     rate-limiting:
-        svc-pb-mw:
-            limit: 5
-            duration-in-seconds: 60
     cassandra-enabled: false

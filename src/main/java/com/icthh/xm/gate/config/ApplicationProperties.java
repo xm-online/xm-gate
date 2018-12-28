@@ -24,7 +24,6 @@ public class ApplicationProperties {
     private List<String> hosts = new ArrayList<>();
     private boolean kafkaEnabled;
     private String kafkaSystemQueue;
-    private String clientId;
     private boolean cassandraEnabled;
     private Map<String, RateLimiting> rateLimiting = new HashMap<>();
 
@@ -41,7 +40,7 @@ public class ApplicationProperties {
     @Setter
     public static class RateLimiting {
 
-        private long limit = 100_000L;
-        private int durationInSeconds = 3_600;
+        private long limit;
+        private int durationInSeconds;
     }
 }
