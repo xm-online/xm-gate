@@ -23,7 +23,7 @@ import java.util.List;
 
 @Slf4j
 @Configuration
-@ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")
+@ConditionalOnProperty("application.cassandra-enabled")
 @EnableConfigurationProperties(CassandraProperties.class)
 @Profile({JHipsterConstants.SPRING_PROFILE_DEVELOPMENT, JHipsterConstants.SPRING_PROFILE_PRODUCTION})
 public class CassandraConfiguration {

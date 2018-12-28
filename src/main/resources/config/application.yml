@@ -147,6 +147,8 @@ aspects:
 # ===================================================================
 
 application:
+    tenant-properties-path-pattern: /config/tenants/{tenantName}/gate/${application.tenant-properties-name}
+    tenant-properties-name: gate.yml
     hosts:
         - localhost
         - local
@@ -156,3 +158,4 @@ application:
         max-attempts: 3
         delay: 1000 #in milliseconds
         multiplier: 2
+    cassandra-enabled: false
