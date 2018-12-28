@@ -42,13 +42,17 @@ public class GatewayConfiguration {
 
         private final JHipsterProperties jHipsterProperties;
 
-        public RateLimitingConfiguration(JHipsterProperties jHipsterProperties) {
+        private final ApplicationProperties applicationProperties;
+
+        public RateLimitingConfiguration(JHipsterProperties jHipsterProperties,
+                                         ApplicationProperties applicationProperties) {
             this.jHipsterProperties = jHipsterProperties;
+            this.applicationProperties = applicationProperties;
         }
 
         @Bean
         public RateLimitingFilter rateLimitingFilter(XmAuthenticationContextHolder authenticationContextHolder) {
-            return new RateLimitingFilter(jHipsterProperties, authenticationContextHolder);
+            return new RateLimitingFilter(jHipsterProperties, authenticationContextHolder, applicationProperties);
         }
     }
 }
