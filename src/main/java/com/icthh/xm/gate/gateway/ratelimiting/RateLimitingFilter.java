@@ -2,6 +2,7 @@ package com.icthh.xm.gate.gateway.ratelimiting;
 
 import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
 import com.icthh.xm.gate.domain.properties.TenantProperties;
+import com.icthh.xm.gate.domain.properties.TenantProperties.RateLimiting.RateLimitingConf;
 import com.icthh.xm.gate.service.TenantPropertiesService;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
@@ -12,6 +13,7 @@ import io.github.bucket4j.grid.jcache.JCache;
 import io.github.jhipster.config.JHipsterProperties;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -23,6 +25,7 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import javax.servlet.http.HttpServletRequest;
 
+import io.github.jhipster.config.JHipsterProperties.Gateway.RateLimiting;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.http.HttpStatus;
@@ -101,7 +104,7 @@ public class RateLimitingFilter extends ZuulFilter {
 
     private Supplier<BucketConfiguration> getConfigSupplier(String clientId) {
         return () -> {
-            JHipsterProperties.Gateway.RateLimiting rateLimitingProperties =
+            RateLimiting rateLimitingProperties =
                 jhipsterProperties.getGateway().getRateLimiting();
             long limit = rateLimitingProperties.getLimit();
             int duration = rateLimitingProperties.getDurationInSeconds();
@@ -170,7 +173,16 @@ public class RateLimitingFilter extends ZuulFilter {
         return Optional.empty();
     }
 
-    private Map<String, TenantProperties.RateLimiting.RateLimitingConf> getTenantRateLimitingConfig() {
-        return tenantPropertiesService.getTenantProps().getRateLimiting().getOauth2Client();
+    private Map<String, RateLimitingConf> getTenantRateLimitingConfig() {
+        Map<String, RateLimitingConf> rateLimitingMap = new HashMap<>();
+
+        TenantProperties tenantProperties = tenantPropertiesService.getTenantProps();
+        if (tenantProperties != null && tenantProperties.getRateLimiting() != null) {
+            if (tenantProperties.getRateLimiting().getOauth2Client() != null) {
+                rateLimitingMap = tenantProperties.getRateLimiting().getOauth2Client();
+            }
+        }
+
+        return rateLimitingMap;
     }
 }

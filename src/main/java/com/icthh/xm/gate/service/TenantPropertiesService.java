@@ -33,7 +33,8 @@ public class TenantPropertiesService implements RefreshableConfiguration {
         String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
         String cfgTenantKey = tenantKey.toUpperCase();
         if (!tenantProps.containsKey(cfgTenantKey)) {
-            throw new IllegalArgumentException("Tenant '" + cfgTenantKey + "' - configuration is empty");
+            log.info("Tenant '" + cfgTenantKey + "' - configuration is empty");
+            return null;
         }
         return tenantProps.get(cfgTenantKey);
     }
