@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class Service {
+public class MsService {
 
     private String name;
     private List<ServiceInstance> instances = new ArrayList<>();
