@@ -4,6 +4,10 @@ import com.icthh.xm.gate.service.MonitoringService;
 import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
+
+import java.util.List;
+import java.util.Objects;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,11 +15,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Objects;
-
 /**
- * REST controller for microservices monitoring
+ * REST controller for microservices monitoring.
  */
 @RestController
 @RequestMapping("/api/monitoring")
