@@ -149,6 +149,8 @@ aspects:
 application:
     tenant-properties-path-pattern: /config/tenants/{tenantName}/gate/${application.tenant-properties-name}
     tenant-properties-name: gate.yml
+    tenant-path: /config/tenants/{tenantName}/tenant-config.yml
+    consul-address: localhost:8500
     hosts:
         - localhost
         - local

@@ -34,4 +34,12 @@ public class MonitoringService {
         @RequestLine("GET /management/metrics")
         String get(URI baseUrl, @Param("access_token") String accessToken);
     }
+
+    interface HealthClient {
+
+        @Headers("Authorization: {token}")
+        @RequestLine("GET /management/health")
+        String get(URI baseUrl, @Param("token") String accessToken);
+    }
+
 }

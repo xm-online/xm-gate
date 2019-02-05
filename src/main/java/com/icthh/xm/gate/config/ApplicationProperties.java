@@ -24,6 +24,8 @@ public class ApplicationProperties {
     private String kafkaSystemQueue;
     private String tenantPropertiesPathPattern;
     private String tenantPropertiesName;
+    private String tenantPath;
+    private String consulAddress;
 
     @Getter
     @Setter
