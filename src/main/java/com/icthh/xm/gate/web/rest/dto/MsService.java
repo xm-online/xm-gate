@@ -1,14 +1,14 @@
 package com.icthh.xm.gate.web.rest.dto;
 
-import lombok.Builder;
-import lombok.Data;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Builder;
+import lombok.Data;
+
 @Data
 @Builder
-public class Service {
+public class MsService {
 
     private String name;
     private List<ServiceInstance> instances = new ArrayList<>();
