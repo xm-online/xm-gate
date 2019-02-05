@@ -1,7 +1,7 @@
 package com.icthh.xm.gate.web.rest;
 
 import com.icthh.xm.gate.service.MonitoringService;
-import com.icthh.xm.gate.web.rest.dto.Service;
+import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +34,9 @@ public class MonitoringResource {
      */
     @GetMapping("/services")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_LIST')")
-    public ResponseEntity<List<Service>> getServices() {
-        throw new UnsupportedOperationException("Not implemented");
+    public ResponseEntity<List<MsService>> getServices() {
+        List<MsService> services = monitoringService.getServices();
+        return ResponseEntity.ok(services);
     }
 
     /**
