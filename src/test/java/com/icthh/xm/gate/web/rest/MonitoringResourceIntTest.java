@@ -21,6 +21,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
@@ -28,6 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasValue;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,6 +84,10 @@ public class MonitoringResourceIntTest {
             .perform(get("/api/monitoring/services"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].name").value(containsInAnyOrder("uaa", "gate")))
+            .andExpect(jsonPath("$.[*].instances[*]").isNotEmpty())
+            .andExpect(jsonPath("$.[*].instances[*].id")
+                .value(containsInAnyOrder("uaa1", "gate1", "gate2")))
             .andReturn();
 
         log.info(result.getResponse().getContentAsString());
