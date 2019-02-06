@@ -2,7 +2,7 @@ package com.icthh.xm.gate.service;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantKey;
-import com.icthh.xm.gate.domain.TokenHolder;
+import com.icthh.xm.gate.domain.SystemTokenHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
@@ -68,7 +68,7 @@ public class SystemTokenService {
 
         Map<String, String> body = new HashMap<>();
         body.put(GRANT_TYPE, GRANT_TYPE_CLIENT_CREDENTIALS);
-        TokenHolder uaa = credService.getTenantProps().getToken();
+        SystemTokenHolder uaa = credService.getTenantProps().getToken();
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, uaa.getSystemClientToken());

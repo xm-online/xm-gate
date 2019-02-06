@@ -2,7 +2,7 @@ package com.icthh.xm.gate.domain.properties;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.icthh.xm.gate.domain.TokenHolder;
+import com.icthh.xm.gate.domain.SystemTokenHolder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +16,7 @@ import java.util.Map;
 public class TenantProperties {
 
     private RateLimiting rateLimiting = new RateLimiting();
-    private TokenHolder token = new TokenHolder();
+    private SystemTokenHolder token = new SystemTokenHolder();
 
     @Getter
     @Setter

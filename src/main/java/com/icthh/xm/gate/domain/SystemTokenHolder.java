@@ -5,9 +5,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TokenHolder {
+public class SystemTokenHolder {
     private String systemAuthUrl;
-    private String systemUsername;
-    private String systemPassword;
     private String systemClientToken;
 }
