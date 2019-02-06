@@ -1,22 +1,21 @@
 package com.icthh.xm.gate.service;
 
-import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
-
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
+import com.icthh.xm.gate.web.client.HealthCheckClient;
 import com.icthh.xm.gate.web.client.MsServiceMetricsClient;
 import com.icthh.xm.gate.web.rest.dto.MsService;
+import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
 import com.icthh.xm.gate.web.rest.dto.ServiceInstance;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
-
 import feign.Feign;
-import feign.Headers;
-import feign.Param;
-import feign.RequestLine;
 import feign.Target;
 import feign.jackson.JacksonDecoder;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -24,15 +23,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
 
 @Service
 @Slf4j
 public class MonitoringService {
 
+    public static final String PROTOCOL = "http://";
+    public static final String SEPARATOR = ":";
     private final ConsulClient consulClient;
     private final MsServiceMetricsClient metricsClient;
+    private final HealthCheckClient healthCheckClient;
 
     /**
      * Constructor of the service
@@ -41,6 +42,8 @@ public class MonitoringService {
      */
     public MonitoringService(ConsulClient consulClient) {
         this.consulClient = consulClient;
+
+        this.healthCheckClient = Feign.builder().decoder(new JacksonDecoder()).target(Target.EmptyTarget.create(HealthCheckClient.class));
         this.metricsClient = Feign.builder().decoder(new JacksonDecoder())
             .target(Target.EmptyTarget.create(MsServiceMetricsClient.class));
     }
@@ -76,6 +79,15 @@ public class MonitoringService {
         return dtoServices;
     }
 
+    public List<ServiceHealth> getHealth(String service) {
+        Response<List<CatalogService>> catalogServices = consulClient.getCatalogService(service, QueryParams.DEFAULT);
+        List<ServiceHealth> result = new ArrayList<>();
+        catalogServices.getValue().forEach(catalogService -> {
+            URI baseUrl = URI.create(PROTOCOL + catalogService.getAddress()+ SEPARATOR + catalogService.getServicePort());
+            Map s = healthCheckClient.get(baseUrl); // TODO
+        });
+        return result;
+    }
 
     /**
      * Get all metrics of each service instance
@@ -90,11 +102,5 @@ public class MonitoringService {
         return Collections.singletonList(ServiceMetrics.builder().metrics(s).instanceId("gate-4sfdf23").build());
     }
 
-    interface HealthClient {
-
-        @Headers("Authorization: {token}")
-        @RequestLine("GET /management/health")
-        String get(URI baseUrl, @Param("token") String accessToken);
-    }
 
 }

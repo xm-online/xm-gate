@@ -46,7 +46,7 @@ public class MonitoringResource {
     @GetMapping("/services/{serviceName}/health")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_HEALTH')")
     public ResponseEntity<List<ServiceHealth>> getHealth(@PathVariable String serviceName) {
-        throw new UnsupportedOperationException("Not implemented");
+        return ResponseEntity.ok(monitoringService.getHealth(serviceName));
     }
 
     /**
