@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -47,13 +48,19 @@ public class MonitoringService {
      *
      * @return the list of services
      */
+    @SuppressWarnings("unchecked")
     public List<MsService> getServices() {
         Response<Map<String, List<String>>> catalogServices = consulClient.getCatalogServices(QueryParams.DEFAULT);
         List<MsService> dtoServices = new ArrayList<>();
 
+        if (catalogServices == null || MapUtils.isEmpty(catalogServices.getValue())) {
+            return Collections.EMPTY_LIST;
+        }
         catalogServices.getValue().keySet().forEach(serviceId -> {
+
             Response<List<HealthService>> services = consulClient
                 .getHealthServices(serviceId, false, null);
+
             List<ServiceInstance> instances = new ArrayList<>();
 
             services.getValue().forEach(service -> {
@@ -69,7 +76,6 @@ public class MonitoringService {
                 .instances(instances)
                 .build());
         });
-
         return dtoServices;
     }
 
