@@ -25,7 +25,6 @@ import java.util.Objects;
 public class MonitoringResource {
 
     private final MonitoringService monitoringService;
-    private final ConsulService consulService;
 
     /**
      * GET /services : Get list of service instances
@@ -48,7 +47,6 @@ public class MonitoringResource {
     @GetMapping("/services/{serviceName}/health")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_HEALTH')")
     public ResponseEntity<List<ServiceHealth>> getHealth(@PathVariable String serviceName) {
-        consulService.getHealth(serviceName);
         throw new UnsupportedOperationException("Not implemented");
     }
 
