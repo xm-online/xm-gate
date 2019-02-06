@@ -1,6 +1,5 @@
 package com.icthh.xm.gate.web.rest;
 
-import com.icthh.xm.gate.service.ConsulService;
 import com.icthh.xm.gate.service.MonitoringService;
 import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
