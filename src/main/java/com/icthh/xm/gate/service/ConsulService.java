@@ -23,7 +23,6 @@ public class ConsulService {
     private final SystemTokenService systemTokenService;
     private final ApplicationProperties appProps;
 
-
     public void getHealth(String service) {
         ConsulClient client = new ConsulClient(appProps.getConsulAddress());
         HealthServicesRequest request = HealthServicesRequest.newBuilder()

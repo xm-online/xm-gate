@@ -27,12 +27,14 @@ public class SystemTokenService {
     private static final String TOKEN_TYPE = "token_type";
     private static final String ACCESS_TOKEN = "access_token";
 
-
     private final RestTemplate restTemplate;
     private final TenantContextHolder tenantContext;
     private final TenantPropertiesService credService;
 
-    public SystemTokenService(@Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate, TenantContextHolder tenantContext, TenantPropertiesService credService) {
+    public SystemTokenService(
+        @Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate,
+        TenantContextHolder tenantContext,
+        TenantPropertiesService credService) {
         this.restTemplate = restTemplate;
         this.tenantContext = tenantContext;
         this.credService = credService;
@@ -61,7 +63,6 @@ public class SystemTokenService {
         log.info("Post to {} with args {}", url, args);
         return restTemplate.postForEntity(url, request, Map.class).getBody();
     }
-
 
     protected String getSystemToken() {
 
