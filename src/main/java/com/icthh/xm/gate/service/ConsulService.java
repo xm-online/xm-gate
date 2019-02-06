@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ConsulService {
 
-    private final TokenService tokenService;
+    private final SystemTokenService systemTokenService;
     private final ApplicationProperties appProps;
 
 
@@ -31,7 +31,7 @@ public class ConsulService {
             .setQueryParams(QueryParams.DEFAULT)
             .build();
 
-        String token = this.tokenService.getSystemToken();
+        String token = this.systemTokenService.getSystemToken();
 
         Response<List<HealthService>> healthyServices = client.getHealthServices(service, request);
         healthyServices.getValue().stream().forEach(healthService -> {

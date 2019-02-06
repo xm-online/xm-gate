@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class UaaConfig {
+public class TokenHolder {
     private String systemAuthUrl;
     private String systemUsername;
     private String systemPassword;

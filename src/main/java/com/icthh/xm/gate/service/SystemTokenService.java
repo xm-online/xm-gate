@@ -2,8 +2,7 @@ package com.icthh.xm.gate.service;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantKey;
-import com.icthh.xm.gate.domain.UaaConfig;
-import lombok.RequiredArgsConstructor;
+import com.icthh.xm.gate.domain.TokenHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
@@ -20,7 +19,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-public class TokenService {
+public class SystemTokenService {
 
     private static final String GRANT_TYPE = "grant_type";
     private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
@@ -31,9 +30,9 @@ public class TokenService {
 
     private final RestTemplate restTemplate;
     private final TenantContextHolder tenantContext;
-    private final AuthCredService credService;
+    private final TenantPropertiesService credService;
 
-    public TokenService(@Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate, TenantContextHolder tenantContext, AuthCredService credService) {
+    public SystemTokenService(@Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate, TenantContextHolder tenantContext, TenantPropertiesService credService) {
         this.restTemplate = restTemplate;
         this.tenantContext = tenantContext;
         this.credService = credService;
@@ -68,7 +67,7 @@ public class TokenService {
 
         Map<String, String> body = new HashMap<>();
         body.put(GRANT_TYPE, GRANT_TYPE_CLIENT_CREDENTIALS);
-        UaaConfig uaa = credService.getTenantProps().getUaa();
+        TokenHolder uaa = credService.getTenantProps().getToken();
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, uaa.getSystemClientToken());
