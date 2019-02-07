@@ -45,7 +45,9 @@ public class MonitoringService {
      *
      * @param consulClient autowired consul client
      */
-    public MonitoringService(ConsulClient consulClient, XmAuthenticationContextHolder authContextHolder) {
+    public MonitoringService(ConsulClient consulClient,
+                             XmAuthenticationContextHolder authContextHolder,
+                             MsServiceMonitoringClient metricsClient) {
         this.consulClient = consulClient;
         this.authContextHolder = authContextHolder;
         this.monitoringClient = Feign.builder().decoder(new JacksonDecoder())
