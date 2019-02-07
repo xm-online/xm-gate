@@ -7,6 +7,7 @@ import com.ecwid.consul.v1.health.model.HealthService;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import com.icthh.xm.gate.service.MonitoringService;
+import com.icthh.xm.gate.web.client.MsServiceMetricsClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -29,8 +30,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -55,6 +56,9 @@ public class MonitoringResourceIntTest {
     @MockBean
     private ConsulClient consulClient;
 
+    @MockBean
+    private MsServiceMetricsClient metricsClient;
+
     @SneakyThrows
     @Before
     public void setup() {
@@ -64,17 +68,16 @@ public class MonitoringResourceIntTest {
         this.mvc = MockMvcBuilders
             .standaloneSetup(controller)
             .build();
+
+        when(consulClient.getCatalogServices(QueryParams.DEFAULT)).thenReturn(buildServiceList());
+        when(consulClient.getHealthServices("gate", false, null))
+            .thenReturn(buildGateServiceResponse());
+        when(consulClient.getHealthServices("uaa", false, null))
+            .thenReturn(buildUaaServiceResponse());
     }
 
     @Test
     public void testGetServicesServices() throws Exception {
-
-        when(consulClient.getCatalogServices(QueryParams.DEFAULT)).thenReturn(getResponse());
-        when(consulClient.getHealthServices("gate", false, null))
-            .thenReturn(getGateResponse());
-        when(consulClient.getHealthServices("uaa", false, null))
-            .thenReturn(getUaaResponse());
-
         MvcResult result = mvc
             .perform(get("/api/monitoring/services"))
             .andExpect(status().isOk())
@@ -87,7 +90,7 @@ public class MonitoringResourceIntTest {
 
         log.info(result.getResponse().getContentAsString());
         verify(consulClient, times(1)).getCatalogServices(QueryParams.DEFAULT);
-        verify(consulClient, times(2)).getHealthServices(anyString(), anyBoolean(), anyObject());
+        verify(consulClient, times(2)).getHealthServices(anyString(), anyBoolean(), any());
 
         verifyNoMoreInteractions(consulClient);
     }
@@ -99,10 +102,24 @@ public class MonitoringResourceIntTest {
 
     @Test
     public void testGetMetrics() throws Exception {
-        throw new UnsupportedOperationException("Not implemented");
+        when(metricsClient.get(any(), any())).thenReturn(buildMetrics());
+
+        MvcResult result = mvc
+            .perform(get("/api/monitoring/services/gate/metrics"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*]").isNotEmpty())
+            .andExpect(jsonPath("$.[*].metrics").isNotEmpty())
+            .andExpect(jsonPath("$.[*].instanceId").value(containsInAnyOrder("gate1", "gate2")))
+            .andReturn();
+
+        log.info(result.getResponse().getContentAsString());
+        verify(consulClient, times(1)).getHealthServices(anyString(), anyBoolean(), any());
+
+        verifyNoMoreInteractions(consulClient);
     }
 
-    private Response<Map<String, List<String>>> getResponse() {
+    private Response<Map<String, List<String>>> buildServiceList() {
         List<String> servicesList1 = new ArrayList<>();
         servicesList1.add("gate1");
 
@@ -116,7 +133,7 @@ public class MonitoringResourceIntTest {
         return new Response<>(value, 1L, true, 1L);
     }
 
-    private Response<List<HealthService>> getGateResponse() {
+    private Response<List<HealthService>> buildGateServiceResponse() {
         List<HealthService> value = new ArrayList<>();
 
         HealthService.Service service1 = new HealthService.Service();
@@ -142,7 +159,7 @@ public class MonitoringResourceIntTest {
         return new Response<>(value, 1L, true, 1L);
     }
 
-    private Response<List<HealthService>> getUaaResponse() {
+    private Response<List<HealthService>> buildUaaServiceResponse() {
         List<HealthService> value = new ArrayList<>();
 
         HealthService.Service service1 = new HealthService.Service();
@@ -157,5 +174,13 @@ public class MonitoringResourceIntTest {
 
 
         return new Response<>(value, 1L, true, 1L);
+    }
+
+    private Map buildMetrics() {
+        Map<Object, Object> metrics = new HashMap<>();
+        metrics.put("metric1", new HashMap<Object, Object>() {{
+            put("jvm.metric.value", "some-value");
+        }});
+        return metrics;
     }
 }
