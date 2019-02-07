@@ -14,10 +14,6 @@ import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceInstance;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
 
-import feign.Feign;
-import feign.Target;
-import feign.jackson.JacksonDecoder;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
