@@ -49,7 +49,9 @@ public class MonitoringResource {
     @GetMapping("/services/{serviceName}/health")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_HEALTH')")
     public ResponseEntity<List<ServiceHealth>> getHealth(@PathVariable String serviceName) {
-        throw new UnsupportedOperationException("Not implemented");
+        Objects.requireNonNull(serviceName, "Can't getMetrics health because serviceName is not pass");
+        List<ServiceHealth> health = monitoringService.getHealth(serviceName);
+        return ResponseEntity.ok(health);
     }
 
     /**
@@ -62,7 +64,7 @@ public class MonitoringResource {
     @GetMapping("/services/{serviceName}/metrics")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_METRIC')")
     public ResponseEntity<List<ServiceMetrics>> getMetrics(@PathVariable String serviceName) {
-        Objects.requireNonNull(serviceName, "Can't get metrics because serviceName is not pass");
+        Objects.requireNonNull(serviceName, "Can't getMetrics metrics because serviceName is not pass");
         List<ServiceMetrics> metrics = monitoringService.getMetrics(serviceName);
         return ResponseEntity.ok(metrics);
     }

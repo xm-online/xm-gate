@@ -7,7 +7,7 @@ import com.ecwid.consul.v1.health.model.HealthService;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import com.icthh.xm.gate.service.MonitoringService;
-import com.icthh.xm.gate.web.client.MsServiceMetricsClient;
+import com.icthh.xm.gate.web.client.MsMonitoringClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -57,7 +57,7 @@ public class MonitoringResourceIntTest {
     private ConsulClient consulClient;
 
     @MockBean
-    private MsServiceMetricsClient metricsClient;
+    private MsMonitoringClient metricsClient;
 
     @SneakyThrows
     @Before
@@ -102,7 +102,7 @@ public class MonitoringResourceIntTest {
 
     @Test
     public void testGetMetrics() throws Exception {
-        when(metricsClient.get(any(), any())).thenReturn(buildMetrics());
+        when(metricsClient.getMetrics(any(), any())).thenReturn(buildMetrics());
 
         MvcResult result = mvc
             .perform(get("/api/monitoring/services/gate/metrics"))

@@ -1,6 +1,6 @@
 package com.icthh.xm.gate.config;
 
-import com.icthh.xm.gate.web.client.MsServiceMetricsClient;
+import com.icthh.xm.gate.web.client.MsMonitoringClient;
 import feign.Feign;
 import feign.Target;
 import feign.jackson.JacksonDecoder;
@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Configuration;
 public class FeignClientConfiguration {
 
     @Bean
-    public MsServiceMetricsClient msServiceMetricsClient() {
+    public MsMonitoringClient msServiceMetricsClient() {
         return Feign.builder().decoder(new JacksonDecoder())
-            .target(Target.EmptyTarget.create(MsServiceMetricsClient.class));
+            .target(Target.EmptyTarget.create(MsMonitoringClient.class));
     }
 }
