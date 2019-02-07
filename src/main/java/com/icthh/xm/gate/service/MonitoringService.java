@@ -1,8 +1,5 @@
 package com.icthh.xm.gate.service;
 
-import static org.apache.http.HttpHost.DEFAULT_SCHEME_NAME;
-import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
-
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
@@ -15,10 +12,10 @@ import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
 import com.icthh.xm.gate.web.rest.dto.ServiceInstance;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
-
-import feign.Feign;
-import feign.Target;
-import feign.jackson.JacksonDecoder;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -27,10 +24,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.MapUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
+import static org.apache.http.HttpHost.DEFAULT_SCHEME_NAME;
+import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
 
 @Service
 @Slf4j
@@ -50,8 +45,7 @@ public class MonitoringService {
                              MsServiceMonitoringClient metricsClient) {
         this.consulClient = consulClient;
         this.authContextHolder = authContextHolder;
-        this.monitoringClient = Feign.builder().decoder(new JacksonDecoder())
-            .target(Target.EmptyTarget.create(MsServiceMonitoringClient.class));
+        this.monitoringClient = metricsClient;
     }
 
     /**
