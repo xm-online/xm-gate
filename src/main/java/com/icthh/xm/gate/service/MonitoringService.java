@@ -98,7 +98,7 @@ public class MonitoringService {
                 //support spring actuator with version < 2.0
                 healthStatusBuilder.details(
                     healthStatus.entrySet().stream()
-                        .filter(x -> x.getKey().equals(ACTUATOR_HEALTH_STATUS))
+                        .filter(x -> !x.getKey().equals(ACTUATOR_HEALTH_STATUS))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
                 );
             } else {
