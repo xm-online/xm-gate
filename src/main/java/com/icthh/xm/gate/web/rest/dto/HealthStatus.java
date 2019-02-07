@@ -4,7 +4,6 @@ import java.util.Map;
 
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.boot.actuate.health.Status;
 
 @Data
 @Builder
