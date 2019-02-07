@@ -5,6 +5,8 @@ import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.gate.config.ApplicationProperties;
 import com.icthh.xm.gate.web.client.HealthCheckClient;
 import com.icthh.xm.gate.web.client.MsServiceMetricsClient;
 import com.icthh.xm.gate.web.rest.dto.MsService;
@@ -40,9 +42,8 @@ public class MonitoringService {
      *
      * @param consulClient autowired consul client
      */
-    public MonitoringService(ConsulClient consulClient) {
+    public MonitoringService(ConsulClient consulClient, SystemTokenService systemTokenService, ApplicationProperties appProps, TenantContextHolder tenantContext) {
         this.consulClient = consulClient;
-
         this.healthCheckClient = Feign.builder().decoder(new JacksonDecoder()).target(Target.EmptyTarget.create(HealthCheckClient.class));
         this.metricsClient = Feign.builder().decoder(new JacksonDecoder())
             .target(Target.EmptyTarget.create(MsServiceMetricsClient.class));
@@ -79,14 +80,13 @@ public class MonitoringService {
         return dtoServices;
     }
 
-    public List<ServiceHealth> getHealth(String service) {
+    public List<ServiceHealth> getHealth(String service, String token) {
         Response<List<CatalogService>> catalogServices = consulClient.getCatalogService(service, QueryParams.DEFAULT);
-        List<ServiceHealth> result = new ArrayList<>();
         catalogServices.getValue().forEach(catalogService -> {
             URI baseUrl = URI.create(PROTOCOL + catalogService.getAddress()+ SEPARATOR + catalogService.getServicePort());
-            Map s = healthCheckClient.get(baseUrl); // TODO
+            Map s = healthCheckClient.get(baseUrl, token);
         });
-        return result;
+        return null;
     }
 
     /**
