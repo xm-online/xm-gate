@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
@@ -86,7 +87,7 @@ public class MonitoringService {
 
         service.getInstances().forEach(instance -> {
             URI serviceAdr = buildUri(instance);
-            Map healthStatus = monitoringClient.getHealth(serviceAdr, currentUserToken);
+            Map<String, Object> healthStatus = monitoringClient.getHealth(serviceAdr, currentUserToken);
 
             ServiceHealthBuilder serviceHealthBuilder = ServiceHealth.builder().instanceId(instance.getId());
             HealthStatusBuilder healthStatusBuilder = HealthStatus.builder();
@@ -95,8 +96,11 @@ public class MonitoringService {
             Object details = healthStatus.get(ACTUATOR_HEALTH_DETAILS);
             if (details == null) {
                 //support spring actuator with version < 2.0
-                healthStatus.remove(ACTUATOR_HEALTH_STATUS);
-                healthStatusBuilder.details(healthStatus);
+                healthStatusBuilder.details(
+                    healthStatus.entrySet().stream()
+                        .filter(x -> x.getKey().equals(ACTUATOR_HEALTH_STATUS))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                );
             } else {
                 //support new version of spring actuator
                 healthStatusBuilder.details((Map) details);

@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -96,8 +97,33 @@ public class MonitoringResourceIntTest {
     }
 
     @Test
-    public void testGetHealth() throws Exception {
-        throw new UnsupportedOperationException("Not implemented");
+    public void testGetHealthActuatorV1() throws Exception {
+        testGetHealth(buildHealthV1());
+    }
+
+    @Test
+    public void testGetHealthActuatorV2() throws Exception {
+        testGetHealth(buildHealthV2());
+    }
+
+    public void testGetHealth(Map healthResponse) throws Exception {
+        when(metricsClient.getHealth(any(), any())).thenReturn(healthResponse);
+
+        MvcResult result = mvc
+            .perform(get("/api/monitoring/services/gate/health"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*]").isNotEmpty())
+            .andExpect(jsonPath("$.[*].health").isNotEmpty())
+            .andExpect(jsonPath("$.[*].health.details").isNotEmpty())
+            .andExpect(jsonPath("$.[*].health.status").value(containsInAnyOrder("UP", "UP")))
+            .andExpect(jsonPath("$.[*].instanceId").value(containsInAnyOrder("gate1", "gate2")))
+            .andReturn();
+
+        log.info(result.getResponse().getContentAsString());
+        verify(consulClient, times(1)).getHealthServices(anyString(), anyBoolean(), any());
+
+        verifyNoMoreInteractions(consulClient);
     }
 
     @Test
@@ -182,5 +208,21 @@ public class MonitoringResourceIntTest {
             put("jvm.metric.value", "some-value");
         }});
         return metrics;
+    }
+
+    private Map buildHealthV2() throws IOException {
+        Map<Object, Object> health = new HashMap<>();
+        health.put("status", "UP");
+        health.put("details", new HashMap<String, Object>() {{
+            put("db", "UP");
+        }});
+        return health;
+    }
+
+    private Map buildHealthV1() throws IOException {
+        Map<Object, Object> health = new HashMap<>();
+        health.put("status", "UP");
+        health.put("db", "UP");
+        return health;
     }
 }
