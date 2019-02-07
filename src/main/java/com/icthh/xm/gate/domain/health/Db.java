@@ -1,9 +1,11 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
 
+import lombok.Data;
+
+@Data
 public class Db {
-
-    public String status;
-    public String database;
-    public Integer hello;
+    private String status;
+    private String database;
+    private Integer hello;
 
 }

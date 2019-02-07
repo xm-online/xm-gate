@@ -1,9 +1,11 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
 
+import lombok.Data;
+
+@Data
 public class DiscoveryComposite {
-
-    public String description;
-    public String status;
-    public DiscoveryClient discoveryClient;
+    private String description;
+    private String status;
+    private DiscoveryClient discoveryClient;
 
 }

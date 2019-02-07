@@ -1,10 +1,11 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
 
+import lombok.Data;
+@Data
 public class DiskSpace {
-
-    public String status;
-    public Long total;
-    public Long free;
-    public Long threshold;
+    private String status;
+    private Long total;
+    private Long free;
+    private Long threshold;
 
 }

@@ -1,5 +1,8 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
 
+import lombok.Data;
+
+@Data
 public class RefreshScope {
-    public String status;
+    private String status;
 }

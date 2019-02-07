@@ -1,14 +1,16 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
 
+import lombok.Data;
+
+@Data
 public class HealthResponse {
-
-    public String description;
-    public String status;
-    public DiscoveryComposite discoveryComposite;
-    public DiskSpace diskSpace;
-    public Db db;
-    public RefreshScope refreshScope;
-    public Hystrix hystrix;
-    public Consul consul;
+    private String description;
+    private String status;
+    private DiscoveryComposite discoveryComposite;
+    private DiskSpace diskSpace;
+    private Db db;
+    private RefreshScope refreshScope;
+    private Hystrix hystrix;
+    private Consul consul;
 
 }

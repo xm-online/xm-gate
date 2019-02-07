@@ -1,15 +1,17 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
 
+import lombok.Data;
+
+@Data
 public class Consul {
-
-    public String status;
-    public Services services;
-    public String advertiseAddress;
-    public String datacenter;
-    public String domain;
-    public String nodeName;
-    public String bindAddress;
-    public String clientAddress;
+    private String status;
+    private Services services;
+    private String advertiseAddress;
+    private String datacenter;
+    private String domain;
+    private String nodeName;
+    private String bindAddress;
+    private String clientAddress;
 
 }
 

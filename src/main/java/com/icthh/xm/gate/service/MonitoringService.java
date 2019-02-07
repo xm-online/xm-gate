@@ -68,7 +68,6 @@ public class MonitoringService {
         return dtoServices;
     }
 
-
     /**
      * Get all metrics of each service instance
      * from endpoint /management/metrics
@@ -125,7 +124,6 @@ public class MonitoringService {
         return serviceHealth;
 
     }
-
 
     private MsService getService(String serviceName) {
         Response<List<HealthService>> services = consulClient

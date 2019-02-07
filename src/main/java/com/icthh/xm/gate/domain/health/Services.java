@@ -1,11 +1,14 @@
-package com.icthh.xm.gate.domain;
+package com.icthh.xm.gate.domain.health;
+
+import lombok.Data;
 
 import java.util.List;
 
+@Data
 public class Services {
-    public List<String> config = null;
-    public List<Object> consul = null;
-    public List<String> entity = null;
-    public List<String> gate = null;
-    public List<String> uaa = null;
+    private List<String> config;
+    private List<Object> consul;
+    private List<String> entity;
+    private List<String> gate;
+    private List<String> uaa;
 }

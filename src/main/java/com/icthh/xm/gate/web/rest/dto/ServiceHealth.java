@@ -1,13 +1,13 @@
 package com.icthh.xm.gate.web.rest.dto;
 
+import com.icthh.xm.gate.domain.health.HealthResponse;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.boot.actuate.health.Health;
 
 @Data
 @Builder
 public class ServiceHealth {
 
     private String instanceId;
-    private Health health;
+    private HealthResponse health;
 }
