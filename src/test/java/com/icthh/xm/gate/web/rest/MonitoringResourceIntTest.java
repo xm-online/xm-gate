@@ -4,12 +4,15 @@ import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.health.model.HealthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
+import com.icthh.xm.gate.domain.health.HealthResponse;
 import com.icthh.xm.gate.service.MonitoringService;
 import com.icthh.xm.gate.web.client.MsServiceMonitoringClient;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,7 +101,21 @@ public class MonitoringResourceIntTest {
 
     @Test
     public void testGetHealth() throws Exception {
-        throw new UnsupportedOperationException("Not implemented");
+        when(metricsClient.getHealth(any(), any())).thenReturn(buildHealth());
+
+        MvcResult result = mvc
+            .perform(get("/api/monitoring/services/gate/health"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*]").isNotEmpty())
+            .andExpect(jsonPath("$.[*].health").isNotEmpty())
+            .andExpect(jsonPath("$.[*].instanceId").value(containsInAnyOrder("gate1", "gate2")))
+            .andReturn();
+
+        log.info(result.getResponse().getContentAsString());
+        verify(consulClient, times(1)).getHealthServices(anyString(), anyBoolean(), any());
+
+        verifyNoMoreInteractions(consulClient);
     }
 
     @Test
@@ -182,5 +200,12 @@ public class MonitoringResourceIntTest {
             put("jvm.metric.value", "some-value");
         }});
         return metrics;
+    }
+
+    private HealthResponse buildHealth() throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] bytes = IOUtils.toByteArray(getClass().getClassLoader().getResourceAsStream("healthResponse.json"));
+        HealthResponse response = objectMapper.readValue(bytes, HealthResponse.class);
+        return response;
     }
 }

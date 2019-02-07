@@ -1,0 +1,70 @@
+{
+    "description": "Spring Cloud Consul Discovery Client",
+    "status": "UP",
+    "discoveryComposite": {
+        "description": "Spring Cloud Consul Discovery Client",
+        "status": "UP",
+        "discoveryClient": {
+            "description": "Spring Cloud Consul Discovery Client",
+            "status": "UP",
+            "services": [
+                "config",
+                "consul",
+                "entity",
+                "gate",
+                "uaa"
+            ]
+        }
+    },
+    "diskSpace": {
+        "status": "UP",
+        "total": 167969722368,
+        "free": 10714644480,
+        "threshold": 10485760
+    },
+    "db": {
+        "status": "UP",
+        "database": "PostgreSQL",
+        "hello": 1
+    },
+    "refreshScope": {
+        "status": "UP"
+    },
+    "hystrix": {
+        "status": "UP"
+    },
+    "consul": {
+        "status": "UP",
+        "services": {
+            "config": [
+                "profile=dev",
+                "version=0.0.1-SNAPSHOT",
+                "secure=false"
+            ],
+            "consul": [],
+            "entity": [
+                "profile=dev",
+                "version="
+            ],
+            "gate": [
+                "version=",
+                "git-version=",
+                "git-commit=",
+                "git-branch=",
+                "secure=false",
+                "profile=dev"
+            ],
+            "uaa": [
+                "version=",
+                "profile=dev",
+                "version=0.0.1-SNAPSHOT"
+            ]
+        },
+        "advertiseAddress": "127.0.0.1",
+        "datacenter": "dc1",
+        "domain": "consul.",
+        "nodeName": "9334b69680ba",
+        "bindAddress": "127.0.0.1",
+        "clientAddress": "0.0.0.0"
+    }
+}

@@ -95,7 +95,7 @@ public class MonitoringService {
         return serviceMetrics;
     }
 
-    public List<ServiceHealth> getHealth(String serviceName, String token) {
+    public List<ServiceHealth> getHealth(String serviceName) {
 
         List<ServiceHealth> serviceHealth = new LinkedList<>();
         MsService service = getService(serviceName);

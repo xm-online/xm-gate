@@ -46,8 +46,8 @@ public class MonitoringResource {
      */
     @GetMapping("/services/{serviceName}/health")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_HEALTH')")
-    public ResponseEntity<List<ServiceHealth>> getHealth(@PathVariable String serviceName, @RequestHeader("Authorization") String auth) {
-        return ResponseEntity.ok(monitoringService.getHealth(serviceName, auth));
+    public ResponseEntity<List<ServiceHealth>> getHealth(@PathVariable String serviceName) {
+        return ResponseEntity.ok(monitoringService.getHealth(serviceName));
     }
 
     /**
