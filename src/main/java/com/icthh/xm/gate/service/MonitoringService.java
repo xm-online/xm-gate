@@ -1,52 +1,55 @@
 package com.icthh.xm.gate.service;
 
+import static org.apache.http.HttpHost.DEFAULT_SCHEME_NAME;
+import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
+
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
-import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
-import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.gate.config.ApplicationProperties;
-import com.icthh.xm.gate.web.client.HealthCheckClient;
-import com.icthh.xm.gate.web.client.MsServiceMetricsClient;
+import com.icthh.xm.commons.security.XmAuthenticationContext;
+import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
+import com.icthh.xm.gate.domain.health.HealthResponse;
+import com.icthh.xm.gate.web.client.MsServiceMonitoringClient;
 import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
 import com.icthh.xm.gate.web.rest.dto.ServiceInstance;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
+
 import feign.Feign;
 import feign.Target;
 import feign.jackson.JacksonDecoder;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @Slf4j
 public class MonitoringService {
 
-    public static final String PROTOCOL = "http://";
-    public static final String SEPARATOR = ":";
     private final ConsulClient consulClient;
-    private final MsServiceMetricsClient metricsClient;
-    private final HealthCheckClient healthCheckClient;
+    private final MsServiceMonitoringClient monitoringClient;
+    private final XmAuthenticationContextHolder authContextHolder;
 
     /**
      * Constructor of the service
      *
      * @param consulClient autowired consul client
      */
-    public MonitoringService(ConsulClient consulClient, SystemTokenService systemTokenService, ApplicationProperties appProps, TenantContextHolder tenantContext) {
+    public MonitoringService(ConsulClient consulClient, XmAuthenticationContextHolder authContextHolder) {
         this.consulClient = consulClient;
-        this.healthCheckClient = Feign.builder().decoder(new JacksonDecoder()).target(Target.EmptyTarget.create(HealthCheckClient.class));
-        this.metricsClient = Feign.builder().decoder(new JacksonDecoder())
-            .target(Target.EmptyTarget.create(MsServiceMetricsClient.class));
+        this.authContextHolder = authContextHolder;
+        this.monitoringClient = Feign.builder().decoder(new JacksonDecoder())
+            .target(Target.EmptyTarget.create(MsServiceMonitoringClient.class));
     }
 
     /**
@@ -58,36 +61,13 @@ public class MonitoringService {
         Response<Map<String, List<String>>> catalogServices = consulClient.getCatalogServices(QueryParams.DEFAULT);
         List<MsService> dtoServices = new ArrayList<>();
 
-        catalogServices.getValue().keySet().forEach(serviceId -> {
-            Response<List<HealthService>> services = consulClient
-                .getHealthServices(serviceId, false, null);
-            List<ServiceInstance> instances = new ArrayList<>();
-
-            services.getValue().forEach(service -> {
-                String host = findHost(service);
-                instances.add(ServiceInstance.builder()
-                    .id(service.getService().getId())
-                    .address(host)
-                    .port(service.getService().getPort())
-                    .build());
-            });
-            dtoServices.add(MsService.builder()
-                .name(serviceId)
-                .instances(instances)
-                .build());
-        });
-
+        if (catalogServices == null || MapUtils.isEmpty(catalogServices.getValue())) {
+            return Collections.emptyList();
+        }
+        catalogServices.getValue().keySet().forEach(serviceId -> dtoServices.add(getService(serviceId)));
         return dtoServices;
     }
 
-    public List<ServiceHealth> getHealth(String service, String token) {
-        Response<List<CatalogService>> catalogServices = consulClient.getCatalogService(service, QueryParams.DEFAULT);
-        catalogServices.getValue().forEach(catalogService -> {
-            URI baseUrl = URI.create(PROTOCOL + catalogService.getAddress()+ SEPARATOR + catalogService.getServicePort());
-            Map s = healthCheckClient.get(baseUrl, token);
-        });
-        return null;
-    }
 
     /**
      * Get all metrics of each service instance
@@ -97,10 +77,74 @@ public class MonitoringService {
      * @return list of service metrics for each instance
      */
     public List<ServiceMetrics> getMetrics(String serviceName) {
-        Map s = metricsClient.get(URI.create("http://localhost:8080"), "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVUb2tlblRpbWUiOjE1NDkzNzY1Mjg4MjgsInVzZXJfbmFtZSI6ImNvbXBhc3MiLCJzY29wZSI6WyJvcGVuaWQiXSwicm9sZV9rZXkiOiJTVVBFUi1BRE1JTiIsInVzZXJfa2V5IjoiY29tcGFzcyIsImV4cCI6MTU0OTQxOTcyOCwiYWRkaXRpb25hbERldGFpbHMiOnt9LCJsb2dpbnMiOlt7InR5cGVLZXkiOiJMT0dJTi5FTUFJTCIsInN0YXRlS2V5IjpudWxsLCJsb2dpbiI6ImNvbXBhc3NAeG0tb25saW5lLmNvbS51YSJ9LHsidHlwZUtleSI6IkxPR0lOLk5JQ0tOQU1FIiwic3RhdGVLZXkiOm51bGwsImxvZ2luIjoiY29tcGFzcyJ9XSwiYXV0aG9yaXRpZXMiOlsiU1VQRVItQURNSU4iXSwianRpIjoiYTQ3MGY2YmItZDVkMC00ODljLTg0ODQtMTVmYTVlN2E1ZTEzIiwidGVuYW50IjoiQ09NUEFTUyIsImNsaWVudF9pZCI6ImludGVybmFsIn0.NHrWxI7NkmQYX6gLg04Eav8TT6el749tqt3EyE8kw74_k7S1EYD9gDRNx9lPxw3KJoHPcwUgFFJUrfnhgvYnA97mWFpMYuXZjMZKcN_d_66sz9Q7GDzSsjfdzT-orclEdrZj9zdl6HcuRwwyyo3dt3i1CF1rPg8mqbfLlm8g3IbLuHWGvlcBnrU_kw_tryAG3yNQ_KlJY78yTYR6Ssjs1wSPXA1fGB0d9FkY3GZ5kCaFEEEaoCtHGhS48B5oXSLP5rtU2bG7Boy24T9Ax_38wJDpGZ6aKXIZJow5nRcaPFMQ9Q4z7Nxv2gQoZOBcnrrHTMU9Yog8__VmMAlTTNhlbA");
-        log.info(s.toString());
-        return Collections.singletonList(ServiceMetrics.builder().metrics(s).instanceId("gate-4sfdf23").build());
+        List<ServiceMetrics> serviceMetrics = new LinkedList<>();
+        MsService service = getService(serviceName);
+        XmAuthenticationContext authContext = authContextHolder.getContext();
+        String currentUserToken = authContext.getTokenValue().orElse("");
+
+        service.getInstances().forEach(instance -> {
+            URI serviceAdr = UriComponentsBuilder.newInstance()
+                .scheme(DEFAULT_SCHEME_NAME)
+                .host(instance.getAddress())
+                .port(instance.getPort())
+                .build()
+                .toUri();
+            Map metrics = monitoringClient.getMetrics(serviceAdr, currentUserToken);
+
+            serviceMetrics.add(ServiceMetrics.builder()
+                .metrics(metrics)
+                .instanceId(instance.getId())
+                .build());
+        });
+
+        return serviceMetrics;
+    }
+
+    public List<ServiceHealth> getHealth(String serviceName, String token) {
+
+        List<ServiceHealth> serviceHealth = new LinkedList<>();
+        MsService service = getService(serviceName);
+        XmAuthenticationContext authContext = authContextHolder.getContext();
+        String currentUserToken = authContext.getTokenValue().orElse("");
+
+        service.getInstances().forEach(instance -> {
+            URI serviceAdr = UriComponentsBuilder.newInstance()
+                .scheme(DEFAULT_SCHEME_NAME)
+                .host(instance.getAddress())
+                .port(instance.getPort())
+                .build()
+                .toUri();
+            HealthResponse health = monitoringClient.getHealth(serviceAdr, currentUserToken);
+
+            serviceHealth.add(ServiceHealth.builder()
+                .instanceId(instance.getId())
+                .health(health)
+                .build());
+        });
+
+        return serviceHealth;
+
     }
 
 
+    private MsService getService(String serviceName) {
+        Response<List<HealthService>> services = consulClient
+            .getHealthServices(serviceName, false, null);
+
+        List<ServiceInstance> instances = new ArrayList<>();
+
+        services.getValue().forEach(service -> {
+            String host = findHost(service);
+            instances.add(ServiceInstance.builder()
+                .id(service.getService().getId())
+                .address(host)
+                .port(service.getService().getPort())
+                .build());
+        });
+
+        return MsService.builder()
+            .name(serviceName)
+            .instances(instances)
+            .build();
+    }
 }

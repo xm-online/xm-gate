@@ -12,4 +12,10 @@ public interface MsServiceMetricsClient {
     @Headers("Authorization: Bearer {access_token}")
     @RequestLine("GET /management/metrics")
     Map get(URI baseUrl, @Param("access_token") String accessToken);
+
+
+    @Headers("Authorization: Bearer {access_token}")
+    @RequestLine("GET /management/health")
+    Map getHelath(URI baseUrl, @Param("token") String accessToken);
+
 }
