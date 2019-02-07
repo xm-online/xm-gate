@@ -7,8 +7,8 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ServiceMetrics {
+public class HealthStatus {
 
-    private String instanceId;
-    private Map metrics;
+    private String status;
+    private Map<String, Object> details;
 }

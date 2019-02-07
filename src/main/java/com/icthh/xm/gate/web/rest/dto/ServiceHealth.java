@@ -9,5 +9,5 @@ import org.springframework.boot.actuate.health.Health;
 public class ServiceHealth {
 
     private String instanceId;
-    private Health health;
+    private HealthStatus health;
 }
