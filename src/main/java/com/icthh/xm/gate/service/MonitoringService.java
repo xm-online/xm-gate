@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.service;
 
+import static org.apache.http.HttpHost.DEFAULT_SCHEME_NAME;
 import static org.springframework.cloud.consul.discovery.ConsulServerUtils.findHost;
 
 import com.ecwid.consul.v1.ConsulClient;
@@ -26,7 +27,6 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
-import org.apache.http.HttpHost;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -82,7 +82,7 @@ public class MonitoringService {
 
         service.getInstances().forEach(instance -> {
             URI serviceAdr = UriComponentsBuilder.newInstance()
-                .scheme(HttpHost.DEFAULT_SCHEME_NAME)
+                .scheme(DEFAULT_SCHEME_NAME)
                 .host(instance.getAddress())
                 .port(instance.getPort())
                 .build()
