@@ -11,9 +11,9 @@ public interface MsMonitoringClient {
 
     @Headers("Authorization: Bearer {access_token}")
     @RequestLine("GET /management/metrics")
-    Map getMetrics(URI baseUrl, @Param("access_token") String accessToken);
+    Map<String, Object> getMetrics(URI baseUrl, @Param("access_token") String accessToken);
 
     @Headers("Authorization: Bearer {access_token}")
     @RequestLine("GET /management/health")
-    Map getHealth(URI baseUrl, @Param("access_token") String accessToken);
+    Map<String, Object> getHealth(URI baseUrl, @Param("access_token") String accessToken);
 }

@@ -17,10 +17,12 @@ import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth.ServiceHealthBuilder;
 import com.icthh.xm.gate.web.rest.dto.ServiceInstance;
 import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
+import feign.RetryableException;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -78,7 +81,6 @@ public class MonitoringService {
      * @param serviceName name of the service
      * @return list of service health for each instance
      */
-    @SuppressWarnings("unchecked")
     public List<ServiceHealth> getHealth(String serviceName) {
         List<ServiceHealth> serviceHealths = new LinkedList<>();
         MsService service = getService(serviceName);
@@ -87,26 +89,20 @@ public class MonitoringService {
 
         service.getInstances().forEach(instance -> {
             URI serviceAdr = buildUri(instance);
-            Map<String, Object> healthStatus = monitoringClient.getHealth(serviceAdr, currentUserToken);
+            log.info("Get heath for {}", serviceAdr);
+            Map<String, Object> healthStatus = new HashMap<>();
+            try {
+                healthStatus = monitoringClient.getHealth(serviceAdr, currentUserToken);
+            } catch (RetryableException ex) {
+                Health health = Health.down(ex).build();
+                healthStatus.put(ACTUATOR_HEALTH_STATUS, health.getStatus().getCode());
+                healthStatus.put(ACTUATOR_HEALTH_DETAILS, health.getDetails());
+            }
+            log.info("Health {}", healthStatus);
 
             ServiceHealthBuilder serviceHealthBuilder = ServiceHealth.builder().instanceId(instance.getId());
-            HealthStatusBuilder healthStatusBuilder = HealthStatus.builder();
-            healthStatusBuilder.status(healthStatus.get(ACTUATOR_HEALTH_STATUS).toString());
+            serviceHealthBuilder.health(buildServiceHealth(healthStatus));
 
-            Object details = healthStatus.get(ACTUATOR_HEALTH_DETAILS);
-            if (details == null) {
-                //support spring actuator with version < 2.0
-                healthStatusBuilder.details(
-                    healthStatus.entrySet().stream()
-                        .filter(x -> !x.getKey().equals(ACTUATOR_HEALTH_STATUS))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-                );
-            } else {
-                //support new version of spring actuator
-                healthStatusBuilder.details((Map) details);
-            }
-
-            serviceHealthBuilder.health(healthStatusBuilder.build());
             serviceHealths.add(serviceHealthBuilder.build());
         });
 
@@ -128,8 +124,16 @@ public class MonitoringService {
 
         service.getInstances().forEach(instance -> {
             URI serviceAdr = buildUri(instance);
-            Map metrics = monitoringClient.getMetrics(serviceAdr, currentUserToken);
 
+            log.info("Get metrics for {}", serviceAdr);
+            Map metrics;
+            try {
+                metrics = monitoringClient.getMetrics(serviceAdr, currentUserToken);
+            } catch (RetryableException ex) {
+                Health health = Health.down(ex).build();
+                metrics = health.getDetails();
+            }
+            log.info("Metrics {}", metrics);
             serviceMetrics.add(ServiceMetrics.builder()
                 .metrics(metrics)
                 .instanceId(instance.getId())
@@ -153,11 +157,31 @@ public class MonitoringService {
                 .port(service.getService().getPort())
                 .build());
         });
-
         return MsService.builder()
             .name(serviceName)
             .instances(instances)
             .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private HealthStatus buildServiceHealth(Map<String, Object> healthStatus) {
+        HealthStatusBuilder healthStatusBuilder = HealthStatus.builder();
+        healthStatusBuilder.status(healthStatus.get(ACTUATOR_HEALTH_STATUS).toString());
+
+        Object details = healthStatus.get(ACTUATOR_HEALTH_DETAILS);
+        if (details == null) {
+            //support spring actuator with version < 2.0
+            healthStatusBuilder.details(
+                healthStatus.entrySet().stream()
+                    .filter(x -> !x.getKey().equals(ACTUATOR_HEALTH_STATUS))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+            );
+        } else {
+            //support new version of spring actuator
+            healthStatusBuilder.details((Map) details);
+        }
+
+        return healthStatusBuilder.build();
     }
 
     private URI buildUri(ServiceInstance instance) {

@@ -95,6 +95,9 @@ server:
             cookie:
                 http-only: true
 
+feign:
+  httpclient:
+    connection-timeout: 1000
 
 # ===================================================================
 # JHipster specific properties
