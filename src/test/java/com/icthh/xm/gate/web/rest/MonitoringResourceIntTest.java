@@ -4,6 +4,7 @@ import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.health.model.HealthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import com.icthh.xm.gate.service.MonitoringService;
@@ -17,6 +18,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -26,6 +28,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +110,11 @@ public class MonitoringResourceIntTest {
     }
 
     public void testGetHealth(Map healthResponse) throws Exception {
-        when(metricsClient.getHealth(any(), any())).thenReturn(healthResponse);
+        feign.Response response = feign.Response.builder()
+            .status(HttpStatus.OK.value())
+            .headers(new HashMap<>())
+            .body(new ObjectMapper().writeValueAsBytes(healthResponse)).build();
+        when(metricsClient.getHealth(any(), any())).thenReturn(response);
 
         MvcResult result = mvc
             .perform(get("/api/monitoring/services/gate/health"))
