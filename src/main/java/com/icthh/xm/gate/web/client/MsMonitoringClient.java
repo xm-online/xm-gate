@@ -15,5 +15,5 @@ public interface MsMonitoringClient {
 
     @Headers("Authorization: Bearer {access_token}")
     @RequestLine("GET /management/health")
-    Map<String, Object> getHealth(URI baseUrl, @Param("access_token") String accessToken);
+    feign.Response getHealth(URI baseUrl, @Param("access_token") String accessToken);
 }

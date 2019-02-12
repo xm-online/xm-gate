@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -81,6 +82,7 @@ public class MonitoringService {
      * @param serviceName name of the service
      * @return list of service health for each instance
      */
+    @SuppressWarnings("unchecked")
     public List<ServiceHealth> getHealth(String serviceName) {
         List<ServiceHealth> serviceHealths = new LinkedList<>();
         MsService service = getService(serviceName);
@@ -92,8 +94,9 @@ public class MonitoringService {
             log.info("Get heath for {}", serviceAdr);
             Map<String, Object> healthStatus = new HashMap<>();
             try {
-                healthStatus = monitoringClient.getHealth(serviceAdr, currentUserToken);
-            } catch (RetryableException ex) {
+                feign.Response response = monitoringClient.getHealth(serviceAdr, currentUserToken);
+                healthStatus = new ObjectMapper().readValue(response.body().asInputStream(), Map.class);
+            } catch (Exception ex) {
                 Health health = Health.down(ex).build();
                 healthStatus.put(ACTUATOR_HEALTH_STATUS, health.getStatus().getCode());
                 healthStatus.put(ACTUATOR_HEALTH_DETAILS, health.getDetails());
