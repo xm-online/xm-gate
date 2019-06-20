@@ -89,6 +89,11 @@ spring:
             key-serializer: org.apache.kafka.common.serialization.StringSerializer
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
+    servlet:
+        multipart:
+            maxFileSize: 20MB
+            maxRequestSize: 20MB
+
 server:
     servlet:
         session:
