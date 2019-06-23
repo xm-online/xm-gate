@@ -32,8 +32,8 @@ public class UploadResource {
         this.restTemplate = restTemplate;
     }
 
-    @PutMapping(value = UPLOAD_PREFIX)
-    @PostMapping(value = UPLOAD_PREFIX)
+    @PutMapping(value = UPLOAD_PREFIX + "/**")
+    @PostMapping(value = UPLOAD_PREFIX+ "/**")
     public ResponseEntity<Object> upload(MultipartHttpServletRequest request) throws Exception {
 
         final MultiValueMap<String, Object> requestParts = new LinkedMultiValueMap<>();
