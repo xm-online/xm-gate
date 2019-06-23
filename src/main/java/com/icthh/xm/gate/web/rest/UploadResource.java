@@ -25,7 +25,7 @@ import org.springframework.web.util.UrlPathHelper;
 @RestController
 public class UploadResource {
 
-    public static final String UPLOAD_PREFIX = "/upload";
+    public static final String UPLOAD_PREFIX = "/upload/";
     private final UrlPathHelper urlHelper = new UrlPathHelper();
     private final RestTemplate restTemplate;
 
@@ -33,7 +33,7 @@ public class UploadResource {
         this.restTemplate = restTemplate;
     }
 
-    @RequestMapping(value = UPLOAD_PREFIX + "/**", method = {POST, PUT})
+    @RequestMapping(value = UPLOAD_PREFIX + "**", method = {POST, PUT})
     public ResponseEntity<Object> upload(MultipartHttpServletRequest request) throws Exception {
 
         final MultiValueMap<String, Object> requestParts = new LinkedMultiValueMap<>();
