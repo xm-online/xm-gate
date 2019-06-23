@@ -2,6 +2,8 @@ package com.icthh.xm.gate.web.rest;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 import com.icthh.xm.gate.web.rest.dto.MultipartFileResource;
 import java.util.List;
@@ -13,8 +15,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -32,8 +33,7 @@ public class UploadResource {
         this.restTemplate = restTemplate;
     }
 
-    @PutMapping(value = UPLOAD_PREFIX + "/**")
-    @PostMapping(value = UPLOAD_PREFIX+ "/**")
+    @RequestMapping(value = UPLOAD_PREFIX + "/**", method = {POST, PUT})
     public ResponseEntity<Object> upload(MultipartHttpServletRequest request) throws Exception {
 
         final MultiValueMap<String, Object> requestParts = new LinkedMultiValueMap<>();
