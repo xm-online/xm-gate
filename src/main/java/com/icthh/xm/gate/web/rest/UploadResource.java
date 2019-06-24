@@ -15,6 +15,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
 import org.springframework.cloud.client.loadbalancer.ServiceInstanceChooser;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -30,6 +31,19 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.util.UrlPathHelper;
 
+/**
+ * Endpoint for uploading multipart form.
+ *
+ * Example usage:
+ * http://<host>:<port>/upload/entity/api/functions/FUNCTION-NAME/upload
+ * This request will be proxy multipart form to entity to /api/functions/FUNCTION-NAME/upload
+ *
+ * Reason for create this class:
+ * 1) FormBodyWrapperFilter read file to memory
+ * 2) LoadBalancerRequestFactory operate with byte array (and read file to memory)
+ * 3) If content length of multipart resource specified and > -1 than rest template use ByteArrayOutputStream (and read file to memory)
+ *
+ */
 @Slf4j
 @RestController
 public class UploadResource {
@@ -39,7 +53,7 @@ public class UploadResource {
     private final RestTemplate restTemplate;
     private final ServiceInstanceChooser serviceInstanceChooser;
 
-    public UploadResource(@Qualifier("simpleRestTemplate") RestTemplate restTemplate,
+    public UploadResource(@Qualifier("notBufferRestTemplate") RestTemplate restTemplate,
                           ServiceInstanceChooser serviceInstanceChooser) {
         this.restTemplate = restTemplate;
         this.serviceInstanceChooser = serviceInstanceChooser;

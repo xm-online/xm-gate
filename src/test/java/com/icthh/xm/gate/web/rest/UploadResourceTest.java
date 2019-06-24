@@ -2,7 +2,6 @@ package com.icthh.xm.gate.web.rest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.test.web.client.ExpectedCount.once;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -27,7 +26,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.support.RestGatewaySupport;
 
@@ -35,18 +33,18 @@ import org.springframework.web.client.support.RestGatewaySupport;
 @SpringBootTest(classes = {GateApp.class, SecurityBeanOverrideConfiguration.class})
 public class UploadResourceTest {
 
-    private RestTemplate simpleRestTemplate = new RestTemplate();
+    private RestTemplate notBufferRestTemplate = new RestTemplate();
     private MockRestServiceServer mockServer;
     private MockMvc mockMvc;
 
     @Before
     public void before() {
         RestGatewaySupport gateway = new RestGatewaySupport();
-        gateway.setRestTemplate(simpleRestTemplate);
+        gateway.setRestTemplate(notBufferRestTemplate);
         mockServer = MockRestServiceServer.createServer(gateway);
         ServiceInstanceChooser serviceInstanceChooser = (name) -> new SimpleServiceInstance(toUri(name));
         this.mockMvc = MockMvcBuilders
-            .standaloneSetup(new UploadResource(simpleRestTemplate, serviceInstanceChooser))
+            .standaloneSetup(new UploadResource(notBufferRestTemplate, serviceInstanceChooser))
             .build();
     }
 
