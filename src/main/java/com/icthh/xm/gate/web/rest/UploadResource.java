@@ -3,6 +3,7 @@ package com.icthh.xm.gate.web.rest;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
@@ -14,7 +15,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.ServiceInstanceChooser;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -53,6 +53,7 @@ public class UploadResource {
         request.getParameterMap().forEach((name, value) -> requestParts.addAll(name, asList(value)));
         request.getMultiFileMap().forEach((name, value) -> {
             List<Resource> resources = value.stream().map(MultipartFileResource::new).collect(toList());
+            value.forEach(file -> requestParts.add(file.getOriginalFilename() + "-" + CONTENT_LENGTH, file.getSize()));
             requestParts.addAll(name, resources);
         });
 
