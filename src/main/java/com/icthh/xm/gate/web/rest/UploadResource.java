@@ -74,7 +74,7 @@ public class UploadResource {
 
         HttpHeaders requestHeaders = request.getRequestHeaders();
         requestHeaders.setContentLength(-1L); // for avoid read request to memory in message converter
-        requestHeaders.add(ACCEPT_ENCODING, "*");
+        requestHeaders.set(ACCEPT_ENCODING, "*");
 
         log.info("Request upload with headers {}", requestHeaders);
 
