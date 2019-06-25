@@ -3,9 +3,7 @@ package com.icthh.xm.gate.web.rest;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringUtils.isBlank;
-
 import static org.springframework.http.HttpHeaders.ACCEPT_ENCODING;
-
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
