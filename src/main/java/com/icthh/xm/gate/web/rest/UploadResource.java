@@ -76,6 +76,8 @@ public class UploadResource {
         requestHeaders.setContentLength(-1L); // for avoid read request to memory in message converter
         requestHeaders.add(ACCEPT_ENCODING, "*");
 
+        log.info("Request upload with headers {}", requestHeaders);
+
         return restTemplate.exchange(extractPath(request), request.getRequestMethod(),
                                      new HttpEntity<>(requestParts, requestHeaders), Object.class);
     }
