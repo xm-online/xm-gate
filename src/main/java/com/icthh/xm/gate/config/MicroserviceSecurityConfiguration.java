@@ -2,6 +2,7 @@ package com.icthh.xm.gate.config;
 
 import com.icthh.xm.commons.permission.constants.RoleConstant;
 import io.github.jhipster.config.JHipsterProperties;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -109,7 +110,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             throw new CertificateException("Received empty certificate from config.");
         }
 
-        InputStream fin = new ByteArrayInputStream(content.getBytes());
+        InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
 
         CertificateFactory f = CertificateFactory.getInstance(Constants.CERTIFICATE);
         X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
