@@ -2,6 +2,7 @@ package com.icthh.xm.gate.config;
 
 import com.icthh.xm.commons.permission.constants.RoleConstant;
 import io.github.jhipster.config.JHipsterProperties;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -76,7 +77,8 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter(
-            @Qualifier("loadBalancedRestTemplate") RestTemplate keyUriRestTemplate) throws CertificateException {
+            @Qualifier("loadBalancedRestTemplate") RestTemplate keyUriRestTemplate)
+        throws CertificateException, IOException {
 
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
         converter.setVerifierKey(getKeyFromConfigServer(keyUriRestTemplate));
@@ -99,7 +101,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
         return restTemplate;
     }
 
-    private String getKeyFromConfigServer(RestTemplate keyUriRestTemplate) throws CertificateException {
+    private String getKeyFromConfigServer(RestTemplate keyUriRestTemplate) throws CertificateException, IOException {
         // Load available UAA servers
         discoveryClient.getServices();
         HttpEntity<Void> request = new HttpEntity<Void>(new HttpHeaders());
@@ -110,11 +112,12 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             throw new CertificateException("Received empty certificate from config.");
         }
 
-        InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        try(InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
 
-        CertificateFactory f = CertificateFactory.getInstance(Constants.CERTIFICATE);
-        X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
-        PublicKey pk = certificate.getPublicKey();
-        return String.format(Constants.PUBLIC_KEY, new String(Base64.encode(pk.getEncoded())));
+            CertificateFactory f = CertificateFactory.getInstance(Constants.CERTIFICATE);
+            X509Certificate certificate = (X509Certificate) f.generateCertificate(fin);
+            PublicKey pk = certificate.getPublicKey();
+            return String.format(Constants.PUBLIC_KEY, new String(Base64.encode(pk.getEncoded())));
+        }
     }
 }
