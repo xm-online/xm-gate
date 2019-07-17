@@ -96,6 +96,10 @@ public class MonitoringService {
             try {
                 feign.Response response = monitoringClient.getHealth(serviceAdr, currentUserToken);
                 healthStatus = new ObjectMapper().readValue(response.body().asInputStream(), Map.class);
+                if (healthStatus == null) {
+                    healthStatus = new HashMap<>();
+                    throw new Exception("health status is null");
+                }
             } catch (Exception ex) {
                 Health health = Health.down(ex).build();
                 healthStatus.put(ACTUATOR_HEALTH_STATUS, health.getStatus().getCode());
