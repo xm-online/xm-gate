@@ -2,8 +2,10 @@ package com.icthh.xm.gate.web.rest;
 
 import static com.icthh.xm.gate.service.TenantMappingServiceImpl.TENANTS_LIST_CONFIG_KEY;
 import static io.advantageous.boon.core.Maps.map;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -16,6 +18,9 @@ import com.icthh.xm.commons.config.domain.TenantState;
 import com.icthh.xm.commons.gen.api.TenantsApi;
 import com.icthh.xm.commons.gen.api.TenantsApiController;
 import com.icthh.xm.commons.gen.model.Tenant;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantContextUtils;
+import com.icthh.xm.commons.tenantendpoint.TenantManager;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import com.icthh.xm.gate.service.TenantMappingService;
@@ -35,7 +40,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.transaction.Transactional;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +53,13 @@ public class TenantsApiIntTest {
     @Autowired
     private TenantMappingService service;
 
-    Set<TenantState> tenants = new HashSet<>();
+    @Autowired
+    private TenantManager tenantManager;
+
+    @Autowired
+    private TenantContextHolder tenantContextHolder;
+
+    private Set<TenantState> tenants = new HashSet<>();
 
     private ObjectMapper om = new ObjectMapper();
 
@@ -63,7 +73,9 @@ public class TenantsApiIntTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
 
-        TenantsApi controller = new TenantsApiController(new TenantResource(service));
+        TenantContextUtils.setTenant(tenantContextHolder, "XM");
+
+        TenantsApi controller = new TenantsApiController(new TenantResource(tenantManager));
         this.mvc = MockMvcBuilders
             .standaloneSetup(controller)
             .build();
@@ -74,13 +86,13 @@ public class TenantsApiIntTest {
         when(details.getTokenValue()).thenReturn("token");
         SecurityContextHolder.getContext().setAuthentication(auth);
         doAnswer(ans -> {
-            tenants.add(new TenantState(ans.getArguments()[0].toString(), ""));
+            tenants.add(new TenantState(ans.getArguments()[0].toString().toLowerCase(), ""));
             String content = om.writeValueAsString(map(applicationName, tenants));
             service.onRefresh(TENANTS_LIST_CONFIG_KEY, content);
             return null;
         }).when(tenantListRepository).addTenant(any());
         doAnswer(ans -> {
-            tenants.remove(new TenantState(ans.getArguments()[0].toString(), ""));
+            tenants.remove(new TenantState(ans.getArguments()[0].toString().toLowerCase(), ""));
             String content = om.writeValueAsString(map(applicationName, tenants));
             service.onRefresh(TENANTS_LIST_CONFIG_KEY, content);
             return null;
@@ -96,15 +108,15 @@ public class TenantsApiIntTest {
         mvc.perform(post("/tenants").content(om.writeValueAsBytes(new Tenant().tenantKey("testAdd"))).contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        assertTrue(service.getTenants().containsKey("testadd.local"));
-        assertEquals(service.getTenants().get("testadd.local"), "TESTADD");
+        assertTrue(service.getTenantByDomain().containsKey("testadd.local"));
+        assertEquals(service.getTenantByDomain().get("testadd.local"), "TESTADD");
     }
 
     @Test
     public void testDeleteTenant() throws Exception {
         testAddTenant();
         mvc.perform(delete("/tenants/testadd")).andExpect(status().isOk());
-        assertFalse(service.getTenants().containsKey("testadd.local"));
+        assertFalse(service.getTenantByDomain().containsKey("testadd.local"));
     }
 
 }

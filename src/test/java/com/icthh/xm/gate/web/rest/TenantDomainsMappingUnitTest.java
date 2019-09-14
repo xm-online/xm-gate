@@ -2,6 +2,7 @@ package com.icthh.xm.gate.web.rest;
 
 import static org.junit.Assert.assertEquals;
 
+import com.icthh.xm.commons.config.client.repository.TenantListRepository;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import com.icthh.xm.gate.repository.TenantDomainRepository;
@@ -39,7 +40,8 @@ public class TenantDomainsMappingUnitTest {
                               + " - \"dev.tenant1.com\"\n";
 
         tenantDomainRepository.onInit(TenantDomainRepository.TENANTS_DOMAINS_CONFIG_KEY, domainConfig);
-        service.getTenants().put("tenant2.local", "TENANT2");
+        service.onInit(TenantListRepository.TENANTS_LIST_CONFIG_KEY,
+                       "{\"gate\":[{\"name\":\"tenant2\", \"state\":\"ACTIVE\"}]}");
     }
 
     @Test

@@ -8,9 +8,7 @@ import static java.util.Collections.unmodifiableList;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
-import com.icthh.xm.commons.config.client.repository.TenantListRepository;
 import com.icthh.xm.commons.config.domain.TenantState;
-import com.icthh.xm.commons.gen.model.Tenant;
 import com.icthh.xm.gate.config.ApplicationProperties;
 import com.icthh.xm.gate.repository.TenantDomainRepository;
 import lombok.SneakyThrows;
@@ -19,49 +17,40 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Component
 public class TenantMappingServiceImpl implements TenantMappingService {
 
-    public static final String IP_REGEX = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
+    private static final String IP_REGEX = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
     public static final String TENANTS_LIST_CONFIG_KEY = "/config/tenants/tenants-list.json";
 
     private final List<String> hosts;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String applicationName;
 
-    private volatile Map<String, String> tenants = new HashMap<>();
+    private volatile Map<String, String> tenantByDomain = new HashMap<>();
 
-    private final TenantListRepository tenantListRepository;
     private final TenantDomainRepository tenantDomainRepository;
 
     public TenantMappingServiceImpl(ApplicationProperties applicationProperties,
-                                    TenantListRepository tenantListRepository,
                                     TenantDomainRepository tenantDomainRepository,
                                     @Value("${spring.application.name}") String applicationName) {
         this.hosts = unmodifiableList(applicationProperties.getHosts());
-        this.tenantListRepository = tenantListRepository;
         this.tenantDomainRepository = tenantDomainRepository;
         this.applicationName = applicationName;
     }
 
     @Override
-    public Map<String, String> getTenants() {
-        return tenants;
-    }
-
-    @Override
-    @SneakyThrows
-    public void addTenant(Tenant tenant) {
-        tenantListRepository.addTenant(tenant.getTenantKey().toLowerCase());
-    }
-
-    @Override
-    @SneakyThrows
-    public void deleteTenant(String tenantDomain) {
-        tenantListRepository.deleteTenant(tenantDomain);
+    public Map<String, String> getTenantByDomain() {
+        return Collections.unmodifiableMap(tenantByDomain);
     }
 
     @Override
@@ -70,16 +59,10 @@ public class TenantMappingServiceImpl implements TenantMappingService {
     }
 
     @Override
-    @SneakyThrows
-    public void manageTenant(String tenantDomain, String state) {
-        tenantListRepository.updateTenant(tenantDomain, state);
-    }
-
-    @Override
     public String getTenantKey(final String domain) {
 
         String tenantKey = Optional.ofNullable(tenantDomainRepository.getTenantKey(domain))
-                                   .orElse(getTenants().get(domain));
+                                   .orElse(getTenantByDomain().get(domain));
 
         if (StringUtils.isBlank(tenantKey)) {
             printWarnIfNotIpAddress(domain);
@@ -105,13 +88,13 @@ public class TenantMappingServiceImpl implements TenantMappingService {
         final Map<String, String> tenants = new HashMap<>();
         for (TenantState tenant: tenantsByServiceMap.getOrDefault(applicationName, emptySet())) {
             for (String host : hosts) {
-                tenants.put(tenant.getName() + "." + host, tenant.getName().toUpperCase());
+                tenants.put(tenant.getName().toLowerCase() + "." + host, tenant.getName().toUpperCase());
             }
         }
 
         log.info("Tenants sub-domain mapping configured by $application.hosts: {}", hosts);
 
-        this.tenants = tenants;
+        this.tenantByDomain = tenants;
     }
 
     @Override
