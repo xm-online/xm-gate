@@ -3,8 +3,6 @@ package com.icthh.xm.gate.config;
 import com.icthh.xm.gate.security.AuthoritiesConstants;
 import io.github.jhipster.config.JHipsterProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
@@ -14,9 +12,9 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.socket.WebSocketHandler;
-import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
@@ -29,7 +27,7 @@ import java.util.Optional;
 @Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
-public class WebsocketConfiguration extends AbstractWebSocketMessageBrokerConfigurer {
+public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
     public static final String IP_ADDRESS = "IP_ADDRESS";
 

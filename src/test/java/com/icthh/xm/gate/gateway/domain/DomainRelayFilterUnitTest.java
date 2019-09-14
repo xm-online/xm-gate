@@ -4,7 +4,7 @@ import static com.icthh.xm.gate.config.Constants.HEADER_DOMAIN;
 import static com.icthh.xm.gate.config.Constants.HEADER_PORT;
 import static com.icthh.xm.gate.config.Constants.HEADER_SCHEME;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.icthh.xm.gate.service.TenantMappingService;
