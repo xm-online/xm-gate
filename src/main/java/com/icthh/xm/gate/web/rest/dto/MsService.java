@@ -11,5 +11,6 @@ import lombok.Data;
 public class MsService {
 
     private String name;
+    @Builder.Default
     private List<ServiceInstance> instances = new ArrayList<>();
 }

@@ -17,7 +17,6 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.provider.token.TokenStore;
@@ -31,6 +30,7 @@ import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 
 @Configuration
 @EnableResourceServer
@@ -117,7 +117,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             CertificateFactory f = CertificateFactory.getInstance(Constants.CERTIFICATE);
             X509Certificate certificate = (X509Certificate) f.generateCertificate(fin);
             PublicKey pk = certificate.getPublicKey();
-            return String.format(Constants.PUBLIC_KEY, new String(Base64.encode(pk.getEncoded())));
+            return String.format(Constants.PUBLIC_KEY, new String(Base64.getEncoder().encode(pk.getEncoded())));
         }
     }
 }
