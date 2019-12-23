@@ -1,9 +1,8 @@
 ######################
 # Project Specific
 ######################
-/build/www/**
+/build/resources/main/static/**
 /src/test/javascript/coverage/
-/src/test/javascript/PhantomJS*/
 
 ######################
 # Node
@@ -51,6 +50,8 @@ local.properties
 # PDT-specific
 .buildpath
 
+# STS-specific
+/.sts4-cache/*
 ######################
 # Intellij
 ######################
@@ -119,7 +120,7 @@ Desktop.ini
 ######################
 # Logs
 ######################
-*.log
+*.log*
 
 ######################
 # Others
@@ -143,6 +144,3 @@ Desktop.ini
 # ESLint
 ######################
 .eslintcache
-
-
-gradle-local.properties

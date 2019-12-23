@@ -1,13 +1,16 @@
 package com.icthh.xm.gate.config.apidoc;
 
-import io.github.jhipster.config.JHipsterConstants;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.github.jhipster.config.JHipsterConstants;
+
+import org.springframework.context.annotation.*;
 import org.springframework.cloud.netflix.zuul.filters.Route;
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+
 import springfox.documentation.swagger.web.SwaggerResource;
 import springfox.documentation.swagger.web.SwaggerResourcesProvider;
 
@@ -41,7 +44,7 @@ public class GatewaySwaggerResourcesProvider implements SwaggerResourcesProvider
         return resources;
     }
 
-    private static SwaggerResource swaggerResource(String name, String location) {
+    private SwaggerResource swaggerResource(String name, String location) {
         SwaggerResource swaggerResource = new SwaggerResource();
         swaggerResource.setName(name);
         swaggerResource.setLocation(location);

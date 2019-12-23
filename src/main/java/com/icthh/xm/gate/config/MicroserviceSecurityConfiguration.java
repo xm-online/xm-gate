@@ -42,7 +42,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     private final DiscoveryClient discoveryClient;
 
     public MicroserviceSecurityConfiguration(JHipsterProperties jHipsterProperties,
-            DiscoveryClient discoveryClient) {
+                                             DiscoveryClient discoveryClient) {
 
         this.jHipsterProperties = jHipsterProperties;
         this.discoveryClient = discoveryClient;
@@ -56,10 +56,10 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .headers()
             .frameOptions()
             .disable()
-        .and()
+            .and()
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        .and()
+            .and()
             .authorizeRequests()
             //convention: allow to process /api/public for all service
             .antMatchers("/*/api/public/**").permitAll()
@@ -77,7 +77,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter(
-            @Qualifier("loadBalancedRestTemplate") RestTemplate keyUriRestTemplate)
+        @Qualifier("loadBalancedRestTemplate") RestTemplate keyUriRestTemplate)
         throws CertificateException, IOException {
 
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();

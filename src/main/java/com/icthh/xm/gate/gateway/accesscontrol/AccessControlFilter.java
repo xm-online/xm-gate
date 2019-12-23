@@ -1,16 +1,17 @@
 package com.icthh.xm.gate.gateway.accesscontrol;
 
-import com.netflix.zuul.ZuulFilter;
-import com.netflix.zuul.context.RequestContext;
 import io.github.jhipster.config.JHipsterProperties;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.netflix.zuul.filters.Route;
-import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
-import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.netflix.zuul.filters.Route;
+import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
+import org.springframework.http.HttpStatus;
+
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
 
 /**
  * Zuul filter for restricting access to backend micro-services endpoints.
@@ -29,7 +30,7 @@ public class AccessControlFilter extends ZuulFilter {
 
     @Override
     public String filterType() {
-        return FilterConstants.PRE_TYPE;
+        return "pre";
     }
 
     @Override
@@ -43,16 +44,17 @@ public class AccessControlFilter extends ZuulFilter {
     @Override
     public boolean shouldFilter() {
         String requestUri = RequestContext.getCurrentContext().getRequest().getRequestURI();
+        String contextPath = RequestContext.getCurrentContext().getRequest().getContextPath();
 
         // If the request Uri does not start with the path of the authorized endpoints, we block the request
         for (Route route : routeLocator.getRoutes()) {
-            String serviceUrl = route.getFullPath();
+            String serviceUrl = contextPath + route.getFullPath();
             String serviceName = route.getId();
 
             // If this route correspond to the current request URI
             // We do a substring to remove the "**" at the end of the route URL
             if (requestUri.startsWith(serviceUrl.substring(0, serviceUrl.length() - 2))) {
-                return !isAuthorizedRequest(serviceUrl, serviceName, requestUri);
+				return !isAuthorizedRequest(serviceUrl, serviceName, requestUri);
             }
         }
         return true;
@@ -88,9 +90,7 @@ public class AccessControlFilter extends ZuulFilter {
     public Object run() {
         RequestContext ctx = RequestContext.getCurrentContext();
         ctx.setResponseStatusCode(HttpStatus.FORBIDDEN.value());
-        if (ctx.getResponseBody() == null && !ctx.getResponseGZipped()) {
-            ctx.setSendZuulResponse(false);
-        }
+        ctx.setSendZuulResponse(false);
         log.debug("Access Control: filtered unauthorized access on endpoint {}", ctx.getRequest().getRequestURI());
         return null;
     }
