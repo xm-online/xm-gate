@@ -109,32 +109,18 @@ springBoot {
 }
 
 test {
-    useJUnitPlatform()
-    exclude "**/*IT*", "**/*IntTest*"
+    systemProperty "spring.profiles.active", "test"
+    include '**/*UnitTest*'
+    include '**/*IntTest*'
 
-    testLogging {
-        events 'FAILED', 'SKIPPED'
-    }
     // uncomment if the tests reports are not generated
     // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
     // ignoreFailures true
     reports.html.enabled = false
-}
-
-task integrationTest(type: Test) {
-    useJUnitPlatform()
-    description = "Execute integration tests."
-    group = "verification"
-    include "**/*IT*", "**/*IntTest*"
-    exclude "**/*CucumberIT*"
-
     testLogging {
-        events 'FAILED', 'SKIPPED'
+        exceptionFormat = 'full'
+        events "passed", "skipped", "failed", "standardOut", "standardError"
     }
-    // uncomment if the tests reports are not generated
-    // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
-    // ignoreFailures true
-    reports.html.enabled = false
 }
 
 task cucumberTest(type: Test) {
@@ -150,15 +136,9 @@ task cucumberTest(type: Test) {
 
 check.dependsOn cucumberTest
 
-check.dependsOn integrationTest
 task testReport(type: TestReport) {
     destinationDir = file("$buildDir/reports/tests")
     reportOn test
-}
-
-task integrationTestReport(type: TestReport) {
-    destinationDir = file("$buildDir/reports/tests")
-    reportOn integrationTest
 }
 
 task cucumberTestReport(type: TestReport) {
@@ -208,6 +188,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "com.fasterxml.jackson.module:jackson-module-afterburner"
+    implementation "com.ryantenney.metrics:metrics-spring"
     implementation "javax.cache:cache-api"
     implementation "commons-codec:commons-codec"
     implementation "org.apache.commons:commons-lang3"

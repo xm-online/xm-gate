@@ -1,3 +1,9 @@
+apply plugin: 'org.springframework.boot'
+
+ext {
+    logbackLoglevel = "DEBUG"
+}
+
 configurations {
     developmentOnly
     runtimeClasspath {
@@ -33,6 +39,11 @@ bootRun {
 processResources {
     inputs.property('version', version)
     inputs.property('springProfiles', profiles)
+    filesMatching('**/logback-spring.xml') {
+        filter {
+            it.replace('#logback.loglevel#', logbackLoglevel)
+        }
+    }
     filesMatching("**/application.yml") {
         filter {
             it.replace("#project.version#", version)

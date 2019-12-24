@@ -9,6 +9,7 @@ import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import com.icthh.xm.gate.service.MonitoringService;
 import com.icthh.xm.gate.web.client.MsMonitoringClient;
+import feign.Request;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -18,6 +19,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -112,7 +114,8 @@ public class MonitoringResourceIntTest {
         feign.Response response = feign.Response.builder()
             .status(HttpStatus.OK.value())
             .headers(new HashMap<>())
-            .body(new ObjectMapper().writeValueAsBytes(healthResponse)).build();
+            .body(new ObjectMapper().writeValueAsBytes(healthResponse))
+            .request(Request.create("get", "", new HashMap<>(), null, null)).build();
         when(metricsClient.getHealth(any(), any())).thenReturn(response);
 
         MvcResult result = mvc
