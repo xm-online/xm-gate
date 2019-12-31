@@ -80,7 +80,7 @@ if (OperatingSystem.current().isWindows()) {
     task classpathJar(type: Jar) {
         inputs.files sourceSets.main.runtimeClasspath
 
-        archiveName = "runboot-classpath.jar"
+        archiveFileName = "runboot-classpath.jar"
         doFirst {
             manifest {
                 def classpath = sourceSets.main.runtimeClasspath.files
@@ -98,10 +98,11 @@ defaultTasks "bootRun"
 
 bootWar {
     mainClassName = 'com.icthh.xm.gate.GateApp'
-}
-
-war {
-
+    manifest {
+        attributes(
+            "Implementation-Version": archiveVersion
+        )
+    }
 }
 
 springBoot {
