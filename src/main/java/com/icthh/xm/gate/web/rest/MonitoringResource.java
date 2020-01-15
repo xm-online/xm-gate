@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.web.rest;
 
+import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
 import com.icthh.xm.gate.service.MonitoringService;
 import com.icthh.xm.gate.web.rest.dto.MsService;
 import com.icthh.xm.gate.web.rest.dto.ServiceHealth;
@@ -35,6 +36,7 @@ public class MonitoringResource {
      */
     @GetMapping("/services")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_LIST')")
+    @PrivilegeDescription("Privilege to get list of service instances")
     public ResponseEntity<List<MsService>> getServices() {
         List<MsService> services = monitoringService.getServices();
         return ResponseEntity.ok(services);
@@ -48,6 +50,7 @@ public class MonitoringResource {
      */
     @GetMapping("/services/{serviceName}/health")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_HEALTH')")
+    @PrivilegeDescription("Privilege to get heath of each service instance from endpoint /management/health")
     public ResponseEntity<List<ServiceHealth>> getHealth(@PathVariable String serviceName) {
         Objects.requireNonNull(serviceName, "Can't getMetrics health because serviceName is not pass");
         List<ServiceHealth> health = monitoringService.getHealth(serviceName);
@@ -63,6 +66,7 @@ public class MonitoringResource {
      */
     @GetMapping("/services/{serviceName}/metrics")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.MONITORING.SERVICE.GET_METRIC')")
+    @PrivilegeDescription("Privilege to get all metrics of each service instance")
     public ResponseEntity<List<ServiceMetrics>> getMetrics(@PathVariable String serviceName) {
         Objects.requireNonNull(serviceName, "Can't getMetrics metrics because serviceName is not pass");
         List<ServiceMetrics> metrics = monitoringService.getMetrics(serviceName);
