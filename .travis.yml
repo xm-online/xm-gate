@@ -29,8 +29,8 @@ script:
   - docker build -t app-docker-img --label commit_id="$TRAVIS_COMMIT" --label commit_message="$TRAVIS_COMMIT_MESSAGE" -f src/main/docker/Dockerfile .
   - for TAG in $TAGS;
     do
-        docker tag app-docker-img $DOCKER_REPO:$TAGS;
-        docker push $DOCKER_REPO:$TAGS;
+        docker tag app-docker-img $DOCKER_REPO:$TAG;
+        docker push $DOCKER_REPO:$TAG;
     done
 
 cache:
