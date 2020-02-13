@@ -8,9 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Properties specific to JHipster.
+ * Properties specific to Gate.
  * <p>
- * Properties are configured in the application.yml file.
+ * Properties are configured in the {@code application.yml} file.
+ * See {@link io.github.jhipster.config.JHipsterProperties} for a good example.
  */
 @Getter
 @Setter

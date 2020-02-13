@@ -19,7 +19,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 /**
- * Filter for setting {@link com.icthh.xm.commons.tenant.TenantContextHolder}.
+ * Filter for setting {@link TenantContextHolder}.
  */
 @Slf4j
 @AllArgsConstructor

@@ -1,14 +1,18 @@
 {
   "generator-jhipster": {
-    "jhipsterVersion": "5.7.0",
+    "promptValues": {
+      "packageName": "com.icthh.xm.gate"
+    },
+    "jhipsterVersion": "6.5.1",
+    "applicationType": "gateway",
     "baseName": "gate",
     "packageName": "com.icthh.xm.gate",
     "packageFolder": "com/icthh/xm/gate",
     "serverPort": "8080",
     "authenticationType": "uaa",
     "uaaBaseName": "uaa",
-    "hibernateCache": "hazelcast",
-    "clusteredHttpSession": false,
+    "cacheProvider": "no",
+    "enableHibernateCache": false,
     "websocket": "spring-websocket",
     "databaseType": "no",
     "devDatabaseType": "no",
@@ -17,27 +21,26 @@
     "messageBroker": false,
     "serviceDiscoveryType": "consul",
     "buildTool": "gradle",
-    "enableSocialSignIn": true,
+    "enableSwaggerCodegen": false,
+    "jwtSecretKey": "NzBiY2I0M2E3ZjkxMzJjYjVmNmI1MTY0ODVjNTQxZmFhMmJiNzBkZTI1YmYzMzkyNjNlYWQ0ZTNhMDUwMzNkOTZkMTQ0NzA0ODRhOWQzNWFjMjQyZDg0MTJiOWUzNWM3NTdhYjRmZjNmMmIxZWM5ZDM1ZTQxYWM4OTgzNDZhMTU=",
+    "embeddableLaunchScript": false,
     "useSass": false,
     "clientPackageManager": "yarn",
-    "applicationType": "gateway",
+    "skipClient": true,
     "testFrameworks": [
       "gatling",
       "cucumber"
     ],
     "jhiPrefix": "jhi",
-    "skipClient": true,
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
     "enableTranslation": true,
     "nativeLanguage": "en",
     "languages": [
       "en",
       "ru"
     ],
-    "promptValues": {
-      "microservicePath": "../xm-ms-entity"
-    },
-    "cacheProvider": "hazelcast",
-    "enableHibernateCache": false,
-    "otherModules": []
+    "blueprints": []
   }
 }

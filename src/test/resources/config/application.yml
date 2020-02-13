@@ -17,6 +17,13 @@
 spring:
     application:
         name: gate
+    cloud:
+      bus:
+          enabled: false
+      discovery:
+          enabled: false
+      consul:
+          enabled: true
     jackson:
         serialization.write_dates_as_timestamps: false
     cache:
@@ -31,6 +38,8 @@ spring:
             enabled: false
     thymeleaf:
         mode: XHTML
+    main:
+      allow-bean-definition-overriding: true
 
 liquibase:
     contexts: test
@@ -48,6 +57,11 @@ server:
 #
 # Full reference is available at: https://jhipster.github.io/common-application-properties/
 # ===================================================================
+management:
+    metrics:
+        export:
+            prometheus:
+                enabled: true
 
 jhipster:
     async:
@@ -68,9 +82,8 @@ jhipster:
                 # Token is valid 24 hours
                 token-validity-in-seconds: 86400
     metrics: # DropWizard Metrics configuration, used by MetricsConfiguration
-        jmx.enabled: true
         logs: # Reports Dropwizard metrics in the logs
-            enabled: true
+            enabled: false
             report-frequency: 60 # in seconds
 
 # ===================================================================

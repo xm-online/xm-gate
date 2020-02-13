@@ -42,7 +42,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     private final DiscoveryClient discoveryClient;
 
     public MicroserviceSecurityConfiguration(JHipsterProperties jHipsterProperties,
-            DiscoveryClient discoveryClient) {
+                                             DiscoveryClient discoveryClient) {
 
         this.jHipsterProperties = jHipsterProperties;
         this.discoveryClient = discoveryClient;
@@ -66,6 +66,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .antMatchers("/api/profile-info").permitAll()
             .antMatchers("/api/**").authenticated()
             .antMatchers("/management/health").permitAll()
+            .antMatchers("/management/prometheus/**").permitAll()
             .antMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
             .antMatchers("/swagger-resources/configuration/ui").permitAll();
     }
@@ -77,7 +78,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter(
-            @Qualifier("loadBalancedRestTemplate") RestTemplate keyUriRestTemplate)
+        @Qualifier("loadBalancedRestTemplate") RestTemplate keyUriRestTemplate)
         throws CertificateException, IOException {
 
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();

@@ -36,7 +36,7 @@ public class GatewayConfiguration {
     /**
      * Configures the Zuul filter that limits the number of API calls per user.
      * <p>
-     * This uses Bucke4J to limit the API calls, see {@link com.icthh.xm.gate.gateway.ratelimiting.RateLimitingFilter}.
+     * This uses Bucke4J to limit the API calls, see {@link RateLimitingFilter}.
      */
     @Configuration
     @ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")

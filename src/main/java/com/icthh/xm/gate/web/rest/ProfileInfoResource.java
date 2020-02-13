@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.web.rest;
 
+import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
 import com.icthh.xm.gate.config.DefaultProfileUtil;
 import org.springframework.core.env.Environment;
 import org.springframework.security.access.prepost.PostAuthorize;
@@ -22,6 +23,7 @@ public class ProfileInfoResource {
 
     @GetMapping("/profile-info")
     @PostAuthorize("hasPermission({'returnObject': returnObject}, 'GATE.PROFILE.GET_LIST.ITEM')")
+    @PrivilegeDescription("Privilege to get gate Spring active profiles")
     public ProfileInfoVM getActiveProfiles() {
         String[] activeProfiles = DefaultProfileUtil.getActiveProfiles(env);
         return new ProfileInfoVM(activeProfiles);

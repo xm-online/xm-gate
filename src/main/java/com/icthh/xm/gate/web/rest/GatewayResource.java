@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.web.rest;
 
 import com.codahale.metrics.annotation.Timed;
+import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
 import com.icthh.xm.commons.security.XmAuthenticationContext;
 import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
 import com.icthh.xm.gate.web.rest.vm.RouteVM;
@@ -62,6 +63,7 @@ public class GatewayResource {
     @GetMapping("/routes")
     @Timed
     @PostFilter("hasPermission({'returnObject': filterObject, 'log': false}, 'ROUTE.GET_LIST')")
+    @PrivilegeDescription("Privilege to get the active routes")
     public List<RouteVM> activeRoutes() {
         List<Route> routes = routeLocator.getRoutes();
         List<RouteVM> routeVMs = new ArrayList<>();
