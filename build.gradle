@@ -141,7 +141,6 @@ if (project.hasProperty('zipkin')) {
 }
 
 group = 'com.icthh.xm.gate'
-version = '0.0.1-SNAPSHOT'
 
 description = ''
 
