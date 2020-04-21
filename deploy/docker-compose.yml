@@ -14,7 +14,6 @@ services:
             restart_policy:
                 condition: on-failure
         secrets:
-            secrets:
             - source: GATE_SPRING_DATASOURCE_PASSWORD
               target: SPRING_DATASOURCE_PASSWORD
         logging:
