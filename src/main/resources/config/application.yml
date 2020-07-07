@@ -206,5 +206,5 @@ application:
     multiplier: 2
 
 gracefulShutdown:
-  enabled: true
-  shutdownDelay: 4000
+  enabled: false
+  shutdownDelay:
