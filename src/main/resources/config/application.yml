@@ -204,3 +204,7 @@ application:
     max-attempts: 3
     delay: 1000 #in milliseconds
     multiplier: 2
+
+gracefulShutdown:
+  enabled: true
+  shutdownDelay: 4000
