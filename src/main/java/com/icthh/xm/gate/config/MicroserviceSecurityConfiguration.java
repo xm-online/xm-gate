@@ -64,11 +64,14 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             //convention: allow to process /api/public for all service
             .antMatchers("/*/api/public/**").permitAll()
             .antMatchers("/api/profile-info").permitAll()
+            .antMatchers("/api/oauth2/authorization/**").permitAll()
             .antMatchers("/api/**").authenticated()
             .antMatchers("/management/health").permitAll()
             .antMatchers("/management/prometheus/**").permitAll()
             .antMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
-            .antMatchers("/swagger-resources/configuration/ui").permitAll();
+            .antMatchers("/swagger-resources/configuration/ui").permitAll()
+        .and()
+            .oauth2Client();
     }
 
     @Bean
@@ -113,7 +116,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             throw new CertificateException("Received empty certificate from config.");
         }
 
-        try(InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
+        try (InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
 
             CertificateFactory f = CertificateFactory.getInstance(Constants.CERTIFICATE);
             X509Certificate certificate = (X509Certificate) f.generateCertificate(fin);
