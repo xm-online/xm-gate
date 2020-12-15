@@ -96,7 +96,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .collect(Collectors.toList());
 
         if (tmpIdpClientConfigs.size() != applicablyConfigs.size()) {
-            log.info("Config not fully loaded or have wrong configuration");
+            log.info("IDP configs not fully loaded or has wrong configuration");
             return;
         }
 
