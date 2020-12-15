@@ -102,8 +102,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
         List<ClientRegistration> clientRegistrations = buildClientRegistrations();
 
-        idpClientConfigs.putAll(tmpIdpClientConfigs);
-        tmpIdpClientConfigs.clear();
+        updateInMemoryDataStorage();
 
         clientRegistrationRepository.setRegistrations(clientRegistrations);
     }
@@ -146,6 +145,11 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                     tmpIdpClientConfigs.put(compositeKey, configContainerDto);
                 }
             );
+    }
+
+    private void updateInMemoryDataStorage() {
+        idpClientConfigs.putAll(tmpIdpClientConfigs);
+        tmpIdpClientConfigs.clear();
     }
 
     private String buildIdpKeyPrefix(String tenantKey) {
