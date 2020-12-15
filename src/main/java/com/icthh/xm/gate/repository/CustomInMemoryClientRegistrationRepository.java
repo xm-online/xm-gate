@@ -1,5 +1,7 @@
 package com.icthh.xm.gate.repository;
 
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantKey;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
@@ -10,6 +12,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -17,7 +20,13 @@ import java.util.stream.Collectors;
 public class CustomInMemoryClientRegistrationRepository implements
     ClientRegistrationRepository, Iterable<ClientRegistration> {
 
+    private final TenantContextHolder tenantContextHolder;
+
     private Map<String, ClientRegistration> registrations;
+
+    public CustomInMemoryClientRegistrationRepository(TenantContextHolder tenantContextHolder) {
+        this.tenantContextHolder = tenantContextHolder;
+    }
 
     public Map<String, ClientRegistration> getRegistrations() {
         return registrations;
@@ -42,7 +51,13 @@ public class CustomInMemoryClientRegistrationRepository implements
     @Override
     public ClientRegistration findByRegistrationId(String registrationId) {
         Assert.hasText(registrationId, "registrationId cannot be empty");
-        return this.registrations.get(registrationId);
+
+        TenantKey tenantKey = tenantContextHolder.getContext()
+            .getTenantKey().orElseThrow(() -> new IllegalArgumentException("tenantKey not found in context!"));
+
+        String compositeKey = (tenantKey.getValue() + "_" + registrationId).toLowerCase();
+
+        return this.registrations.get(compositeKey);
     }
 
     @Override

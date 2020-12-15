@@ -3,6 +3,7 @@ package com.icthh.xm.gate.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.dto.IdpClientConfigDto;
 import com.icthh.xm.gate.dto.IdpDto;
 import lombok.SneakyThrows;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -33,9 +35,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     private CustomInMemoryClientRegistrationRepository clientRegistrationRepository;
 
+    private final TenantContextHolder tenantContextHolder;
+
     @Autowired
-    public IdpConfigRepository(CustomInMemoryClientRegistrationRepository clientRegistrationRepository) {
+    public IdpConfigRepository(CustomInMemoryClientRegistrationRepository clientRegistrationRepository,
+                               TenantContextHolder tenantContextHolder) {
         this.clientRegistrationRepository = clientRegistrationRepository;
+        this.tenantContextHolder = tenantContextHolder;
     }
 
     public IdpClientConfigDto getIdpConfigByKey(String idpKey) {
@@ -71,29 +77,39 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
         IdpDto.IdpConfigDto idp = idpDto.getIdp();
-        this.directLogin = idp.getDirectLogin();
+        directLogin = idp.getDirectLogin();
 
-        idp.getClients().forEach(idpClientConfigDto -> idpClientConfigs.put(idpClientConfigDto.getKey(), idpClientConfigDto));
-        List<ClientRegistration> clientRegistrations = idp.getClients().stream()
-            .map(idpClientConfigDto -> clientRegistration(idpClientConfigDto).build())
-            .collect(Collectors.toUnmodifiableList());
+        List<ClientRegistration> clientRegistrations = buildClientRegistrations(configKey, idp);
+
         clientRegistrationRepository.setRegistrations(clientRegistrations);
     }
 
-    private ClientRegistration.Builder clientRegistration(IdpClientConfigDto idpClientConfigDto) {
+    private List<ClientRegistration> buildClientRegistrations(String configKey, IdpDto.IdpConfigDto idp) {
+        Map<String, String> configKeyParams = matcher.extractUriTemplateVariables(publicSettingsConfigPath, configKey);
+        String idpKeyPrefix = configKeyParams.get("tenant") + "_";
+        idp.getClients()
+            .forEach(idpClientConfigDto ->
+                idpClientConfigs.put((idpKeyPrefix + idpClientConfigDto.getKey()).toLowerCase(), idpClientConfigDto));
 
-        return ClientRegistration.withRegistrationId(idpClientConfigDto.getKey())//same as key in settings-public/private
+        return idp.getClients().stream()
+            .map(idpClientConfigDto -> createClientRegistration(idpKeyPrefix, idpClientConfigDto).build())
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    private ClientRegistration.Builder createClientRegistration(String idpKeyPrefix, IdpClientConfigDto idpClientConfigDto) {
+
+        return ClientRegistration.withRegistrationId((idpKeyPrefix + idpClientConfigDto.getKey()).toLowerCase())//same as key in settings-public/private
             .redirectUriTemplate(idpClientConfigDto.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .scope("read:user")
+            .scope("read:user")//todo set from private-settings
             .authorizationUri(idpClientConfigDto.getAuthorizationEndpoint().getUri())
             .tokenUri(idpClientConfigDto.getTokenEndpoint().getUri())
-            .jwkSetUri("https://ticino-dev-co.eu.auth0.com/.well-known/jwks.json")//todo set from private-settings name
+            .jwkSetUri("https://ticino-dev-co.eu.auth0.com/.well-known/jwks.json")//todo set from private-settings
             .userInfoUri(idpClientConfigDto.getUserinfoEndpoint().getUri())
             .clientName("Dynamic Client Name")//todo set from public-settings name
             .clientId(idpClientConfigDto.getClientId())
-            .clientSecret("NHOsxzwEBgflBHuGF-mF9NkF8HI5kotVkBJYrpTPsZf0s9Js5klBrJ5bdROjMHLZ") //todo set from private-settings name
+            .clientSecret("NHOsxzwEBgflBHuGF-mF9NkF8HI5kotVkBJYrpTPsZf0s9Js5klBrJ5bdROjMHLZ") //todo set from private-settings
             ;
     }
 
