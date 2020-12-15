@@ -100,11 +100,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
-        List<ClientRegistration> clientRegistrations = buildClientRegistrations();
+        clientRegistrationRepository.setRegistrations(buildClientRegistrations());
 
         updateInMemoryDataStorage();
-
-        clientRegistrationRepository.setRegistrations(clientRegistrations);
     }
 
     private String getTenantKey(String configKey) {
