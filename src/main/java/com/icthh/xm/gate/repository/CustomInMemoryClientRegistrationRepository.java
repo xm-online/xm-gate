@@ -44,11 +44,9 @@ public class CustomInMemoryClientRegistrationRepository implements
     }
 
     private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(Collection<ClientRegistration> registrations) {
-        Map<String, ClientRegistration> registrations_cannot_contain_null_values = Collections.unmodifiableMap(registrations.stream()
+        return Collections.unmodifiableMap(registrations.stream()
             .peek(registration -> Assert.notNull(registration, "registrations cannot contain null values"))
             .collect(Collectors.toMap(ClientRegistration::getRegistrationId, Function.identity())));
-
-        return registrations_cannot_contain_null_values;
     }
 
     @Override

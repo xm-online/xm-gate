@@ -16,7 +16,6 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -33,8 +32,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
-
-    private Boolean directLogin;
 
     private ConcurrentHashMap<String, ConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, ConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
@@ -53,10 +50,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     public PublicIdpClientConfigDto getPublicIdpConfigByKey(String idpKey) {
         ConfigContainer configContainer = idpClientConfigs.get(idpKey);
         return configContainer.getPublicIdpClientConfigDto();
-    }
-
-    public Boolean getDirectLogin() {
-        return directLogin;
     }
 
     @Override
@@ -87,20 +80,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             if (publicIdpDto.getIdp() == null) {
                 return;
             }
-            directLogin = publicIdpDto.getIdp().getDirectLogin();
-
-            publicIdpDto.getIdp().getClients()
-                .forEach(publicIdpClientConfigDto -> {
-                        String compositeKey = (idpKeyPrefix + publicIdpClientConfigDto.getKey()).toLowerCase();
-
-                        ConfigContainer configContainer = tmpIdpClientConfigs.get(compositeKey);
-                        if (configContainer == null) {
-                            configContainer = new ConfigContainer();
-                        }
-                        configContainer.setPublicIdpClientConfigDto(publicIdpClientConfigDto);
-                        tmpIdpClientConfigs.put(compositeKey, configContainer);
-                    }
-                );
+            processPublicConfiguration(idpKeyPrefix, publicIdpDto);
         }
 
         if (matcher.match(privateSettingsConfigPath, configKey)) {
@@ -108,37 +88,22 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             if (privateIdpDto.getIdp() == null) {
                 return;
             }
-            privateIdpDto.getIdp().getClients()
-                .forEach(privateIdpClientConfigDto -> {
-                        String compositeKey = (idpKeyPrefix + privateIdpClientConfigDto.getKey()).toLowerCase();
-
-                        ConfigContainer configContainer = tmpIdpClientConfigs.get(compositeKey);
-                        if (configContainer == null) {
-                            configContainer = new ConfigContainer();
-                        }
-
-                        configContainer.setPrivateIdpClientConfigDto(privateIdpClientConfigDto);
-
-                        tmpIdpClientConfigs.put(compositeKey, configContainer);
-                    }
-                );
+            processPrivateConfiguration(idpKeyPrefix, privateIdpDto);
         }
 
-        List<ConfigContainer> applicablyConfigs = tmpIdpClientConfigs.entrySet().stream()
-            .filter(entry -> entry.getKey().startsWith(idpKeyPrefix))
-            .map(Map.Entry::getValue)
+        List<ConfigContainer> applicablyConfigs = tmpIdpClientConfigs.values().stream()
             .filter(ConfigContainer::isApplicable)
             .collect(Collectors.toList());
 
-        if (CollectionUtils.isEmpty(applicablyConfigs)) {
-            log.info("Config not fully loaded");
+        if (tmpIdpClientConfigs.size() != applicablyConfigs.size()) {
+            log.info("Config not fully loaded or have wrong configuration");
             return;
         }
 
+        List<ClientRegistration> clientRegistrations = buildClientRegistrations();
+
         idpClientConfigs.putAll(tmpIdpClientConfigs);
         tmpIdpClientConfigs.clear();
-
-        List<ClientRegistration> clientRegistrations = buildClientRegistrations(idpKeyPrefix, applicablyConfigs);
 
         clientRegistrationRepository.setRegistrations(clientRegistrations);
     }
@@ -151,6 +116,38 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         }
     }
 
+    private void processPublicConfiguration(String idpKeyPrefix, PublicIdpDto publicIdpDto) {
+        publicIdpDto.getIdp().getClients()
+            .forEach(publicIdpClientConfigDto -> {
+                    String compositeKey = (idpKeyPrefix + publicIdpClientConfigDto.getKey()).toLowerCase();
+
+                    ConfigContainer configContainer = tmpIdpClientConfigs.get(compositeKey);
+                    if (configContainer == null) {
+                        configContainer = new ConfigContainer();
+                    }
+                    configContainer.setPublicIdpClientConfigDto(publicIdpClientConfigDto);
+                    tmpIdpClientConfigs.put(compositeKey, configContainer);
+                }
+            );
+    }
+
+    private void processPrivateConfiguration(String idpKeyPrefix, PrivateIdpDto privateIdpDto) {
+        privateIdpDto.getIdp().getClients()
+            .forEach(privateIdpClientConfigDto -> {
+                    String compositeKey = (idpKeyPrefix + privateIdpClientConfigDto.getKey()).toLowerCase();
+
+                    ConfigContainer configContainer = tmpIdpClientConfigs.get(compositeKey);
+                    if (configContainer == null) {
+                        configContainer = new ConfigContainer();
+                    }
+
+                    configContainer.setPrivateIdpClientConfigDto(privateIdpClientConfigDto);
+
+                    tmpIdpClientConfigs.put(compositeKey, configContainer);
+                }
+            );
+    }
+
     private String buildIdpKeyPrefix(String tenantKey) {
         return (tenantKey + "_").toLowerCase();
     }
@@ -161,23 +158,20 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return configKeyParams.get(KEY_TENANT);
     }
 
-    private List<ClientRegistration> buildClientRegistrations(String idpKeyPrefix, List<ConfigContainer> applicablyConfigs) {
-
-        return applicablyConfigs.stream()
-            .map(config ->
-                createClientRegistration(
-                    idpKeyPrefix,
-                    config.getPublicIdpClientConfigDto(),
-                    config.getPrivateIdpClientConfigDto()
-                ))
-            .collect(Collectors.toUnmodifiableList());
+    private List<ClientRegistration> buildClientRegistrations() {
+        return tmpIdpClientConfigs.entrySet().stream()
+            .map(entry -> createClientRegistration(
+                entry.getKey(),
+                entry.getValue().getPublicIdpClientConfigDto(),
+                entry.getValue().getPrivateIdpClientConfigDto()
+            )).collect(Collectors.toList());
     }
 
-    private ClientRegistration createClientRegistration(String idpKeyPrefix,
+    private ClientRegistration createClientRegistration(String compositeRegistrationId,
                                                         PublicIdpClientConfigDto publicIdpClientConfigDto,
                                                         PrivateIdpClientConfigDto privateIdpConfig) {
 
-        return ClientRegistration.withRegistrationId((idpKeyPrefix + publicIdpClientConfigDto.getKey()).toLowerCase())//same as key in settings-public/private
+        return ClientRegistration.withRegistrationId((compositeRegistrationId))
             .redirectUriTemplate(publicIdpClientConfigDto.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -191,6 +185,5 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .clientSecret(privateIdpConfig.getClientSecret())
             .build();
     }
-
 
 }
