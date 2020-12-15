@@ -5,7 +5,7 @@ import com.icthh.xm.gate.dto.idp.PublicIdpClientConfigDto;
 import lombok.Data;
 
 @Data
-public class ConfigContainer {
+public class ConfigContainerDto {
 
     private PublicIdpClientConfigDto publicIdpClientConfigDto;
     private PrivateIdpClientConfigDto privateIdpClientConfigDto;
