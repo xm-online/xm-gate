@@ -9,6 +9,7 @@ import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ public class CustomInMemoryClientRegistrationRepository implements
 
     private final TenantContextHolder tenantContextHolder;
 
-    private Map<String, ClientRegistration> registrations;
+    private Map<String, ClientRegistration> registrations = new HashMap<>();
 
     public CustomInMemoryClientRegistrationRepository(TenantContextHolder tenantContextHolder) {
         this.tenantContextHolder = tenantContextHolder;
@@ -34,18 +35,20 @@ public class CustomInMemoryClientRegistrationRepository implements
 
     public void setRegistrations(Map<String, ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");
-        this.registrations = registrations;
+        this.registrations.putAll(registrations);
     }
 
     public void setRegistrations(List<ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");
-        this.registrations = createClientRegistrationIdToClientRegistration(registrations);
+        this.registrations.putAll(createClientRegistrationIdToClientRegistration(registrations));
     }
 
     private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(Collection<ClientRegistration> registrations) {
-        return Collections.unmodifiableMap(registrations.stream()
+        Map<String, ClientRegistration> registrations_cannot_contain_null_values = Collections.unmodifiableMap(registrations.stream()
             .peek(registration -> Assert.notNull(registration, "registrations cannot contain null values"))
             .collect(Collectors.toMap(ClientRegistration::getRegistrationId, Function.identity())));
+
+        return registrations_cannot_contain_null_values;
     }
 
     @Override

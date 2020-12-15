@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.dto;
+package com.icthh.xm.gate.dto.idp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,7 +9,7 @@ import java.util.Map;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IdpClientConfigDto {
+public class PublicIdpClientConfigDto {
 
     @JsonProperty("key")
     private String key;

@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.dto;
+package com.icthh.xm.gate.dto.idp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,18 +9,18 @@ import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IdpDto {
+public class PublicIdpDto {
 
     @JsonProperty("idp")
-    private IdpConfigDto idp;
+    private PublicIdpConfigDto idp;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public class IdpConfigDto {
+    public class PublicIdpConfigDto {
         @JsonProperty("directLogin")
         private Boolean directLogin;
 
         @JsonProperty("clients")
-        private List<IdpClientConfigDto> clients = new ArrayList<>();
+        private List<PublicIdpClientConfigDto> clients = new ArrayList<>();
     }
 }
