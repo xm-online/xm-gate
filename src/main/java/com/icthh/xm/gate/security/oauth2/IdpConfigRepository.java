@@ -1,13 +1,15 @@
 package com.icthh.xm.gate.security.oauth2;
 
+import static com.icthh.xm.gate.security.oauth2.IdpUtils.buildIdpKeyPrefix;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
-import com.icthh.xm.gate.idp.IdpConfigContainer;
-import com.icthh.xm.gate.idp.IdpPrivateConfig;
-import com.icthh.xm.gate.idp.IdpPrivateConfig.PrivateIdpConfigDto.IdpPrivateClientConfig;
-import com.icthh.xm.gate.idp.IdpPublicConfig.PublicIdpConfigDto.IdpPublicClientConfig;
-import com.icthh.xm.gate.idp.IdpPublicConfig;
+import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
+import com.icthh.xm.gate.domain.idp.IdpPrivateConfig;
+import com.icthh.xm.gate.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
+import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +40,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
 
-    private ConcurrentHashMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
     private final IdpClientHolder clientRegistrationRepository;
 
@@ -50,8 +52,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @Override
     public boolean isListeningConfiguration(String updatedKey) {
-        return matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, updatedKey) ||
-            matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, updatedKey);
+        return matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, updatedKey)
+            || matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, updatedKey);
     }
 
     @Override
@@ -97,48 +99,52 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @SneakyThrows
     private boolean processPublicConfiguration(String tenantKey, String configKey, String config) {
-        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
-            IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
-            if (idpPublicConfig.getIdp() == null) {
-                return false;
-            }
-            idpPublicConfig
-                .getIdp()
-                .getClients()
-                .forEach(publicIdpConf -> {
-                        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
-
-                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
-                        idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
-
-                        tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
-                    }
-                );
+        if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
+            return false;
         }
+        IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
+        if (idpPublicConfig.getIdpConfigContainer() == null) {
+            return false;
+        }
+        idpPublicConfig
+            .getIdpConfigContainer()
+            .getClients()
+            .forEach(publicIdpConf -> {
+                    String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
+
+                    IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
+                    idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+
+                    tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
+                }
+            );
+
         return true;
     }
 
     @SneakyThrows
     private boolean processPrivateConfiguration(String tenantKey, String configKey, String config) {
-        if (matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
-            IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
-            if (idpPrivateConfig.getIdp() == null) {
-                return false;
-            }
-            idpPrivateConfig
-                .getIdp()
-                .getClients()
-                .forEach(privateIdpConf -> {
-                        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
-
-                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
-
-                        idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
-
-                        tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
-                    }
-                );
+        if (!matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
+            return false;
         }
+        IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
+        if (idpPrivateConfig.getIdpConfigContainer() == null) {
+            return false;
+        }
+        idpPrivateConfig
+            .getIdpConfigContainer()
+            .getClients()
+            .forEach(privateIdpConf -> {
+                    String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
+
+                    IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
+
+                    idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
+
+                    tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
+                }
+            );
+
         return true;
     }
 
@@ -154,8 +160,10 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     /**
+     * <p>
      * Basing on input configuration method removes all previously registered tenants clients
      * to avoid redundant clients registration presence
+     * </p>
      */
     private void removeInMemoryClientRecords() {
         //extract tenant prefixes
@@ -168,16 +176,14 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         //remove all client records which are related to specified tenant
         List<String> tenantClientsKeysToDelete = new ArrayList<>();
 
-        tenantsPrefixKeys.forEach(tenantClientKey -> {
+        tenantsPrefixKeys.forEach(tenantClientKey ->
             tenantClientsKeysToDelete.addAll(idpClientConfigs
                 .keySet()
                 .stream()
-                .filter(configContainerDto -> configContainerDto.startsWith(IdpUtils.buildIdpKeyPrefix(tenantClientKey)))
-                .collect(Collectors.toList()));
-        });
+                .filter(configContainerDto -> configContainerDto.startsWith(buildIdpKeyPrefix(tenantClientKey)))
+                .collect(Collectors.toList())));
 
-
-        tenantClientsKeysToDelete.forEach(keyToDelete -> idpClientConfigs.remove(keyToDelete));
+        tenantClientsKeysToDelete.forEach(idpClientConfigs::remove);
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
@@ -218,10 +224,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .userInfoUri(idpPublicClientConfig.getUserinfoEndpoint().getUri())
             .clientName(idpPublicClientConfig.getName())
             .clientId(idpPublicClientConfig.getClientId())
-//            .jwkSetUri(idpPublicClientConfig.getJwksEndpoint().getUri())
+            .jwkSetUri(idpPublicClientConfig.getJwksEndpoint().getUri())
             .clientSecret(privateIdpConfig.getClientSecret())
             .scope(privateIdpConfig.getScope())
             .build();
     }
-
 }

@@ -28,7 +28,7 @@ public class IdpClientHolder implements
 
     private final TenantContextHolder tenantContextHolder;
 
-    private Map<String, ClientRegistration> clientsHolder = new HashMap<>();
+    private final Map<String, ClientRegistration> clientsHolder = new HashMap<>();
 
     public void setRegistrations(List<ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");

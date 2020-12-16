@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.idp;
+package com.icthh.xm.gate.domain.idp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,12 +14,12 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IdpPublicConfig {
 
-    @JsonProperty("idp") //TODO can we map without this inner class?
-    private PublicIdpConfigDto idp;
+    @JsonProperty("idp")
+    private IdpConfigContainer idpConfigContainer;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class PublicIdpConfigDto {
+    public static class IdpConfigContainer {
         @JsonProperty("directLogin")
         private boolean directLogin;
 
