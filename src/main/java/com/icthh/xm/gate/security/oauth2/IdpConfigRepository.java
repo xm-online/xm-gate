@@ -9,7 +9,7 @@ import com.icthh.xm.gate.dto.idp.PrivateIdpClientConfigDto;
 import com.icthh.xm.gate.dto.idp.PrivateIdpDto;
 import com.icthh.xm.gate.dto.idp.PublicIdpClientConfigDto;
 import com.icthh.xm.gate.dto.idp.PublicIdpDto;
-import com.icthh.xm.gate.repository.ConfigContainerDto;
+//import com.icthh.xm.gate.repository.ConfigContainerDto;
 import com.icthh.xm.gate.security.oauth2.CustomInMemoryClientRegistrationRepository; // TODO unused import
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +48,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     //TODO unused
     private final TenantContextHolder tenantContextHolder;
 
+    //TODO use @RequiredArgsConstructor
     @Autowired
     public IdpConfigRepository(CustomInMemoryClientRegistrationRepository clientRegistrationRepository,
                                TenantContextHolder tenantContextHolder) {
