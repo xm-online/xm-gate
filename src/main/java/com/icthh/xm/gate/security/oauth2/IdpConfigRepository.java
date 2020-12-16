@@ -26,8 +26,6 @@ import org.springframework.stereotype.Component;
 
 import org.springframework.util.AntPathMatcher;
 
-import static com.icthh.xm.gate.security.oauth2.IdpUtils.*;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -106,7 +104,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             }
             idpPublicConfig.getIdp().getClients()
                 .forEach(publicIdpConf -> {
-                        String compositeKey = buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
+                        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
 
                         IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
                         if (idpConfigContainer == null) {
@@ -129,7 +127,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             }
             idpPrivateConfig.getIdp().getClients()
                 .forEach(privateIdpConf -> {
-                        String compositeKey = buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
+                        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
 
                         IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
                         if (idpConfigContainer == null) {
@@ -165,7 +163,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         List<String> tenantsPrefixKeys = tmpIdpClientConfigs
             .keySet()
             .stream()
-            .map(key -> key.split(KEY_SEPARATOR))
+            .map(key -> key.split(IdpUtils.KEY_SEPARATOR))
             .map(data -> data[0])
             .collect(Collectors.toList());
         //remove all client records which are related to specified tenant
@@ -175,7 +173,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             tenantClientsKeysToDelete.addAll(idpClientConfigs
                 .keySet()
                 .stream()
-                .filter(configContainerDto -> configContainerDto.startsWith(buildIdpKeyPrefix(tenantClientKey)))
+                .filter(configContainerDto -> configContainerDto.startsWith(IdpUtils.buildIdpKeyPrefix(tenantClientKey)))
                 .collect(Collectors.toList()));
         });
 

@@ -12,16 +12,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.util.Assert;
-
-import static com.icthh.xm.gate.security.oauth2.IdpUtils.buildCompositeIdpKey;
 
 @Component
 @RequiredArgsConstructor
@@ -52,7 +50,7 @@ public class IdpClientHolder implements
         TenantKey tenantKey = tenantContextHolder.getContext()
             .getTenantKey().orElseThrow(() -> new IllegalArgumentException("tenantKey not found in context!"));
 
-        String compositeKey = buildCompositeIdpKey(tenantKey.getValue(), registrationId);
+        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey.getValue(), registrationId);
 
         return this.clientsHolder.get(compositeKey);
     }
