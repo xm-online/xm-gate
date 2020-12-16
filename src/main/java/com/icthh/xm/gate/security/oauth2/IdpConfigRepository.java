@@ -3,22 +3,11 @@ package com.icthh.xm.gate.security.oauth2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
-import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.gate.dto.idp.ConfigContainerDto;
-import com.icthh.xm.gate.dto.idp.PrivateIdpClientConfigDto;
-import com.icthh.xm.gate.dto.idp.PrivateIdpDto;
-import com.icthh.xm.gate.dto.idp.PublicIdpClientConfigDto;
-import com.icthh.xm.gate.dto.idp.PublicIdpDto;
-//import com.icthh.xm.gate.repository.ConfigContainerDto;
-import com.icthh.xm.gate.security.oauth2.CustomInMemoryClientRegistrationRepository; // TODO unused import
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
+import com.icthh.xm.gate.idp.IdpConfigContainer;
+import com.icthh.xm.gate.idp.IdpPrivateConfig;
+import com.icthh.xm.gate.idp.IdpPrivateConfig.PrivateIdpConfigDto.IdpPrivateClientConfig;
+import com.icthh.xm.gate.idp.IdpPublicConfig.PublicIdpConfigDto.IdpPublicClientConfig;
+import com.icthh.xm.gate.idp.IdpPublicConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,41 +15,35 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+
+import org.springframework.stereotype.Component;
+
+import org.springframework.util.AntPathMatcher;
+
+import static com.icthh.xm.gate.security.oauth2.IdpUtils.*;
+
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class IdpConfigRepository implements RefreshableConfiguration {
 
-    //TODO constant should have name in format CONFIG_NAME_BLA_BLA
-    private static final String publicSettingsConfigPath = "/config/tenants/{tenant}/webapp/settings-public.yml";
-    private static final String privateSettingsConfigPath = "/config/tenants/{tenant}/idp-config.yml";
+    private static final String PUBLIC_SETTINGS_CONFIG_PATH = "/config/tenants/{tenant}/webapp/settings-public.yml";
+    private static final String PRIVATE_SETTINGS_CONFIG_PATH = "/config/tenants/{tenant}/idp-config.yml";
     private static final String KEY_TENANT = "tenant";
-    public static final String PREFIX_SEPARATOR = "_";
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
 
-    private ConcurrentHashMap<String, ConfigContainerDto> idpClientConfigs = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, ConfigContainerDto> tmpIdpClientConfigs = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
-    //TODO should be final
-    private CustomInMemoryClientRegistrationRepository clientRegistrationRepository;
-
-    //TODO unused
-    private final TenantContextHolder tenantContextHolder;
-
-    //TODO use @RequiredArgsConstructor
-    @Autowired
-    public IdpConfigRepository(CustomInMemoryClientRegistrationRepository clientRegistrationRepository,
-                               TenantContextHolder tenantContextHolder) {
-        this.clientRegistrationRepository = clientRegistrationRepository;
-        this.tenantContextHolder = tenantContextHolder;
-    }
-
-    //TODO unused
-    public PublicIdpClientConfigDto getPublicIdpConfigByKey(String idpKey) {
-        ConfigContainerDto configContainerDto = idpClientConfigs.get(idpKey);
-        return configContainerDto.getPublicIdpClientConfigDto();
-    }
+    private final IdpClientHolder clientRegistrationRepository;
 
     @Override
     public void onRefresh(String updatedKey, String config) {
@@ -69,8 +52,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @Override
     public boolean isListeningConfiguration(String updatedKey) {
-        return matcher.match(publicSettingsConfigPath, updatedKey) ||
-            matcher.match(privateSettingsConfigPath, updatedKey);
+        return matcher.match(PUBLIC_SETTINGS_CONFIG_PATH, updatedKey) ||
+            matcher.match(PRIVATE_SETTINGS_CONFIG_PATH, updatedKey);
     }
 
     @Override
@@ -80,35 +63,20 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @SneakyThrows
     private void updateIdpConfigs(String configKey, String config) {
-        System.out.println("configKey: " + configKey); //TODO remove sout, use @Slf4j if logger is need
-        System.out.println("config: " + config);
-
         String tenantKey = getTenantKey(configKey);
-        String idpKeyPrefix = buildIdpKeyPrefix(tenantKey);
 
-
-        //TODO let's move this logic to processPublicConfiguration
-        if (matcher.match(publicSettingsConfigPath, configKey)) {
-            PublicIdpDto publicIdpDto = objectMapper.readValue(config, PublicIdpDto.class);
-            if (publicIdpDto.getIdp() == null) {
-                return;
-            }
-            processPublicConfiguration(idpKeyPrefix, publicIdpDto);
+        if (!processPublicConfiguration(tenantKey, configKey, config)) {
+            return;
         }
 
-        //TODO let's move this logic to processPrivateConfiguration
-        if (matcher.match(privateSettingsConfigPath, configKey)) {
-            PrivateIdpDto privateIdpDto = objectMapper.readValue(config, PrivateIdpDto.class);
-            if (privateIdpDto.getIdp() == null) {
-                return;
-            }
-            processPrivateConfiguration(idpKeyPrefix, privateIdpDto);
+        if (!processPrivateConfiguration(tenantKey, configKey, config)) {
+            return;
         }
 
-        List<ConfigContainerDto> applicablyConfigs = tmpIdpClientConfigs
+        List<IdpConfigContainer> applicablyConfigs = tmpIdpClientConfigs
             .values()
             .stream()
-            .filter(ConfigContainerDto::isApplicable)
+            .filter(IdpConfigContainer::isApplicable)
             .collect(Collectors.toList());
 
         if (tmpIdpClientConfigs.size() != applicablyConfigs.size()) {
@@ -122,43 +90,59 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private String getTenantKey(String configKey) {
-        if (matcher.match(publicSettingsConfigPath, configKey)) {
-            return extractTenantKeyFromPath(configKey, publicSettingsConfigPath);
+        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH, configKey)) {
+            return extractTenantKeyFromPath(configKey, PUBLIC_SETTINGS_CONFIG_PATH);
         } else {
-            return extractTenantKeyFromPath(configKey, privateSettingsConfigPath);
+            return extractTenantKeyFromPath(configKey, PRIVATE_SETTINGS_CONFIG_PATH);
         }
     }
 
-    private void processPublicConfiguration(String idpKeyPrefix, PublicIdpDto publicIdpDto) {
-        publicIdpDto.getIdp().getClients()
-            .forEach(publicIdpConf -> {
-                    String compositeKey = (idpKeyPrefix + publicIdpConf.getKey()).toLowerCase();
+    @SneakyThrows
+    private boolean processPublicConfiguration(String tenantKey, String configKey, String config) {
+        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH, configKey)) {
+            IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
+            if (idpPublicConfig.getIdp() == null) {
+                return false;
+            }
+            idpPublicConfig.getIdp().getClients()
+                .forEach(publicIdpConf -> {
+                        String compositeKey = buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
 
-                    ConfigContainerDto configContainerDto = tmpIdpClientConfigs.get(compositeKey);
-                    if (configContainerDto == null) {
-                        configContainerDto = new ConfigContainerDto();
+                        IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
+                        if (idpConfigContainer == null) {
+                            idpConfigContainer = new IdpConfigContainer();
+                        }
+                        idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+                        tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
                     }
-                    configContainerDto.setPublicIdpClientConfigDto(publicIdpConf);
-                    tmpIdpClientConfigs.put(compositeKey, configContainerDto);
-                }
-            );
+                );
+        }
+        return true;
     }
 
-    private void processPrivateConfiguration(String idpKeyPrefix, PrivateIdpDto privateIdpDto) {
-        privateIdpDto.getIdp().getClients()
-            .forEach(privateIdpConf -> {
-                    String compositeKey = (idpKeyPrefix + privateIdpConf.getKey()).toLowerCase();
+    @SneakyThrows
+    private boolean processPrivateConfiguration(String tenantKey, String configKey, String config) {
+        if (matcher.match(PRIVATE_SETTINGS_CONFIG_PATH, configKey)) {
+            IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
+            if (idpPrivateConfig.getIdp() == null) {
+                return false;
+            }
+            idpPrivateConfig.getIdp().getClients()
+                .forEach(privateIdpConf -> {
+                        String compositeKey = buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
 
-                    ConfigContainerDto configContainerDto = tmpIdpClientConfigs.get(compositeKey);
-                    if (configContainerDto == null) {
-                        configContainerDto = new ConfigContainerDto();
+                        IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
+                        if (idpConfigContainer == null) {
+                            idpConfigContainer = new IdpConfigContainer();
+                        }
+
+                        idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
+
+                        tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
                     }
-
-                    configContainerDto.setPrivateIdpClientConfigDto(privateIdpConf);
-
-                    tmpIdpClientConfigs.put(compositeKey, configContainerDto);
-                }
-            );
+                );
+        }
+        return true;
     }
 
     private void updateInMemoryConfig() {
@@ -178,25 +162,25 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      */
     private void removeInMemoryClientRecords() {
         //extract tenant prefixes
-        List<String> keys = tmpIdpClientConfigs.keySet().stream()
-            .map(key -> key.split(PREFIX_SEPARATOR))
+        List<String> tenantsPrefixKeys = tmpIdpClientConfigs
+            .keySet()
+            .stream()
+            .map(key -> key.split(KEY_SEPARATOR))
             .map(data -> data[0])
             .collect(Collectors.toList());
         //remove all client records which are related to specified tenant
-        List<String> keysToDelete = new ArrayList<>();
+        List<String> tenantClientsKeysToDelete = new ArrayList<>();
 
-        keys.forEach(key -> {
-            keysToDelete.addAll(idpClientConfigs.keySet()
+        tenantsPrefixKeys.forEach(tenantClientKey -> {
+            tenantClientsKeysToDelete.addAll(idpClientConfigs
+                .keySet()
                 .stream()
-                .filter(configContainerDto -> configContainerDto.startsWith(key + PREFIX_SEPARATOR))
-                .collect(Collectors.toList())) ;
+                .filter(configContainerDto -> configContainerDto.startsWith(buildIdpKeyPrefix(tenantClientKey)))
+                .collect(Collectors.toList()));
         });
 
-        keysToDelete.forEach(keyToDelete-> idpClientConfigs.remove(keyToDelete));
-    }
 
-    private String buildIdpKeyPrefix(String tenantKey) {
-        return (tenantKey + PREFIX_SEPARATOR).toLowerCase();
+        tenantClientsKeysToDelete.forEach(keyToDelete -> idpClientConfigs.remove(keyToDelete));
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
@@ -206,30 +190,32 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private List<ClientRegistration> buildClientRegistrations() {
-        return tmpIdpClientConfigs.entrySet().stream()
+        return tmpIdpClientConfigs
+            .entrySet()
+            .stream()
             .map(entry -> createClientRegistration(
                 entry.getKey(),
-                entry.getValue().getPublicIdpClientConfigDto(),
-                entry.getValue().getPrivateIdpClientConfigDto()
+                entry.getValue().getIdpPublicClientConfig(),
+                entry.getValue().getIdpPrivateClientConfig()
             )).collect(Collectors.toList());
     }
 
     private ClientRegistration createClientRegistration(String compositeRegistrationId,
-                                                        PublicIdpClientConfigDto publicIdpClientConfigDto,
-                                                        PrivateIdpClientConfigDto privateIdpConfig) {
+                                                        IdpPublicClientConfig idpPublicClientConfig,
+                                                        IdpPrivateClientConfig privateIdpConfig) {
 
         return ClientRegistration.withRegistrationId((compositeRegistrationId))
-            .redirectUriTemplate(publicIdpClientConfigDto.getRedirectUri())
+            .redirectUriTemplate(idpPublicClientConfig.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .scope(privateIdpConfig.getScope())
-            .authorizationUri(publicIdpClientConfigDto.getAuthorizationEndpoint().getUri())
-            .tokenUri(publicIdpClientConfigDto.getTokenEndpoint().getUri())
-            .jwkSetUri("https://ticino-dev-co.eu.auth0.com/.well-known/jwks.json")//todo set from private-settings
-            .userInfoUri(publicIdpClientConfigDto.getUserinfoEndpoint().getUri())
-            .clientName(publicIdpClientConfigDto.getName())
-            .clientId(publicIdpClientConfigDto.getClientId())
+            .authorizationUri(idpPublicClientConfig.getAuthorizationEndpoint().getUri())
+            .tokenUri(idpPublicClientConfig.getTokenEndpoint().getUri())
+            .userInfoUri(idpPublicClientConfig.getUserinfoEndpoint().getUri())
+            .clientName(idpPublicClientConfig.getName())
+            .clientId(idpPublicClientConfig.getClientId())
+//            .jwkSetUri(idpPublicClientConfig.getJwksEndpoint().getUri())
             .clientSecret(privateIdpConfig.getClientSecret())
+            .scope(privateIdpConfig.getScope())
             .build();
     }
 
