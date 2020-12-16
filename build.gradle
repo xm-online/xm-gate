@@ -239,6 +239,7 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstruct_version}"
     implementation "org.apache.httpcomponents:httpclient"
     implementation "com.hazelcast:hazelcast-spring"
+    // TODO - to check and remove old social providers deps from there
     implementation "org.springframework.social:spring-social-security:${spring_social_security_version}"
     implementation "org.springframework.social:spring-social-google:${spring_social_google_version}"
     implementation "org.springframework.social:spring-social-facebook:${spring_social_facebook_version}"

@@ -40,6 +40,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
 
+    // TODO: use interface Map instead of imepemenation class.
     private final ConcurrentHashMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
@@ -73,6 +74,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
+
+        // TODO: why not to use allmatch() instead of comparing two sizes (which is indirect)? Liek that:
+//        boolean allAplicable = tmpIdpClientConfigs
+//            .values()
+//            .stream()
+//            .allMatch(IdpConfigContainer::isApplicable);
+
         List<IdpConfigContainer> applicablyConfigs = tmpIdpClientConfigs
             .values()
             .stream()
@@ -82,6 +90,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         if (tmpIdpClientConfigs.size() != applicablyConfigs.size()) {
             log.info("IDP configs not fully loaded or has configuration lack");
             return;
+            // TODO: what if we have many tenants. And in one tenant there is a wrong configuration (for example
+            //  private config dies not exists). Does it mean that other tenant will suffer from that and won't be able
+            //  to init IDP config? If si it should be resolved. Because all the tenants should be independent.
+            //  Please consider at least next cases:
+            //    - application startup
+            //    - config update triggered for all the tenants
+            //    - config update triggered for single tenant
         }
 
         clientRegistrationRepository.setRegistrations(buildClientRegistrations());
@@ -103,6 +118,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return false;
         }
+        // TODO: public settings definitely contains other settings not only IDP.
+        //  Need to be sure that it will not affect parsing to IdpPublicConfig class
         IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
         if (idpPublicConfig.getConfig() == null) {
             return false;
@@ -166,6 +183,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * to avoid redundant clients registration presence
      * </p>
      */
+    // TODO: I see now the complexity in the processing of combinted (tenant+idpname) keys in the map.
+    //  suggest considering nested map instead like:
+    //  Map<String, Mam<String, IdpConfigContainer>> -- <Tenant, <IdpName, IdpConfigContainer>>
     private void removeInMemoryClientRecords() {
         //extract tenant prefixes
         List<String> tenantsPrefixKeys = tmpIdpClientConfigs

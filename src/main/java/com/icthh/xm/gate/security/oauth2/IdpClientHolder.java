@@ -47,6 +47,8 @@ public class IdpClientHolder implements
     public ClientRegistration findByRegistrationId(String registrationId) {
         Assert.hasText(registrationId, "registrationId cannot be empty");
 
+        // FIXME utility class should be used to obtain tenant:
+        //  Strong tenant = TenantContextUtils.getRequiredTenantKey(tenantContextHolder)
         TenantKey tenantKey = tenantContextHolder.getContext()
             .getTenantKey().orElseThrow(() -> new IllegalArgumentException("tenantKey not found in context!"));
 
