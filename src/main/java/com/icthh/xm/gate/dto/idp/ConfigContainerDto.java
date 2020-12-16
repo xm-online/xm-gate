@@ -1,7 +1,5 @@
-package com.icthh.xm.gate.repository;
+package com.icthh.xm.gate.dto.idp;
 
-import com.icthh.xm.gate.dto.idp.PrivateIdpClientConfigDto;
-import com.icthh.xm.gate.dto.idp.PublicIdpClientConfigDto;
 import lombok.Data;
 
 @Data

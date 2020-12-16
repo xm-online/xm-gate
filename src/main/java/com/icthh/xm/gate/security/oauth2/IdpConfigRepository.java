@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.gate.dto.idp.ConfigContainerDto;
 import com.icthh.xm.gate.dto.idp.PrivateIdpClientConfigDto;
 import com.icthh.xm.gate.dto.idp.PrivateIdpDto;
 import com.icthh.xm.gate.dto.idp.PublicIdpClientConfigDto;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +34,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private static final String publicSettingsConfigPath = "/config/tenants/{tenant}/webapp/settings-public.yml";
     private static final String privateSettingsConfigPath = "/config/tenants/{tenant}/idp-config.yml";
     private static final String KEY_TENANT = "tenant";
+    public static final String PREFIX_SEPARATOR = "_";
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
@@ -108,13 +111,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .collect(Collectors.toList());
 
         if (tmpIdpClientConfigs.size() != applicablyConfigs.size()) {
-            log.info("IDP configs not fully loaded or has wrong configuration");
+            log.info("IDP configs not fully loaded or has configuration lack");
             return;
         }
 
         clientRegistrationRepository.setRegistrations(buildClientRegistrations());
 
-        updateInMemoryDataStorage();
+        updateInMemoryConfig();
     }
 
     private String getTenantKey(String configKey) {
@@ -157,13 +160,42 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             );
     }
 
-    private void updateInMemoryDataStorage() {
+    private void updateInMemoryConfig() {
+        removeInMemoryClientRecords();
+
+        updateConfig();
+    }
+
+    private void updateConfig() {
         idpClientConfigs.putAll(tmpIdpClientConfigs);
         tmpIdpClientConfigs.clear();
     }
 
+    /**
+     * Basing on input configuration method removes all previously registered tenants clients
+     * to avoid redundant clients registration presence
+     */
+    private void removeInMemoryClientRecords() {
+        //extract tenant prefixes
+        List<String> keys = tmpIdpClientConfigs.keySet().stream()
+            .map(key -> key.split(PREFIX_SEPARATOR))
+            .map(data -> data[0])
+            .collect(Collectors.toList());
+        //remove all client records which are related to specified tenant
+        List<String> keysToDelete = new ArrayList<>();
+
+        keys.forEach(key -> {
+            keysToDelete.addAll(idpClientConfigs.keySet()
+                .stream()
+                .filter(configContainerDto -> configContainerDto.startsWith(key + PREFIX_SEPARATOR))
+                .collect(Collectors.toList())) ;
+        });
+
+        keysToDelete.forEach(keyToDelete-> idpClientConfigs.remove(keyToDelete));
+    }
+
     private String buildIdpKeyPrefix(String tenantKey) {
-        return (tenantKey + "_").toLowerCase();
+        return (tenantKey + PREFIX_SEPARATOR).toLowerCase();
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
