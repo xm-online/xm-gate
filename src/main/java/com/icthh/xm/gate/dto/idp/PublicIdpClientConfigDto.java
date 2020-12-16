@@ -9,6 +9,8 @@ import java.util.Map;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+//TODO PublicIdpClientConfigDto -> IdpPublicClientConfig
+//TODO let's make it as inner class of IdpPublicConfig
 public class PublicIdpClientConfigDto {
 
     @JsonProperty("key")
@@ -40,8 +42,11 @@ public class PublicIdpClientConfigDto {
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
+    //TODO Inner class may be static (apply this for all nestated classes)
     public class Features {
         @JsonProperty("pkce")
+        //TODO use primitive object boolean  (if we use class Boolean we add one more state pkce=null)
+        //TODO apply this everywhere
         private Boolean pkce;
 
         @JsonProperty("stateful")

@@ -9,6 +9,7 @@ import java.util.Map;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+//TODO PrivateIdpClientConfigDto -> IdpPrivateConfig
 public class PrivateIdpClientConfigDto {
 
     @JsonProperty("key")

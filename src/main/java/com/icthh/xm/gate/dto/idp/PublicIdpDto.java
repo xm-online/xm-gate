@@ -9,9 +9,11 @@ import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+//TODO PublicIdpDto -> IdpPublicConfig
+//TODO let's move this class to  com.icthh.xm.gate.domain.idp
 public class PublicIdpDto {
 
-    @JsonProperty("idp")
+    @JsonProperty("idp") //TODO can we map without this inner class?
     private PublicIdpConfigDto idp;
 
     @Data
@@ -21,6 +23,7 @@ public class PublicIdpDto {
         private Boolean directLogin;
 
         @JsonProperty("clients")
+        //TODO let's mage PublicIdpClientConfigDto also as inner class
         private List<PublicIdpClientConfigDto> clients = new ArrayList<>();
     }
 }

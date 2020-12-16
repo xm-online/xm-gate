@@ -225,8 +225,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-data"
     implementation "org.springframework.security:spring-security-web"
     implementation "org.springframework.security:spring-security-messaging"
-//    implementation "org.springframework.security.oauth:spring-security-oauth2"
-    implementation 'org.springframework.security:spring-security-oauth2-jose'
+// TODO remove if not needed   implementation "org.springframework.security.oauth:spring-security-oauth2"
+    implementation 'org.springframework.security:spring-security-oauth2-jose' // TODO do we really need all of this new dependencies, verify it
     implementation 'org.springframework.security:spring-security-config'
     implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"

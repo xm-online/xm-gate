@@ -1,7 +1,8 @@
-package com.icthh.xm.gate.repository;
+package com.icthh.xm.gate.security.oauth2;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantKey;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
@@ -17,22 +18,27 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+//TODO CustomInMemoryClientRegistrationRepository -> IdpClientHolder
 @Component
 public class CustomInMemoryClientRegistrationRepository implements
     ClientRegistrationRepository, Iterable<ClientRegistration> {
 
     private final TenantContextHolder tenantContextHolder;
 
+    //TODO registrations -> clientHolder
     private Map<String, ClientRegistration> registrations = new HashMap<>();
 
+    //TODO @RequiredArgsConstructor
     public CustomInMemoryClientRegistrationRepository(TenantContextHolder tenantContextHolder) {
         this.tenantContextHolder = tenantContextHolder;
     }
 
+    //TODO unused method
     public Map<String, ClientRegistration> getRegistrations() {
         return registrations;
     }
 
+    //TODO  do we really need two methods for setRegistrations
     public void setRegistrations(Map<String, ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");
         this.registrations.putAll(registrations);
@@ -43,8 +49,10 @@ public class CustomInMemoryClientRegistrationRepository implements
         this.registrations.putAll(createClientRegistrationIdToClientRegistration(registrations));
     }
 
-    private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(Collection<ClientRegistration> registrations) {
-        return Collections.unmodifiableMap(registrations.stream()
+    private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(
+        Collection<ClientRegistration> registrations) {
+        return Collections.unmodifiableMap(registrations
+            .stream()
             .peek(registration -> Assert.notNull(registration, "registrations cannot contain null values"))
             .collect(Collectors.toMap(ClientRegistration::getRegistrationId, Function.identity())));
     }
@@ -56,6 +64,7 @@ public class CustomInMemoryClientRegistrationRepository implements
         TenantKey tenantKey = tenantContextHolder.getContext()
             .getTenantKey().orElseThrow(() -> new IllegalArgumentException("tenantKey not found in context!"));
 
+        //TODO this logic should be in one place, put it to some util class
         String compositeKey = (tenantKey.getValue() + "_" + registrationId).toLowerCase();
 
         return this.registrations.get(compositeKey);

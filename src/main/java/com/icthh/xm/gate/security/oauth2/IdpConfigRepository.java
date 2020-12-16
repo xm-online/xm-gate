@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.repository;
+package com.icthh.xm.gate.security.oauth2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -8,6 +8,8 @@ import com.icthh.xm.gate.dto.idp.PrivateIdpClientConfigDto;
 import com.icthh.xm.gate.dto.idp.PrivateIdpDto;
 import com.icthh.xm.gate.dto.idp.PublicIdpClientConfigDto;
 import com.icthh.xm.gate.dto.idp.PublicIdpDto;
+import com.icthh.xm.gate.repository.ConfigContainerDto;
+import com.icthh.xm.gate.security.oauth2.CustomInMemoryClientRegistrationRepository; // TODO unused import
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 @Component
 public class IdpConfigRepository implements RefreshableConfiguration {
 
+    //TODO constant should have name in format CONFIG_NAME_BLA_BLA
     private static final String publicSettingsConfigPath = "/config/tenants/{tenant}/webapp/settings-public.yml";
     private static final String privateSettingsConfigPath = "/config/tenants/{tenant}/idp-config.yml";
     private static final String KEY_TENANT = "tenant";
@@ -36,8 +39,10 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private ConcurrentHashMap<String, ConfigContainerDto> idpClientConfigs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, ConfigContainerDto> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
+    //TODO should be final
     private CustomInMemoryClientRegistrationRepository clientRegistrationRepository;
 
+    //TODO unused
     private final TenantContextHolder tenantContextHolder;
 
     @Autowired
@@ -47,6 +52,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         this.tenantContextHolder = tenantContextHolder;
     }
 
+    //TODO unused
     public PublicIdpClientConfigDto getPublicIdpConfigByKey(String idpKey) {
         ConfigContainerDto configContainerDto = idpClientConfigs.get(idpKey);
         return configContainerDto.getPublicIdpClientConfigDto();
@@ -59,7 +65,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @Override
     public boolean isListeningConfiguration(String updatedKey) {
-        return matcher.match(publicSettingsConfigPath, updatedKey) || matcher.match(privateSettingsConfigPath, updatedKey);
+        return matcher.match(publicSettingsConfigPath, updatedKey) ||
+            matcher.match(privateSettingsConfigPath, updatedKey);
     }
 
     @Override
@@ -69,12 +76,14 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @SneakyThrows
     private void updateIdpConfigs(String configKey, String config) {
-        System.out.println("configKey: " + configKey);
+        System.out.println("configKey: " + configKey); //TODO remove sout, use @Slf4j if logger is need
         System.out.println("config: " + config);
 
         String tenantKey = getTenantKey(configKey);
         String idpKeyPrefix = buildIdpKeyPrefix(tenantKey);
 
+
+        //TODO let's move this logic to processPublicConfiguration
         if (matcher.match(publicSettingsConfigPath, configKey)) {
             PublicIdpDto publicIdpDto = objectMapper.readValue(config, PublicIdpDto.class);
             if (publicIdpDto.getIdp() == null) {
@@ -83,6 +92,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             processPublicConfiguration(idpKeyPrefix, publicIdpDto);
         }
 
+        //TODO let's move this logic to processPrivateConfiguration
         if (matcher.match(privateSettingsConfigPath, configKey)) {
             PrivateIdpDto privateIdpDto = objectMapper.readValue(config, PrivateIdpDto.class);
             if (privateIdpDto.getIdp() == null) {
@@ -91,7 +101,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             processPrivateConfiguration(idpKeyPrefix, privateIdpDto);
         }
 
-        List<ConfigContainerDto> applicablyConfigs = tmpIdpClientConfigs.values().stream()
+        List<ConfigContainerDto> applicablyConfigs = tmpIdpClientConfigs
+            .values()
+            .stream()
             .filter(ConfigContainerDto::isApplicable)
             .collect(Collectors.toList());
 
@@ -115,14 +127,14 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     private void processPublicConfiguration(String idpKeyPrefix, PublicIdpDto publicIdpDto) {
         publicIdpDto.getIdp().getClients()
-            .forEach(publicIdpClientConfigDto -> {
-                    String compositeKey = (idpKeyPrefix + publicIdpClientConfigDto.getKey()).toLowerCase();
+            .forEach(publicIdpConf -> {
+                    String compositeKey = (idpKeyPrefix + publicIdpConf.getKey()).toLowerCase();
 
                     ConfigContainerDto configContainerDto = tmpIdpClientConfigs.get(compositeKey);
                     if (configContainerDto == null) {
                         configContainerDto = new ConfigContainerDto();
                     }
-                    configContainerDto.setPublicIdpClientConfigDto(publicIdpClientConfigDto);
+                    configContainerDto.setPublicIdpClientConfigDto(publicIdpConf);
                     tmpIdpClientConfigs.put(compositeKey, configContainerDto);
                 }
             );
@@ -130,15 +142,15 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     private void processPrivateConfiguration(String idpKeyPrefix, PrivateIdpDto privateIdpDto) {
         privateIdpDto.getIdp().getClients()
-            .forEach(privateIdpClientConfigDto -> {
-                    String compositeKey = (idpKeyPrefix + privateIdpClientConfigDto.getKey()).toLowerCase();
+            .forEach(privateIdpConf -> {
+                    String compositeKey = (idpKeyPrefix + privateIdpConf.getKey()).toLowerCase();
 
                     ConfigContainerDto configContainerDto = tmpIdpClientConfigs.get(compositeKey);
                     if (configContainerDto == null) {
                         configContainerDto = new ConfigContainerDto();
                     }
 
-                    configContainerDto.setPrivateIdpClientConfigDto(privateIdpClientConfigDto);
+                    configContainerDto.setPrivateIdpClientConfigDto(privateIdpConf);
 
                     tmpIdpClientConfigs.put(compositeKey, configContainerDto);
                 }
