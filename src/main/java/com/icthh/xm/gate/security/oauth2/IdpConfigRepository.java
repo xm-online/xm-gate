@@ -33,8 +33,8 @@ import static com.icthh.xm.gate.security.oauth2.IdpUtils.*;
 @RequiredArgsConstructor
 public class IdpConfigRepository implements RefreshableConfiguration {
 
-    private static final String PUBLIC_SETTINGS_CONFIG_PATH = "/config/tenants/{tenant}/webapp/settings-public.yml";
-    private static final String PRIVATE_SETTINGS_CONFIG_PATH = "/config/tenants/{tenant}/idp-config.yml";
+    private static final String PUBLIC_SETTINGS_CONFIG_PATH_PATTERN = "/config/tenants/{tenant}/webapp/settings-public.yml";
+    private static final String PRIVATE_SETTINGS_CONFIG_PATH_PATTERN = "/config/tenants/{tenant}/idp-config.yml";
     private static final String KEY_TENANT = "tenant";
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
@@ -52,8 +52,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @Override
     public boolean isListeningConfiguration(String updatedKey) {
-        return matcher.match(PUBLIC_SETTINGS_CONFIG_PATH, updatedKey) ||
-            matcher.match(PRIVATE_SETTINGS_CONFIG_PATH, updatedKey);
+        return matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, updatedKey) ||
+            matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, updatedKey);
     }
 
     @Override
@@ -90,16 +90,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private String getTenantKey(String configKey) {
-        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH, configKey)) {
-            return extractTenantKeyFromPath(configKey, PUBLIC_SETTINGS_CONFIG_PATH);
+        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
+            return extractTenantKeyFromPath(configKey, PUBLIC_SETTINGS_CONFIG_PATH_PATTERN);
         } else {
-            return extractTenantKeyFromPath(configKey, PRIVATE_SETTINGS_CONFIG_PATH);
+            return extractTenantKeyFromPath(configKey, PRIVATE_SETTINGS_CONFIG_PATH_PATTERN);
         }
     }
 
     @SneakyThrows
     private boolean processPublicConfiguration(String tenantKey, String configKey, String config) {
-        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH, configKey)) {
+        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
             if (idpPublicConfig.getIdp() == null) {
                 return false;
@@ -122,7 +122,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @SneakyThrows
     private boolean processPrivateConfiguration(String tenantKey, String configKey, String config) {
-        if (matcher.match(PRIVATE_SETTINGS_CONFIG_PATH, configKey)) {
+        if (matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
             if (idpPrivateConfig.getIdp() == null) {
                 return false;
