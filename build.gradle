@@ -225,13 +225,10 @@ dependencies {
     implementation "org.springframework.security:spring-security-data"
     implementation "org.springframework.security:spring-security-web"
     implementation "org.springframework.security:spring-security-messaging"
-// TODO remove if not needed   implementation "org.springframework.security.oauth:spring-security-oauth2"
-    implementation 'org.springframework.security:spring-security-oauth2-jose' // TODO do we really need all of this new dependencies, verify it
-    implementation 'org.springframework.security:spring-security-config'
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
     implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
-    implementation "org.springframework.security:spring-security-jwt"
-    implementation ("io.springfox:springfox-swagger2") {
+    implementation("io.springfox:springfox-swagger2") {
         exclude module: "mapstruct"
     }
     implementation "io.springfox:springfox-bean-validators"
@@ -239,11 +236,6 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstruct_version}"
     implementation "org.apache.httpcomponents:httpclient"
     implementation "com.hazelcast:hazelcast-spring"
-    // TODO - to check and remove old social providers deps from there
-    implementation "org.springframework.social:spring-social-security:${spring_social_security_version}"
-    implementation "org.springframework.social:spring-social-google:${spring_social_google_version}"
-    implementation "org.springframework.social:spring-social-facebook:${spring_social_facebook_version}"
-    implementation "org.springframework.social:spring-social-twitter:${spring_social_google_version}"
     implementation "io.github.openfeign:feign-jackson"
     annotationProcessor ("org.springframework.boot:spring-boot-configuration-processor:${spring_boot_version}") {
         exclude group: "com.vaadin.external.google", module: "android-json"
