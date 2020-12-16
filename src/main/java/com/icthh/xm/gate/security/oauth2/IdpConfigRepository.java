@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.stereotype.Component;
 
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Component
@@ -41,8 +43,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final AntPathMatcher matcher = new AntPathMatcher();
 
     // TODO: use interface Map instead of imepemenation class.
-    private final ConcurrentHashMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
     private final IdpClientHolder clientRegistrationRepository;
 
@@ -74,34 +76,19 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
-
-        // TODO: why not to use allmatch() instead of comparing two sizes (which is indirect)? Liek that:
-//        boolean allAplicable = tmpIdpClientConfigs
-//            .values()
-//            .stream()
-//            .allMatch(IdpConfigContainer::isApplicable);
-
-        List<IdpConfigContainer> applicablyConfigs = tmpIdpClientConfigs
-            .values()
+        Map<String, IdpConfigContainer> applicablyConfigs = tmpIdpClientConfigs.entrySet()
             .stream()
-            .filter(IdpConfigContainer::isApplicable)
-            .collect(Collectors.toList());
+            .filter(entry -> entry.getValue().isApplicable())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (tmpIdpClientConfigs.size() != applicablyConfigs.size()) {
-            log.info("IDP configs not fully loaded or has configuration lack");
+        if (CollectionUtils.isEmpty(applicablyConfigs)) {
+            log.info("For tenant [{}] IDP configs not fully loaded or has configuration lack", tenantKey);
             return;
-            // TODO: what if we have many tenants. And in one tenant there is a wrong configuration (for example
-            //  private config dies not exists). Does it mean that other tenant will suffer from that and won't be able
-            //  to init IDP config? If si it should be resolved. Because all the tenants should be independent.
-            //  Please consider at least next cases:
-            //    - application startup
-            //    - config update triggered for all the tenants
-            //    - config update triggered for single tenant
         }
 
-        clientRegistrationRepository.setRegistrations(buildClientRegistrations());
+        clientRegistrationRepository.setRegistrations(buildClientRegistrations(applicablyConfigs));
 
-        updateInMemoryConfig();
+        updateInMemoryConfig(applicablyConfigs);
     }
 
     private String getTenantKey(String configKey) {
@@ -116,7 +103,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     @SneakyThrows
     private boolean processPublicConfiguration(String tenantKey, String configKey, String config) {
         if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
-            return false;
+            return true;
         }
         // TODO: public settings definitely contains other settings not only IDP.
         //  Need to be sure that it will not affect parsing to IdpPublicConfig class
@@ -143,7 +130,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     @SneakyThrows
     private boolean processPrivateConfiguration(String tenantKey, String configKey, String config) {
         if (!matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
-            return false;
+            return true;
         }
         IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
         if (idpPrivateConfig.getConfig() == null) {
@@ -166,15 +153,15 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return true;
     }
 
-    private void updateInMemoryConfig() {
-        removeInMemoryClientRecords();
+    private void updateInMemoryConfig(Map<String, IdpConfigContainer> applicablyConfigs) {
+        removeInMemoryClientRecords(applicablyConfigs);
 
-        updateConfig();
+        updateConfig(applicablyConfigs);
     }
 
-    private void updateConfig() {
-        idpClientConfigs.putAll(tmpIdpClientConfigs);
-        tmpIdpClientConfigs.clear();
+    private void updateConfig(Map<String, IdpConfigContainer> applicablyConfigs) {
+        idpClientConfigs.putAll(applicablyConfigs);
+        applicablyConfigs.keySet().forEach(tmpIdpClientConfigs::remove);
     }
 
     /**
@@ -182,13 +169,15 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * Basing on input configuration method removes all previously registered tenants clients
      * to avoid redundant clients registration presence
      * </p>
+     *
+     * @param applicablyConfigs fully loaded configs for processing
      */
     // TODO: I see now the complexity in the processing of combinted (tenant+idpname) keys in the map.
     //  suggest considering nested map instead like:
     //  Map<String, Mam<String, IdpConfigContainer>> -- <Tenant, <IdpName, IdpConfigContainer>>
-    private void removeInMemoryClientRecords() {
+    private void removeInMemoryClientRecords(Map<String, IdpConfigContainer> applicablyConfigs) {
         //extract tenant prefixes
-        List<String> tenantsPrefixKeys = tmpIdpClientConfigs
+        List<String> tenantsPrefixKeys = applicablyConfigs
             .keySet()
             .stream()
             .map(key -> key.split(IdpUtils.KEY_SEPARATOR))
@@ -221,8 +210,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return idpConfigContainer;
     }
 
-    private List<ClientRegistration> buildClientRegistrations() {
-        return tmpIdpClientConfigs
+    private List<ClientRegistration> buildClientRegistrations(Map<String, IdpConfigContainer> applicablyConfigs) {
+        return applicablyConfigs
             .entrySet()
             .stream()
             .map(entry -> createClientRegistration(
