@@ -97,17 +97,18 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         }
     }
 
+    //TODO processPrivateConfiguration and  processPublicConfiguration very similar, think how to combine them
     @SneakyThrows
     private boolean processPublicConfiguration(String tenantKey, String configKey, String config) {
         if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return false;
         }
         IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
-        if (idpPublicConfig.getIdpConfigContainer() == null) {
+        if (idpPublicConfig.getConfig() == null) {
             return false;
         }
         idpPublicConfig
-            .getIdpConfigContainer()
+            .getConfig()
             .getClients()
             .forEach(publicIdpConf -> {
                     String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
@@ -128,11 +129,11 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return false;
         }
         IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
-        if (idpPrivateConfig.getIdpConfigContainer() == null) {
+        if (idpPrivateConfig.getConfig() == null) {
             return false;
         }
         idpPrivateConfig
-            .getIdpConfigContainer()
+            .getConfig()
             .getClients()
             .forEach(privateIdpConf -> {
                     String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());

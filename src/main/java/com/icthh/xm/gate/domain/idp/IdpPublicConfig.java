@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
 public class IdpPublicConfig {
 
     @JsonProperty("idp")
-    private IdpConfigContainer idpConfigContainer;
+    private IdpConfigContainer config;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)

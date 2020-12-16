@@ -14,7 +14,7 @@ import lombok.Data;
 public class IdpPrivateConfig {
 
     @JsonProperty("idp")
-    private IdpConfigContainer idpConfigContainer;
+    private IdpConfigContainer config;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
