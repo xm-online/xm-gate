@@ -102,15 +102,15 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             if (idpPublicConfig.getIdp() == null) {
                 return false;
             }
-            idpPublicConfig.getIdp().getClients()
+            idpPublicConfig
+                .getIdp()
+                .getClients()
                 .forEach(publicIdpConf -> {
                         String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
 
-                        IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
-                        if (idpConfigContainer == null) {
-                            idpConfigContainer = new IdpConfigContainer();
-                        }
+                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
                         idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+
                         tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
                     }
                 );
@@ -125,14 +125,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             if (idpPrivateConfig.getIdp() == null) {
                 return false;
             }
-            idpPrivateConfig.getIdp().getClients()
+            idpPrivateConfig
+                .getIdp()
+                .getClients()
                 .forEach(privateIdpConf -> {
                         String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
 
-                        IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
-                        if (idpConfigContainer == null) {
-                            idpConfigContainer = new IdpConfigContainer();
-                        }
+                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
 
                         idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
 
@@ -185,6 +184,14 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         Map<String, String> configKeyParams = matcher.extractUriTemplateVariables(settingsConfigPath, configKey);
 
         return configKeyParams.get(KEY_TENANT);
+    }
+
+    private IdpConfigContainer getIdpConfigContainer(String compositeKey) {
+        IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
+        if (idpConfigContainer == null) {
+            idpConfigContainer = new IdpConfigContainer();
+        }
+        return idpConfigContainer;
     }
 
     private List<ClientRegistration> buildClientRegistrations() {
