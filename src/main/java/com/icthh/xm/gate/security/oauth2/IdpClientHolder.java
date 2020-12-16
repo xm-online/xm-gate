@@ -1,7 +1,7 @@
 package com.icthh.xm.gate.security.oauth2;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.commons.tenant.TenantKey;
+import com.icthh.xm.commons.tenant.TenantContextUtils;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +20,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.stereotype.Component;
 
 import org.springframework.util.Assert;
+
 
 @Component
 @RequiredArgsConstructor
@@ -47,12 +48,8 @@ public class IdpClientHolder implements
     public ClientRegistration findByRegistrationId(String registrationId) {
         Assert.hasText(registrationId, "registrationId cannot be empty");
 
-        // FIXME utility class should be used to obtain tenant:
-        //  Strong tenant = TenantContextUtils.getRequiredTenantKey(tenantContextHolder)
-        TenantKey tenantKey = tenantContextHolder.getContext()
-            .getTenantKey().orElseThrow(() -> new IllegalArgumentException("tenantKey not found in context!"));
-
-        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey.getValue(), registrationId);
+        String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
+        String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, registrationId);
 
         return this.clientsHolder.get(compositeKey);
     }
