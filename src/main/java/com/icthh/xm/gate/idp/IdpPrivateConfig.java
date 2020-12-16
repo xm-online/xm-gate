@@ -13,8 +13,8 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IdpPrivateConfig {
 
-    @JsonProperty("idp") //TODO can we map without this inner class?
-    private PrivateIdpConfigDto idp;
+    @JsonProperty("idp")
+    private PrivateIdpConfigDto config;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -99,11 +99,11 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private boolean processPublicConfiguration(String tenantKey, String configKey, String config) {
         if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
-            if (idpPublicConfig.getIdp() == null) {
+            if (idpPublicConfig.getConfig() == null) {
                 return false;
             }
             idpPublicConfig
-                .getIdp()
+                .getConfig()
                 .getClients()
                 .forEach(publicIdpConf -> {
                         String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
@@ -122,11 +122,11 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private boolean processPrivateConfiguration(String tenantKey, String configKey, String config) {
         if (matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
-            if (idpPrivateConfig.getIdp() == null) {
+            if (idpPrivateConfig.getConfig() == null) {
                 return false;
             }
             idpPrivateConfig
-                .getIdp()
+                .getConfig()
                 .getClients()
                 .forEach(privateIdpConf -> {
                         String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
