@@ -94,9 +94,6 @@ public class IdpPublicConfig {
                 @JsonProperty("responseType")
                 private String responseType;
 
-                @JsonProperty("xmTokenHeader")
-                private String xmTokenHeader;
-
                 @JsonProperty("additionalParams")
                 private Map<String, String> additionalParams;
 
@@ -105,7 +102,7 @@ public class IdpPublicConfig {
 
                 @Data
                 @JsonIgnoreProperties(ignoreUnknown = true)
-                private static class Features {
+                public static class Features {
                     @JsonProperty("state")
                     private boolean state;
                 }

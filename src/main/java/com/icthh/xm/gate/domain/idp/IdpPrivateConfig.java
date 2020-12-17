@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.Data;
 
@@ -34,7 +35,7 @@ public class IdpPrivateConfig {
             private String clientSecret;
 
             @JsonProperty("scope")
-            private List<String> scope;
+            private Set<String> scope;
 
             @JsonProperty("additionalParams")
             private Map<String, String> additionalParams;
