@@ -1,7 +1,5 @@
 package com.icthh.xm.gate.security.oauth2;
 
-import static com.icthh.xm.gate.security.oauth2.IdpUtils.buildIdpKeyPrefix;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
@@ -11,11 +9,10 @@ import com.icthh.xm.gate.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPriva
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -42,9 +39,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
 
-    // TODO: use interface Map instead of imepemenation class.
-    private final ConcurrentMap<String, IdpConfigContainer> idpClientConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, IdpConfigContainer> tmpIdpClientConfigs = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, IdpConfigContainer>> idpClientConfigs = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, IdpConfigContainer>> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
     private final IdpClientHolder clientRegistrationRepository;
 
@@ -76,19 +72,23 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
-        Map<String, IdpConfigContainer> applicablyConfigs = tmpIdpClientConfigs.entrySet()
+        Map<String, IdpConfigContainer> idpConfigContainers =
+            tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+
+        Map<String, IdpConfigContainer> applicablyIdpConfigs = idpConfigContainers
+            .entrySet()
             .stream()
             .filter(entry -> entry.getValue().isApplicable())
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (CollectionUtils.isEmpty(applicablyConfigs)) {
+        if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
             log.info("For tenant [{}] IDP configs not fully loaded or has configuration lack", tenantKey);
             return;
         }
 
-        clientRegistrationRepository.setRegistrations(buildClientRegistrations(applicablyConfigs));
+        clientRegistrationRepository.setRegistrations(buildClientRegistrations(tenantKey, applicablyIdpConfigs));
 
-        updateInMemoryConfig(applicablyConfigs);
+        updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
     }
 
     private String getTenantKey(String configKey) {
@@ -105,8 +105,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return true;
         }
-        // TODO: public settings definitely contains other settings not only IDP.
-        //  Need to be sure that it will not affect parsing to IdpPublicConfig class
         IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
         if (idpPublicConfig.getConfig() == null) {
             return false;
@@ -115,12 +113,10 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .getConfig()
             .getClients()
             .forEach(publicIdpConf -> {
-                    String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, publicIdpConf.getKey());
+                    String idpConfKey = publicIdpConf.getKey();
 
-                    IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
+                    IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
                     idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
-
-                    tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
                 }
             );
 
@@ -140,60 +136,36 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .getConfig()
             .getClients()
             .forEach(privateIdpConf -> {
-                    String compositeKey = IdpUtils.buildCompositeIdpKey(tenantKey, privateIdpConf.getKey());
+                    String idpConfKey = privateIdpConf.getKey();
 
-                    IdpConfigContainer idpConfigContainer = getIdpConfigContainer(compositeKey);
-
+                    IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
                     idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
-
-                    tmpIdpClientConfigs.put(compositeKey, idpConfigContainer);
                 }
             );
 
         return true;
     }
 
-    private void updateInMemoryConfig(Map<String, IdpConfigContainer> applicablyConfigs) {
-        removeInMemoryClientRecords(applicablyConfigs);
-
-        updateConfig(applicablyConfigs);
-    }
-
-    private void updateConfig(Map<String, IdpConfigContainer> applicablyConfigs) {
-        idpClientConfigs.putAll(applicablyConfigs);
-        applicablyConfigs.keySet().forEach(tmpIdpClientConfigs::remove);
-    }
-
     /**
      * <p>
-     * Basing on input configuration method removes all previously registered tenants clients
+     * Basing on input configuration method removes all previously registered clients for specified tenant
      * to avoid redundant clients registration presence
      * </p>
      *
+     * @param tenantKey         tenant key
      * @param applicablyConfigs fully loaded configs for processing
      */
-    // TODO: I see now the complexity in the processing of combinted (tenant+idpname) keys in the map.
-    //  suggest considering nested map instead like:
-    //  Map<String, Mam<String, IdpConfigContainer>> -- <Tenant, <IdpName, IdpConfigContainer>>
-    private void removeInMemoryClientRecords(Map<String, IdpConfigContainer> applicablyConfigs) {
-        //extract tenant prefixes
-        List<String> tenantsPrefixKeys = applicablyConfigs
-            .keySet()
-            .stream()
-            .map(key -> key.split(IdpUtils.KEY_SEPARATOR))
-            .map(data -> data[0])
-            .collect(Collectors.toList());
-        //remove all client records which are related to specified tenant
-        List<String> tenantClientsKeysToDelete = new ArrayList<>();
+    private void updateInMemoryConfig(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
+        idpClientConfigs.put(tenantKey, applicablyConfigs);
 
-        tenantsPrefixKeys.forEach(tenantClientKey ->
-            tenantClientsKeysToDelete.addAll(idpClientConfigs
-                .keySet()
-                .stream()
-                .filter(configContainerDto -> configContainerDto.startsWith(buildIdpKeyPrefix(tenantClientKey)))
-                .collect(Collectors.toList())));
+        tmpIdpClientConfigs.computeIfPresent(tenantKey, (k, v) -> {
+            applicablyConfigs.keySet().forEach(v::remove);
 
-        tenantClientsKeysToDelete.forEach(idpClientConfigs::remove);
+            if (CollectionUtils.isEmpty(v.values())) {
+                return null;
+            }
+            return v;
+        });
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
@@ -202,23 +174,22 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return configKeyParams.get(KEY_TENANT);
     }
 
-    private IdpConfigContainer getIdpConfigContainer(String compositeKey) {
-        IdpConfigContainer idpConfigContainer = tmpIdpClientConfigs.get(compositeKey);
-        if (idpConfigContainer == null) {
-            idpConfigContainer = new IdpConfigContainer();
-        }
-        return idpConfigContainer;
+    private IdpConfigContainer getIdpConfigContainer(String tenantKey, String registrationId) {
+        Map<String, IdpConfigContainer> tmpIdpConfigContainers = tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+
+        return tmpIdpConfigContainers.computeIfAbsent(registrationId, key -> new IdpConfigContainer());
     }
 
-    private List<ClientRegistration> buildClientRegistrations(Map<String, IdpConfigContainer> applicablyConfigs) {
+    private List<ClientRegistration> buildClientRegistrations(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
         return applicablyConfigs
             .entrySet()
             .stream()
             .map(entry -> createClientRegistration(
-                entry.getKey(),
+                IdpUtils.buildCompositeIdpKey(tenantKey, entry.getKey()),
                 entry.getValue().getIdpPublicClientConfig(),
                 entry.getValue().getIdpPrivateClientConfig()
-            )).collect(Collectors.toList());
+            ))
+            .collect(Collectors.toList());
     }
 
     private ClientRegistration createClientRegistration(String compositeRegistrationId,
