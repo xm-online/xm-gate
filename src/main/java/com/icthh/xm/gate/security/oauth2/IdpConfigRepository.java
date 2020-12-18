@@ -81,7 +81,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
-            log.info("For tenant [{}] IDP configs not fully loaded or has configuration lack", tenantKey);
+            log.info("For tenant [{}] IDP configs not fully loaded or it has configuration lack", tenantKey);
             return;
         }
 
@@ -105,7 +105,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return true;
         }
         IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
-        if (idpPublicConfig.getConfig() == null) {
+        if (idpPublicConfig == null || idpPublicConfig.getConfig() == null) {
             return false;
         }
         idpPublicConfig
@@ -128,7 +128,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return true;
         }
         IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
-        if (idpPrivateConfig.getConfig() == null) {
+        if (idpPrivateConfig == null || idpPrivateConfig.getConfig() == null) {
             return false;
         }
         idpPrivateConfig
