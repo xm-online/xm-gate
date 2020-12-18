@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 
+//TODO JavaDoc with mention that this class process two configs
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -38,6 +39,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
 
+    //TODO java doc with description of purpose of this 2 maps
     private final Map<String, Map<String, IdpConfigContainer>> idpClientConfigs = new ConcurrentHashMap<>();
     private final Map<String, MutablePair<Boolean, Boolean>> idpClientConfigProcessingState = new ConcurrentHashMap<>();
 
