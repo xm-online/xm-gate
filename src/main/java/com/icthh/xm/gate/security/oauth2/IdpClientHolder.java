@@ -31,13 +31,20 @@ public class IdpClientHolder implements ClientRegistrationRepository {
 
     private final Map<String, Map<String, ClientRegistration>> clientsHolder = new HashMap<>();
 
+    /**
+     * Register IDP clients for specified tenant
+     *
+     * @param tenantKey     Tenant key
+     * @param registrations IDP clients
+     */
     public void setRegistrations(String tenantKey, List<ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");
-        this.clientsHolder.put(tenantKey, createClientRegistrationIdToClientRegistration(registrations));
+        this.clientsHolder.put(tenantKey.toLowerCase(), createClientRegistrationIdToClientRegistration(registrations));
+        log.info("IDP clients for tenant [{}] registered", tenantKey);
     }
 
-    public void removeTenantClientRegistrations(String registrationId) {
-        clientsHolder.remove(registrationId);
+    public void removeTenantClientRegistrations(String tenantKey) {
+        clientsHolder.remove(tenantKey.toLowerCase());
     }
 
     private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(
@@ -78,7 +85,6 @@ public class IdpClientHolder implements ClientRegistrationRepository {
 
         if (CollectionUtils.isEmpty(tenantClientsRegistration)) {
             log.info("IDP clients for tenant [{}] not registered", tenantKey);
-            return null;
         }
         return tenantClientsRegistration;
     }
