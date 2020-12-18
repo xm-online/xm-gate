@@ -85,7 +85,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
-        clientRegistrationRepository.setRegistrations(buildClientRegistrations(tenantKey, applicablyIdpConfigs));
+        clientRegistrationRepository.setRegistrations(tenantKey, buildClientRegistrations(tenantKey, applicablyIdpConfigs));
 
         updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
     }
@@ -182,18 +182,18 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .entrySet()
             .stream()
             .map(entry -> createClientRegistration(
-                IdpUtils.buildCompositeIdpKey(tenantKey, entry.getKey()),
+                entry.getKey().toLowerCase(),
                 entry.getValue().getIdpPublicClientConfig(),
                 entry.getValue().getIdpPrivateClientConfig()
             ))
             .collect(Collectors.toList());
     }
 
-    private ClientRegistration createClientRegistration(String compositeRegistrationId,
+    private ClientRegistration createClientRegistration(String registrationId,
                                                         IdpPublicClientConfig idpPublicClientConfig,
                                                         IdpPrivateClientConfig privateIdpConfig) {
 
-        return ClientRegistration.withRegistrationId((compositeRegistrationId))
+        return ClientRegistration.withRegistrationId((registrationId))
             .redirectUriTemplate(idpPublicClientConfig.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
