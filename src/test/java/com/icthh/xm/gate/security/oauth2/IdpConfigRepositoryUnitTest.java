@@ -2,9 +2,13 @@ package com.icthh.xm.gate.security.oauth2;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantContextUtils;
+import com.icthh.xm.commons.tenant.internal.DefaultTenantContextHolder;
 import com.icthh.xm.gate.domain.idp.IdpPrivateConfig;
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -13,45 +17,51 @@ import java.util.Set;
 
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import com.icthh.xm.gate.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.any;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 public class IdpConfigRepositoryUnitTest {
 
-    private final IdpClientHolder clientRegistrationRepository = mock(IdpClientHolder.class);
+    private final TenantContextHolder tenantContextHolder = new DefaultTenantContextHolder();
+
+    private final IdpClientHolder clientRegistrationRepository = new IdpClientHolder(tenantContextHolder);
 
     private final IdpConfigRepository idpConfigRepository = new IdpConfigRepository(clientRegistrationRepository);
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @BeforeEach
+    void setUp() {
+        tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
+    }
+
     @Test
     public void test_shouldNotRegisterAnyTenantClient() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/XM/webapp/settings-public.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
 
+        String tenantKey = "Tenant1";
         String registrationId = "Auth0_1";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
         idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
 
-        verify(clientRegistrationRepository, times(0)).setRegistrations(any());
+        TenantContextUtils.setTenant(tenantContextHolder, tenantKey);
+        assertNull(clientRegistrationRepository.findByRegistrationId(registrationId));
     }
 
     @Test
     public void test_shouldSuccessfullyRegisterExactOneTenantClient() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/XM/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/XM/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "XM";
+        String tenantKey = "Tenant1";
         String registrationId = "Auth0_1";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -61,44 +71,15 @@ public class IdpConfigRepositoryUnitTest {
         String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
         idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ClientRegistration>> clientRegistrations = ArgumentCaptor.forClass(List.class);
-
-        captureAndValidateClient(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig, clientRegistrations, 1);
+        validate(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig);
     }
 
     @Test
     public void test_shouldSuccessfullyRegisterOnlyOneTenantClient() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/XM/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/XM/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "XM";
-        String registrationId_1 = "Auth0_1";
-        IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId_1);
-        String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
-        idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
-
-        IdpPrivateConfig idpPrivateConfig = buildPrivateConfig(registrationId_1);
-        String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
-        idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
-
-        String registrationId_2 = "Auth0_2";
-        idpPrivateConfig = buildPrivateConfig(registrationId_2);
-        privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
-        idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ClientRegistration>> clientRegistrations = ArgumentCaptor.forClass(List.class);
-
-        captureAndValidateClient(tenantKey, registrationId_1, idpPublicConfig, idpPrivateConfig, clientRegistrations, 1);
-    }
-
-    @Test
-    public void test_shouldSuccessfullyRegisterTwoClientsForTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/XM/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/XM/idp-config.yml";
-
-        String tenantKey = "XM";
+        String tenantKey = "Tenant1";
         String registrationId = "Auth0_1";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -108,32 +89,54 @@ public class IdpConfigRepositoryUnitTest {
         String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
         idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ClientRegistration>> clientRegistrationListCaptor = ArgumentCaptor.forClass(List.class);
-        captureAndValidateClient(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig, clientRegistrationListCaptor, 1);
+        validate(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig);
 
-        String registrationId2 = "Auth0_2";
-
-        idpPublicConfig = buildPublicConfig(registrationId2);
-        publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
-        idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
-
-        idpPrivateConfig = buildPrivateConfig(registrationId2);
+        registrationId = "Auth0_2";
+        idpPrivateConfig = buildPrivateConfig(registrationId);
         privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
         idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
 
+        TenantContextUtils.setTenant(tenantContextHolder, tenantKey);
+        assertNull(clientRegistrationRepository.findByRegistrationId(registrationId));
+    }
 
-        captureAndValidateClient(tenantKey, registrationId2, idpPublicConfig, idpPrivateConfig,
-            clientRegistrationListCaptor, 2);
+    @Test
+    public void test_shouldSuccessfullyRegisterTwoClientsForTenant() throws JsonProcessingException {
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+
+        String tenantKey = "Tenant1";
+        String registrationId = "Auth0_1";
+        IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId);
+        String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
+        idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
+
+        IdpPrivateConfig idpPrivateConfig = buildPrivateConfig(registrationId);
+        String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
+        idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
+
+        validate(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig);
+
+        registrationId = "Auth0_2";
+
+        idpPublicConfig = buildPublicConfig(registrationId);
+        publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
+        idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
+
+        idpPrivateConfig = buildPrivateConfig(registrationId);
+        privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
+        idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
+
+        validate(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig);
 
     }
 
     @Test
     public void test_shouldSuccessfullyRegisterOneClientPerTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/XM/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/XM/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "XM";
+        String tenantKey = "Tenant1";
         String registrationId = "Auth0_1";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -143,41 +146,33 @@ public class IdpConfigRepositoryUnitTest {
         String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
         idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ClientRegistration>> clientRegistrationListCaptor = ArgumentCaptor.forClass(List.class);
-        captureAndValidateClient(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig, clientRegistrationListCaptor, 1);
+        validate(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig);
 
-        publicSettingsConfigPath = "/config/tenants/WH/webapp/settings-public.yml";
-        privateSettingsConfigPath = "/config/tenants/WH/idp-config.yml";
+        publicSettingsConfigPath = "/config/tenants/tenant2/webapp/settings-public.yml";
+        privateSettingsConfigPath = "/config/tenants/tenant2/idp-config.yml";
 
-        tenantKey = "WH";
-        String registrationId2 = "Auth0_1";
+        tenantKey = "Tenant2";
+        registrationId = "Auth0_1";
 
-        idpPublicConfig = buildPublicConfig(registrationId2);
+        idpPublicConfig = buildPublicConfig(registrationId);
         publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
         idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
 
-        idpPrivateConfig = buildPrivateConfig(registrationId2);
+        idpPrivateConfig = buildPrivateConfig(registrationId);
         privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
         idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
 
-
-        captureAndValidateClient(tenantKey, registrationId2, idpPublicConfig, idpPrivateConfig,
-            clientRegistrationListCaptor, 2);
+        validate(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig);
 
     }
 
-    private void captureAndValidateClient(String tenantKey, String registrationId,
-                                          IdpPublicConfig idpPublicConfig,
-                                          IdpPrivateConfig idpPrivateConfig,
-                                          ArgumentCaptor<List<ClientRegistration>> clientRegistrationListCaptor, int times) {
-        verify(clientRegistrationRepository, times(times)).setRegistrations(clientRegistrationListCaptor.capture());
-        List<ClientRegistration> clientRegistrations = clientRegistrationListCaptor.getValue();
+    private void validate(String tenantKey, String registrationId, IdpPublicConfig idpPublicConfig, IdpPrivateConfig idpPrivateConfig) {
+        TenantContextUtils.setTenant(tenantContextHolder, tenantKey);
+        ClientRegistration clientRegistration = clientRegistrationRepository.findByRegistrationId(registrationId);
 
-        assertEquals(1, clientRegistrations.size());
-        ClientRegistration registration = clientRegistrations.get(0);
-
-        validateClientRegistration(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig, registration);
+        assertNotNull(clientRegistration);
+        validateClientRegistration(tenantKey, registrationId, idpPublicConfig, idpPrivateConfig, clientRegistration);
+        tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
     }
 
     private void validateClientRegistration(String tenantKey, String registrationId, IdpPublicConfig idpPublicConfig, IdpPrivateConfig idpPrivateConfig, ClientRegistration registration) {
@@ -211,7 +206,7 @@ public class IdpConfigRepositoryUnitTest {
         IdpPublicClientConfig idpPublicClientConfig = new IdpPublicClientConfig();
 
         idpPublicClientConfig.setKey(key);
-        idpPublicClientConfig.setClientId("VtRxEs7qN4oSte7Jap7gXn83mfK1Ww20");
+        idpPublicClientConfig.setClientId("client-id");
         idpPublicClientConfig.setRedirectUri("http://localhost:4200");
 
         idpPublicClientConfig.setFeatures(buildFeatures());
@@ -295,7 +290,7 @@ public class IdpConfigRepositoryUnitTest {
         IdpPrivateClientConfig idpPrivateClientConfig = new IdpPrivateClientConfig();
 
         idpPrivateClientConfig.setKey(key);
-        idpPrivateClientConfig.setClientSecret("NHOsxzwEBgflBHuGF-mF9NkF8HI5kotVkBJYrpTPsZf0s9Js5klBrJ5bdROjMHLZ");
+        idpPrivateClientConfig.setClientSecret("client-secret");
         idpPrivateClientConfig.setScope(Set.of("openid", "profile", "email"));
         idpPrivateClientConfig.setAdditionalParams(Map.of("audience", "https://idp1.com/api/v2/"));
 

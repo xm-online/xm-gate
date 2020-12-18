@@ -40,7 +40,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final AntPathMatcher matcher = new AntPathMatcher();
 
     private final Map<String, Map<String, IdpConfigContainer>> idpClientConfigs = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, IdpConfigContainer>> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
     private final IdpClientHolder clientRegistrationRepository;
 
@@ -73,7 +72,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         }
 
         Map<String, IdpConfigContainer> idpConfigContainers =
-            tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+            idpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
 
         Map<String, IdpConfigContainer> applicablyIdpConfigs = idpConfigContainers
             .entrySet()
@@ -156,9 +155,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * @param applicablyConfigs fully loaded configs for processing
      */
     private void updateInMemoryConfig(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
-        idpClientConfigs.put(tenantKey, applicablyConfigs);
-
-        tmpIdpClientConfigs.computeIfPresent(tenantKey, (k, v) -> {
+        idpClientConfigs.computeIfPresent(tenantKey, (k, v) -> {
             applicablyConfigs.keySet().forEach(v::remove);
 
             if (CollectionUtils.isEmpty(v.values())) {
@@ -175,9 +172,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private IdpConfigContainer getIdpConfigContainer(String tenantKey, String registrationId) {
-        Map<String, IdpConfigContainer> tmpIdpConfigContainers = tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+        Map<String, IdpConfigContainer> idpConfigContainers = idpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
 
-        return tmpIdpConfigContainers.computeIfAbsent(registrationId, key -> new IdpConfigContainer());
+        return idpConfigContainers.computeIfAbsent(registrationId, key -> new IdpConfigContainer());
     }
 
     private List<ClientRegistration> buildClientRegistrations(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {

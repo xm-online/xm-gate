@@ -36,6 +36,10 @@ public class IdpClientHolder implements
         this.clientsHolder.putAll(createClientRegistrationIdToClientRegistration(registrations));
     }
 
+    public void removeRegistration(String registrationId) {
+        clientsHolder.remove(registrationId);
+    }
+
     private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(
         Collection<ClientRegistration> registrations) {
         return Collections.unmodifiableMap(registrations
