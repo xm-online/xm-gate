@@ -83,7 +83,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             boolean isClientConfigurationEmpty = CollectionUtils.isEmpty(idpClientConfigs.get(tenantKey));
 
             // if both public and private tenant configs processed
-            // and client configuration not present at all them all tenant client registrations should be removed
+            // and client configuration not present at all then all tenant client registrations should be removed
             if (isPublicConfigProcessed && isPrivateConfigProcess && isClientConfigurationEmpty) {
                 log.info("For tenant [{}] IDP client configs not specified. "
                     + "Removing all previously registered IDP clients for tenant [{}]", tenantKey, tenantKey);
