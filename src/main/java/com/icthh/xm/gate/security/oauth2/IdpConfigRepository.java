@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.security.oauth2;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
@@ -8,6 +9,7 @@ import com.icthh.xm.gate.domain.idp.IdpPrivateConfig;
 import com.icthh.xm.gate.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -26,7 +27,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 
-//TODO JavaDoc with mention that this class process two configs
+/**
+ * This class reads and process both IDP clients public and private configuration for each tenant.
+ * Tenant IDP clients created for each successfully loaded config. If config not fully loaded it skipped.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -39,8 +43,20 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
 
-    //TODO java doc with description of purpose of this 2 maps
+    /**
+     * In memory storage for storing information tenant IDP clients public/private configuration.
+     * We need to store this information in memory cause public/private configuration could be loaded and processed in random order.
+     * For correct tenant IDP clients registration both configs should be loaded and processed.
+     */
     private final Map<String, Map<String, IdpConfigContainer>> idpClientConfigs = new ConcurrentHashMap<>();
+
+    /**
+     * In memory storage for storing information is tenant public/private configuration process state.
+     * Generally speaking this information allows to understand is tenant public & private configuration loaded and processed.
+     * We need to store this information in memory cause public/private configuration could be loaded and processed in random order.
+     * Map key respond for tenant name, map value respond for config process state.
+     * Left pair value relates to public config process state, right pair value relates to private config process state.
+     */
     private final Map<String, MutablePair<Boolean, Boolean>> idpClientConfigProcessingState = new ConcurrentHashMap<>();
 
     private final IdpClientHolder clientRegistrationRepository;
@@ -61,7 +77,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         updateIdpConfigs(configKey, configValue);
     }
 
-    @SneakyThrows
     private void updateIdpConfigs(String configKey, String config) {
         String tenantKey = getTenantKey(configKey);
 
@@ -113,12 +128,19 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     //TODO processPrivateConfiguration and  processPublicConfiguration very similar, think how to combine them
-    @SneakyThrows
     private void processPublicConfiguration(String tenantKey, String configKey, String config) {
         if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return;
         }
-        IdpPublicConfig idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
+
+        IdpPublicConfig idpPublicConfig = null;
+        try {
+            idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
+        } catch (JsonProcessingException e) {
+            log.error("Something went wrong during attempt to read public configuration for tenant [{}]", tenantKey);
+            e.printStackTrace();
+        }
+
         if (idpPublicConfig != null && idpPublicConfig.getConfig() != null) {
             idpPublicConfig
                 .getConfig()
@@ -138,12 +160,18 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     }
 
-    @SneakyThrows
     private void processPrivateConfiguration(String tenantKey, String configKey, String config) {
         if (!matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return;
         }
-        IdpPrivateConfig idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
+
+        IdpPrivateConfig idpPrivateConfig = null;
+        try {
+            idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
+        } catch (JsonProcessingException e) {
+            log.error("Something went wrong during attempt to read private configuration for tenant [{}]", tenantKey);
+            e.printStackTrace();
+        }
 
         if (idpPrivateConfig != null && idpPrivateConfig.getConfig() != null) {
             idpPrivateConfig
