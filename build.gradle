@@ -225,8 +225,9 @@ dependencies {
     implementation "org.springframework.security:spring-security-data"
     implementation "org.springframework.security:spring-security-web"
     implementation "org.springframework.security:spring-security-messaging"
-    implementation 'org.springframework.security:spring-security-oauth2-jose'
+    implementation 'org.springframework.security:spring-security-oauth2-jose' //5.4.2
     implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+//    implementation "org.springframework.security:spring-security-oauth2-client:5.4.2" //FIXME need to update Jhipster version to latest
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
     implementation("io.springfox:springfox-swagger2") {
         exclude module: "mapstruct"

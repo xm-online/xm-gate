@@ -52,7 +52,7 @@ public class IdpPublicConfig {
             private IdpPublicClientConfig.TokenEndpoint tokenEndpoint;
 
             @JsonProperty("userinfoEndpoint")
-            private IdpPublicClientConfig.BaseEndpoint userinfoEndpoint;
+            private IdpPublicClientConfig.UserInfoEndpoint userinfoEndpoint;
 
             @JsonProperty("endSessionEndpoint")
             private IdpPublicClientConfig.BaseEndpoint endSessionEndpoint;
@@ -121,6 +121,14 @@ public class IdpPublicConfig {
             public static class BaseEndpoint {
                 @JsonProperty("uri")
                 private String uri;
+            }
+
+            @Data
+            @JsonIgnoreProperties(ignoreUnknown = true)
+            @EqualsAndHashCode(callSuper = true)
+            public static class UserInfoEndpoint extends IdpPublicClientConfig.BaseEndpoint {
+                @JsonProperty("userNameAttributeName")
+                private String userNameAttributeName;
             }
         }
 

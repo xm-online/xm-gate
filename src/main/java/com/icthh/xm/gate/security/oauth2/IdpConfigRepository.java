@@ -247,6 +247,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .authorizationUri(idpPublicClientConfig.getAuthorizationEndpoint().getUri())
             .tokenUri(idpPublicClientConfig.getTokenEndpoint().getUri())
             .userInfoUri(idpPublicClientConfig.getUserinfoEndpoint().getUri())
+            .userNameAttributeName(idpPublicClientConfig.getUserinfoEndpoint().getUserNameAttributeName())
             .clientName(idpPublicClientConfig.getName())
             .clientId(idpPublicClientConfig.getClientId())
             .jwkSetUri(idpPublicClientConfig.getJwksEndpoint().getUri())
