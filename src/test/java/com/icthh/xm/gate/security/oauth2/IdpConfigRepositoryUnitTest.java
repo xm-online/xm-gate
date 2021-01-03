@@ -289,9 +289,10 @@ public class IdpConfigRepositoryUnitTest {
         return idpPublicClientConfig;
     }
 
-    private IdpPublicClientConfig.BaseEndpoint buildUserInfoEndpoint() {
-        IdpPublicClientConfig.BaseEndpoint userinfoEndpoint = new IdpPublicClientConfig.BaseEndpoint();
+    private IdpPublicClientConfig.UserInfoEndpoint buildUserInfoEndpoint() {
+        IdpPublicClientConfig.UserInfoEndpoint userinfoEndpoint = new IdpPublicClientConfig.UserInfoEndpoint();
         userinfoEndpoint.setUri("https://idp1.com/userinfo");
+        userinfoEndpoint.setUserNameAttributeName("name");
         return userinfoEndpoint;
     }
 

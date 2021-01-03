@@ -1,7 +1,8 @@
 package com.icthh.xm.gate.security.oauth2;
 
+import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
+
 import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.commons.tenant.TenantContextUtils;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -39,12 +40,12 @@ public class IdpClientHolder implements ClientRegistrationRepository {
      */
     public void setRegistrations(String tenantKey, List<ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");
-        this.clientsHolder.put(tenantKey.toLowerCase(), createClientRegistrationIdToClientRegistration(registrations));
+        this.clientsHolder.put(tenantKey, createClientRegistrationIdToClientRegistration(registrations));
         log.info("IDP clients for tenant [{}] registered", tenantKey);
     }
 
     public void removeTenantClientRegistrations(String tenantKey) {
-        clientsHolder.remove(tenantKey.toLowerCase());
+        clientsHolder.remove(tenantKey);
     }
 
     private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(
@@ -59,7 +60,7 @@ public class IdpClientHolder implements ClientRegistrationRepository {
     public ClientRegistration findByRegistrationId(String registrationId) {
         Assert.hasText(registrationId, "registrationId cannot be empty");
 
-        String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder).toLowerCase();
+        String tenantKey = getRequiredTenantKeyValue(tenantContextHolder);
         Map<String, ClientRegistration> tenantClientsRegistration = clientsHolder.get(tenantKey);
 
         if (CollectionUtils.isEmpty(tenantClientsRegistration)) {
@@ -67,7 +68,7 @@ public class IdpClientHolder implements ClientRegistrationRepository {
             return null;
         }
 
-        ClientRegistration clientRegistration = tenantClientsRegistration.get(registrationId.toLowerCase());
+        ClientRegistration clientRegistration = tenantClientsRegistration.get(registrationId);
         if (clientRegistration == null) {
             log.info("IDP client with registrationId [{}] for tenant [{}] not found", registrationId, tenantKey);
         }
@@ -81,12 +82,11 @@ public class IdpClientHolder implements ClientRegistrationRepository {
      * @return Returns client registrations for specified tenant if they are present. Otherwise returns null
      */
     public Map<String, ClientRegistration> findByTenantKey(String tenantKey) {
-        Map<String, ClientRegistration> tenantClientsRegistration = clientsHolder.get(tenantKey.toLowerCase());
+        Map<String, ClientRegistration> tenantClientsRegistration = clientsHolder.get(tenantKey);
 
         if (CollectionUtils.isEmpty(tenantClientsRegistration)) {
             log.info("IDP clients for tenant [{}] not registered", tenantKey);
         }
         return tenantClientsRegistration;
     }
-
 }

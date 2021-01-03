@@ -114,9 +114,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
-        clientRegistrationRepository.setRegistrations(tenantKey, buildClientRegistrations(tenantKey, applicablyIdpConfigs));
-
-        updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
+        clientRegistrationRepository.setRegistrations(tenantKey, buildClientRegistrations(applicablyIdpConfigs));
+        //todo FIXME : configuration is removed from idpClientConfigs
+        //updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
     }
 
     private String getTenantKey(String configKey) {
@@ -132,14 +132,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return;
         }
-
-        IdpPublicConfig idpPublicConfig = null;
-        try {
-            idpPublicConfig = objectMapper.readValue(config, IdpPublicConfig.class);
-        } catch (JsonProcessingException e) {
-            log.error("Something went wrong during attempt to read public configuration for tenant [{}]", tenantKey);
-            e.printStackTrace();
-        }
+        IdpPublicConfig idpPublicConfig = parseConfig(tenantKey, config, IdpPublicConfig.class);
 
         if (idpPublicConfig != null && idpPublicConfig.getConfig() != null) {
             idpPublicConfig
@@ -165,13 +158,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
 
-        IdpPrivateConfig idpPrivateConfig = null;
-        try {
-            idpPrivateConfig = objectMapper.readValue(config, IdpPrivateConfig.class);
-        } catch (JsonProcessingException e) {
-            log.error("Something went wrong during attempt to read private configuration for tenant [{}]", tenantKey);
-            e.printStackTrace();
-        }
+        IdpPrivateConfig idpPrivateConfig = parseConfig(tenantKey, config, IdpPrivateConfig.class);
 
         if (idpPrivateConfig != null && idpPrivateConfig.getConfig() != null) {
             idpPrivateConfig
@@ -189,7 +176,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         MutablePair<Boolean, Boolean> configProcessingState =
             idpClientConfigProcessingState.computeIfAbsent(tenantKey, key -> new MutablePair<>());
         configProcessingState.setRight(true);
+    }
 
+    private <T> T parseConfig(String tenantKey, String config, Class<T> configType) {
+        T parsedConfig = null;
+        try {
+            parsedConfig = objectMapper.readValue(config, configType);
+        } catch (JsonProcessingException e) {
+            log.error("Something went wrong during attempt to read {} for tenant:{}", config.getClass(), tenantKey, e);
+        }
+        return parsedConfig;
     }
 
     /**
@@ -219,17 +215,18 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private IdpConfigContainer getIdpConfigContainer(String tenantKey, String registrationId) {
-        Map<String, IdpConfigContainer> idpConfigContainers = idpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+        Map<String, IdpConfigContainer> idpConfigContainers =
+            idpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
 
         return idpConfigContainers.computeIfAbsent(registrationId, key -> new IdpConfigContainer());
     }
 
-    private List<ClientRegistration> buildClientRegistrations(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
+    private List<ClientRegistration> buildClientRegistrations(Map<String, IdpConfigContainer> applicablyConfigs) {
         return applicablyConfigs
             .entrySet()
             .stream()
             .map(entry -> createClientRegistration(
-                entry.getKey().toLowerCase(),
+                entry.getKey(),
                 entry.getValue().getIdpPublicClientConfig(),
                 entry.getValue().getIdpPrivateClientConfig()
             ))
@@ -254,5 +251,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .clientSecret(privateIdpConfig.getClientSecret())
             .scope(privateIdpConfig.getScope())
             .build();
+    }
+
+    protected Map<String, Map<String, IdpConfigContainer>> getIdpClientConfigs() {
+        return idpClientConfigs;
     }
 }
