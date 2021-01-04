@@ -238,7 +238,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                                                         IdpPrivateClientConfig privateIdpConfig) {
 
         return ClientRegistration.withRegistrationId((registrationId))
-            .redirectUriTemplate(idpPublicClientConfig.getRedirectUri())
+            .redirectUri(idpPublicClientConfig.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizationUri(idpPublicClientConfig.getAuthorizationEndpoint().getUri())

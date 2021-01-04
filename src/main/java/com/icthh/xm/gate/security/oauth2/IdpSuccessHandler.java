@@ -1,19 +1,26 @@
 package com.icthh.xm.gate.security.oauth2;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
+import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.icthh.xm.commons.exceptions.BusinessException;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
+import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig.Features;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
@@ -32,6 +39,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * XM Strategy used to handle a successful Auth0 user authentication.
+ */
 @Slf4j
 @Component
 public class IdpSuccessHandler implements AuthenticationSuccessHandler {
@@ -40,7 +50,6 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
     private final RestTemplate restTemplate;
     private final TenantContextHolder tenantContextHolder;
     private final IdpConfigRepository idpConfigRepository;
-
 
     public IdpSuccessHandler(ObjectMapper objectMapper,
                              @Lazy @Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate,
@@ -57,17 +66,37 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
         String tenantKey = getRequiredTenantKeyValue(tenantContextHolder);
-        String clientRegistrationId = getClientRegistrationId(authentication);
-        String idpIdToken = getIdpToken(authentication);
+        Features features = getIdpClientConfig(tenantKey, authentication).getFeatures();
 
-        ResponseEntity<Map<String, ?>> xmUaaTokenResponse = exchangeIdpToXmToken(tenantKey, idpIdToken);
-        //todo enrich with idp_token
-        prepareResponse(xmUaaTokenResponse, response);
+        if (features.isStateful()) {
+            // TODO Stateful not implemented for now
+            throw new UnsupportedEncodingException("Stateful mode not supported yet");
+        } else {
+            ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication);
+            prepareStatelessResponse(xmUaaTokenResponse, features, authentication, response);
+        }
+    }
+
+    private IdpPublicClientConfig getIdpClientConfig(String tenantKey, Authentication authentication) {
+        OAuth2AuthenticationToken authenticationToken = (OAuth2AuthenticationToken) authentication;
+        String clientRegistrationId = authenticationToken.getAuthorizedClientRegistrationId();
+
+        IdpConfigContainer idpConfigContainer = idpConfigRepository.getIdpClientConfigs()
+            .getOrDefault(tenantKey, Collections.emptyMap())
+            .get(clientRegistrationId);
+
+        if (idpConfigContainer == null) {
+            throw new BusinessException("Configuration not found for tenant: " + tenantKey
+                + " and clientRegistrationId: " + clientRegistrationId);
+        }
+
+        return idpConfigContainer.getIdpPublicClientConfig();
     }
 
     //TODO impl calling of POST /uaa/token?grant_type=idp_token&token={IDP_access_token}
     //TODO this is just stub for now
-    private ResponseEntity<Map<String, ?>> exchangeIdpToXmToken(String tenantKey, String idpIdToken) {
+    private ResponseEntity<Map<String, Object>> getXmUaaToken(String tenantKey, Authentication authentication) {
+        String idpIdToken = getIdpToken(authentication);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -85,7 +114,7 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
             "http://uaa/oauth/token",
             HttpMethod.POST,
             request,
-            new ParameterizedTypeReference<Map<String, ?>>() {
+            new ParameterizedTypeReference<>() {
             });
     }
 
@@ -95,18 +124,31 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
         return oidcIdToken.getTokenValue();
     }
 
-    private String getClientRegistrationId(Authentication authentication) {
-        OAuth2AuthenticationToken authenticationToken = (OAuth2AuthenticationToken) authentication;
-        return ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
-    }
+    private void prepareStatelessResponse(ResponseEntity<Map<String, Object>> xmUaaTokenResponse,
+                                          Features features,
+                                          Authentication authentication,
+                                          HttpServletResponse response) throws IOException {
 
-    private void prepareResponse(ResponseEntity<Map<String, ?>> xmUaaTokenResponse,
-                                 HttpServletResponse response) throws IOException {
+        //set XM response status to authentication response
+        response.setStatus(xmUaaTokenResponse.getStatusCodeValue());
 
+        //copy XM headers to authentication response
         xmUaaTokenResponse.getHeaders().forEach((String headerName, List<String> headerValues)
             -> headerValues.forEach(headerValue -> response.addHeader(headerName, headerValue)));
 
-        response.setStatus(xmUaaTokenResponse.getStatusCodeValue());
-        response.getWriter().write(objectMapper.writeValueAsString(xmUaaTokenResponse.getBody()));
+        Map<String, Object> xmUaaTokenResponseBody = xmUaaTokenResponse.getBody();
+        if (xmUaaTokenResponseBody == null) {
+            throw new IllegalStateException("Uaa responded with empty body");
+        }
+
+        Map<String, Object> statelessResponse = new LinkedHashMap<>();
+
+        //if bearirng feature is enabled - add IDP token to response
+        if (features.getBearirng() != null && features.getBearirng().isEnabled()) {
+            statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_TOKEN, getIdpToken(authentication));
+        }
+
+        statelessResponse.putAll(xmUaaTokenResponseBody);
+        response.getWriter().write(objectMapper.writeValueAsString(statelessResponse));
     }
 }
