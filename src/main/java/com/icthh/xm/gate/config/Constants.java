@@ -14,6 +14,7 @@ public final class Constants {
     public static final String HEADER_WEBAPP_URL = "x-webapp-url";
 
     public static final String AUTH_RESPONSE_FIELD_IDP_TOKEN = "idp_token";
+    public static final String AUTH_RESPONSE_FIELD_BEARIRNG = "bearirng";
 
     public static final String CERTIFICATE = "X.509";
     public static final String PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----";

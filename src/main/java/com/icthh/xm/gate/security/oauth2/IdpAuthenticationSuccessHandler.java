@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.security.oauth2;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
+import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_BEARIRNG;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,9 +12,7 @@ import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublic
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig.Features;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,17 +43,17 @@ import org.springframework.web.client.RestTemplate;
  */
 @Slf4j
 @Component
-public class IdpSuccessHandler implements AuthenticationSuccessHandler {
+public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final TenantContextHolder tenantContextHolder;
     private final IdpConfigRepository idpConfigRepository;
 
-    public IdpSuccessHandler(ObjectMapper objectMapper,
-                             @Lazy @Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate,
-                             TenantContextHolder tenantContextHolder,
-                             IdpConfigRepository idpConfigRepository) {
+    public IdpAuthenticationSuccessHandler(ObjectMapper objectMapper,
+                                           @Lazy @Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate,
+                                           TenantContextHolder tenantContextHolder,
+                                           IdpConfigRepository idpConfigRepository) {
         this.objectMapper = objectMapper;
         this.tenantContextHolder = tenantContextHolder;
         this.restTemplate = restTemplate;
@@ -70,7 +69,7 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
 
         if (features.isStateful()) {
             // TODO Stateful not implemented for now
-            throw new UnsupportedEncodingException("Stateful mode not supported yet");
+            throw new UnsupportedOperationException("Stateful mode not supported yet");
         } else {
             ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication);
             prepareStatelessResponse(xmUaaTokenResponse, features, authentication, response);
@@ -86,7 +85,7 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
             .get(clientRegistrationId);
 
         if (idpConfigContainer == null) {
-            throw new BusinessException("Configuration not found for tenant: " + tenantKey
+            throw new BusinessException("IDP configuration not found for tenant: " + tenantKey
                 + " and clientRegistrationId: " + clientRegistrationId);
         }
 
@@ -146,6 +145,7 @@ public class IdpSuccessHandler implements AuthenticationSuccessHandler {
         //if bearirng feature is enabled - add IDP token to response
         if (features.getBearirng() != null && features.getBearirng().isEnabled()) {
             statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_TOKEN, getIdpToken(authentication));
+            statelessResponse.put(AUTH_RESPONSE_FIELD_BEARIRNG, features.getBearirng());
         }
 
         statelessResponse.putAll(xmUaaTokenResponseBody);

@@ -1,7 +1,7 @@
 package com.icthh.xm.gate.config;
 
 import com.icthh.xm.commons.permission.constants.RoleConstant;
-import com.icthh.xm.gate.security.oauth2.IdpSuccessHandler;
+import com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,10 +40,10 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     private final DiscoveryClient discoveryClient;
 
-    private final IdpSuccessHandler idpSuccessHandler;
+    private final IdpAuthenticationSuccessHandler idpSuccessHandler;
 
     public MicroserviceSecurityConfiguration(DiscoveryClient discoveryClient,
-                                             IdpSuccessHandler idpSuccessHandler) {
+                                             IdpAuthenticationSuccessHandler idpSuccessHandler) {
 
         this.discoveryClient = discoveryClient;
         this.idpSuccessHandler = idpSuccessHandler;
