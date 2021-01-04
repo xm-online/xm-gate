@@ -13,7 +13,7 @@ public final class Constants {
     public static final String HEADER_TENANT = "x-tenant";
     public static final String HEADER_WEBAPP_URL = "x-webapp-url";
 
-    public static final String AUTH_RESPONSE_FIELD_IDP_TOKEN = "idp_token";
+    public static final String AUTH_RESPONSE_FIELD_IDP_TOKEN = "idp_id_token";
     public static final String AUTH_RESPONSE_FIELD_BEARIRNG = "bearirng";
 
     public static final String CERTIFICATE = "X.509";
