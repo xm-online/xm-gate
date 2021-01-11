@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
 import com.icthh.xm.commons.tenant.internal.DefaultTenantContextHolder;
+import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 import com.icthh.xm.gate.domain.idp.IdpPrivateConfig;
 import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -257,6 +259,7 @@ public class IdpConfigRepositoryUnitTest {
 
         assertNotNull(clientRegistration);
         validateClientRegistration(registrationId, idpPublicConfig, idpPrivateConfig, clientRegistration);
+        validateInMemoryIdpConfigs(tenantKey, registrationId);
         tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
     }
 
@@ -267,23 +270,33 @@ public class IdpConfigRepositoryUnitTest {
         IdpPublicClientConfig idpPublicClientConfig = idpPublicConfig.getConfig()
             .getClients()
             .stream()
-            .filter(config-> registrationId.equals(config.getKey())).findAny()
+            .filter(config -> registrationId.equals(config.getKey())).findAny()
             .orElseThrow();
 
         IdpPrivateClientConfig idpPrivateClientConfig = idpPrivateConfig.getConfig()
             .getClients()
             .stream()
-            .filter(config-> registrationId.equals(config.getKey())).findAny()
+            .filter(config -> registrationId.equals(config.getKey())).findAny()
             .orElseThrow();
 
         assertEquals(registrationId, registration.getRegistrationId());
         assertEquals(idpPublicClientConfig.getClientId(), registration.getClientId());
         assertEquals(ClientAuthenticationMethod.BASIC, registration.getClientAuthenticationMethod());
         assertEquals(AuthorizationGrantType.AUTHORIZATION_CODE, registration.getAuthorizationGrantType());
-        assertEquals(idpPublicClientConfig.getRedirectUri(), registration.getRedirectUriTemplate());
+        assertEquals(idpPublicClientConfig.getRedirectUri(), registration.getRedirectUri());
         assertEquals(idpPrivateClientConfig.getScope(), registration.getScopes());
         assertEquals(registrationId, registration.getClientName());
         assertEquals(idpPrivateClientConfig.getClientSecret(), registration.getClientSecret());
+    }
+
+    private void validateInMemoryIdpConfigs(String tenantKey, String clientRegistrationId) {
+        IdpConfigContainer idpConfigContainer = idpConfigRepository.getIdpClientConfigs()
+            .getOrDefault(tenantKey, Collections.emptyMap())
+            .get(clientRegistrationId);
+
+        assertNotNull(idpConfigContainer);
+        assertNotNull(idpConfigContainer.getIdpPublicClientConfig());
+        assertNotNull(idpConfigContainer.getIdpPrivateClientConfig());
     }
 
     private IdpPublicConfig buildPublicConfig(String key, int clientsAmount) {
@@ -323,7 +336,7 @@ public class IdpConfigRepositoryUnitTest {
     private IdpPublicClientConfig.UserInfoEndpoint buildUserInfoEndpoint() {
         IdpPublicClientConfig.UserInfoEndpoint userinfoEndpoint = new IdpPublicClientConfig.UserInfoEndpoint();
         userinfoEndpoint.setUri("https://idp1.com/userinfo");
-        userinfoEndpoint.setUserNameAttributeName("name");
+        userinfoEndpoint.setUserNameAttributeName("email");
         return userinfoEndpoint;
     }
 
