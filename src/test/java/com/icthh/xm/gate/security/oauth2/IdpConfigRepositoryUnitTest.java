@@ -47,7 +47,7 @@ public class IdpConfigRepositoryUnitTest {
     public void test_shouldNotRegisterAnyTenantClient() throws JsonProcessingException {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
         String registrationId = "Auth0_";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 1);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -62,7 +62,7 @@ public class IdpConfigRepositoryUnitTest {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
         String registrationId = "Auth0_";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 1);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -80,7 +80,7 @@ public class IdpConfigRepositoryUnitTest {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
         String registrationId = "Auth0_";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 1);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -106,7 +106,7 @@ public class IdpConfigRepositoryUnitTest {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
         String registrationId = "Auth0_";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 2);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -126,7 +126,7 @@ public class IdpConfigRepositoryUnitTest {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
 
         //register two tenant clients
         String registrationId = "Auth0_";
@@ -157,11 +157,42 @@ public class IdpConfigRepositoryUnitTest {
     }
 
     @Test
+    public void test_shouldFixInMemoryClientConfigurationAndRegisterClientForTenant() throws JsonProcessingException {
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+
+        String tenantKey = "tenant1";
+
+        //unsuccessful registration for tenant client
+        String registrationId = "Auth0_";
+        IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 1);
+        String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
+        idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
+
+        assertNull(clientRegistrationRepository.findByTenantKey(tenantKey));
+
+        //register one tenant client with full configuration
+        idpPublicConfig = buildPublicConfig(registrationId, 1);
+        publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
+        idpConfigRepository.onRefresh(publicSettingsConfigPath, publicConfigAsString);
+
+        IdpPrivateConfig idpPrivateConfig = buildPrivateConfig(registrationId, 1);
+        String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
+
+        idpConfigRepository.onRefresh(privateSettingsConfigPath, privateConfigAsString);
+
+        validateRegistration(tenantKey, "Auth0_0", idpPublicConfig, idpPrivateConfig);
+
+        assertEquals(1, clientRegistrationRepository.findByTenantKey(tenantKey).size());
+
+    }
+
+    @Test
     public void test_shouldRemoveAllRegisteredClientForTenant() throws JsonProcessingException {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
 
         //register two clients for tenant
         String registrationId = "Auth0_";
@@ -190,7 +221,7 @@ public class IdpConfigRepositoryUnitTest {
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
 
-        String tenantKey = "Tenant1";
+        String tenantKey = "tenant1";
         String registrationId = "Auth0_";
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 1);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
@@ -205,7 +236,7 @@ public class IdpConfigRepositoryUnitTest {
         publicSettingsConfigPath = "/config/tenants/tenant2/webapp/settings-public.yml";
         privateSettingsConfigPath = "/config/tenants/tenant2/idp-config.yml";
 
-        tenantKey = "Tenant2";
+        tenantKey = "tenant2";
         registrationId = "Auth0_";
 
         idpPublicConfig = buildPublicConfig(registrationId, 1);
@@ -245,13 +276,13 @@ public class IdpConfigRepositoryUnitTest {
             .filter(config-> registrationId.equals(config.getKey())).findAny()
             .orElseThrow();
 
-        assertEquals(registrationId.toLowerCase(), registration.getRegistrationId());
+        assertEquals(registrationId, registration.getRegistrationId());
         assertEquals(idpPublicClientConfig.getClientId(), registration.getClientId());
         assertEquals(ClientAuthenticationMethod.BASIC, registration.getClientAuthenticationMethod());
         assertEquals(AuthorizationGrantType.AUTHORIZATION_CODE, registration.getAuthorizationGrantType());
         assertEquals(idpPublicClientConfig.getRedirectUri(), registration.getRedirectUriTemplate());
         assertEquals(idpPrivateClientConfig.getScope(), registration.getScopes());
-        assertEquals(registrationId.toLowerCase(), registration.getClientName());
+        assertEquals(registrationId, registration.getClientName());
         assertEquals(idpPrivateClientConfig.getClientSecret(), registration.getClientSecret());
     }
 

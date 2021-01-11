@@ -51,6 +51,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final Map<String, Map<String, IdpConfigContainer>> idpClientConfigs = new ConcurrentHashMap<>();
 
     /**
+     * In memory storage.
+     * Stores information about tenant IDP clients public/private configuration that currently in process.
+     * We need to store this information in memory cause:
+     *  - public/private configuration could be loaded and processed in random order.
+     *  - to avoid corruption previously registered in-memory tenant clients config
+     * For correct tenant IDP clients registration both configs should be loaded and processed.
+     */
+    private final Map<String, Map<String, IdpConfigContainer>> tmpIdpClientConfigs = new ConcurrentHashMap<>();
+
+    /**
      * In memory storage for storing information is tenant public/private configuration process state.
      * Generally speaking this information allows to understand is tenant public & private configuration loaded and processed.
      * We need to store this information in memory cause public/private configuration could be loaded and processed in random order.
@@ -85,7 +95,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         processPrivateConfiguration(tenantKey, configKey, config);
 
         Map<String, IdpConfigContainer> idpConfigContainers =
-            idpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+            tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
 
         Map<String, IdpConfigContainer> applicablyIdpConfigs = idpConfigContainers
             .entrySet()
@@ -98,7 +108,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
             boolean isPublicConfigProcessed = configProcessingState.getLeft() != null && configProcessingState.getLeft();
             boolean isPrivateConfigProcess = configProcessingState.getRight() != null && configProcessingState.getRight();
-            boolean isClientConfigurationEmpty = CollectionUtils.isEmpty(idpClientConfigs.get(tenantKey));
+            boolean isClientConfigurationEmpty = CollectionUtils.isEmpty(tmpIdpClientConfigs.get(tenantKey));
 
             // if both public and private tenant configs processed
             // and client configuration not present at all then all tenant client registrations should be removed
@@ -115,8 +125,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         }
 
         clientRegistrationRepository.setRegistrations(tenantKey, buildClientRegistrations(applicablyIdpConfigs));
-        //todo FIXME : configuration is removed from idpClientConfigs
-        //updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
+        updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
     }
 
     private String getTenantKey(String configKey) {
@@ -198,14 +207,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * @param applicablyConfigs fully loaded configs for processing
      */
     private void updateInMemoryConfig(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
-        idpClientConfigs.computeIfPresent(tenantKey, (k, v) -> {
-            applicablyConfigs.keySet().forEach(v::remove);
-
-            if (CollectionUtils.isEmpty(v.values())) {
-                return null;
-            }
-            return v;
-        });
+        tmpIdpClientConfigs.remove(tenantKey);
+        idpClientConfigs.put(tenantKey, applicablyConfigs);
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
@@ -216,7 +219,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     private IdpConfigContainer getIdpConfigContainer(String tenantKey, String registrationId) {
         Map<String, IdpConfigContainer> idpConfigContainers =
-            idpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
+            tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
 
         return idpConfigContainers.computeIfAbsent(registrationId, key -> new IdpConfigContainer());
     }
