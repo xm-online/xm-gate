@@ -92,20 +92,17 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
         return idpConfigContainer.getIdpPublicClientConfig();
     }
 
-    //TODO impl calling of POST /uaa/token?grant_type=idp_token&token={IDP_access_token}
-    //TODO this is just stub for now
     private ResponseEntity<Map<String, Object>> getXmUaaToken(String tenantKey, Authentication authentication) {
         String idpIdToken = getIdpToken(authentication);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.set(HttpHeaders.AUTHORIZATION, "Basic aW50ZXJuYWw6aW50ZXJuYWw=");
+        headers.set(HttpHeaders.AUTHORIZATION, "Basic aW50ZXJuYWw6aW50ZXJuYWw=");//TODO think how to provide creds here
         headers.set("x-tenant", tenantKey);
 
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
-        requestBody.add("grant_type", "password");
-        requestBody.add("username", "xm");
-        requestBody.add("password", "P@ssw0rd");
+        requestBody.add("grant_type", "idp_token");
+        requestBody.add("token", idpIdToken);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(requestBody, headers);
 
