@@ -2,14 +2,16 @@ package com.icthh.xm.gate.security.oauth2;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.icthh.xm.commons.domain.idp.IdpPrivateConfig;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
 import com.icthh.xm.commons.tenant.internal.DefaultTenantContextHolder;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
-import com.icthh.xm.gate.domain.idp.IdpPrivateConfig;
-import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
-import org.junit.Test;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig;
+import com.icthh.xm.commons.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -18,16 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
-import com.icthh.xm.gate.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 public class IdpConfigRepositoryUnitTest {
@@ -317,6 +317,7 @@ public class IdpConfigRepositoryUnitTest {
 
     private IdpPublicClientConfig buildIdpPublicClientConfig(String key) {
         IdpPublicClientConfig idpPublicClientConfig = new IdpPublicClientConfig();
+        IdpPublicClientConfig.OpenIdConfig openIdConfig = new IdpPublicClientConfig.OpenIdConfig();
 
         idpPublicClientConfig.setKey(key);
         idpPublicClientConfig.setClientId("client-id");
@@ -324,49 +325,51 @@ public class IdpConfigRepositoryUnitTest {
 
         idpPublicClientConfig.setFeatures(buildFeatures());
 
-        idpPublicClientConfig.setAuthorizationEndpoint(buildAuthorizationEndpoint());
-        idpPublicClientConfig.setTokenEndpoint(buildTokenEndpoint());
-        idpPublicClientConfig.setUserinfoEndpoint(buildUserInfoEndpoint());
-        idpPublicClientConfig.setEndSessionEndpoint(buildEndSessionEndpoint());
-        idpPublicClientConfig.setJwksEndpoint(buildJwksEndpoint());
+        openIdConfig.setAuthorizationEndpoint(buildAuthorizationEndpoint());
+        openIdConfig.setTokenEndpoint(buildTokenEndpoint());
+        openIdConfig.setUserinfoEndpoint(buildUserInfoEndpoint());
+        openIdConfig.setEndSessionEndpoint(buildEndSessionEndpoint());
+        openIdConfig.setJwksEndpoint(buildJwksEndpoint());
+
+        idpPublicClientConfig.setOpenIdConfig(openIdConfig);
 
         return idpPublicClientConfig;
     }
 
-    private IdpPublicClientConfig.UserInfoEndpoint buildUserInfoEndpoint() {
-        IdpPublicClientConfig.UserInfoEndpoint userinfoEndpoint = new IdpPublicClientConfig.UserInfoEndpoint();
+    private IdpPublicClientConfig.OpenIdConfig.UserInfoEndpoint buildUserInfoEndpoint() {
+        IdpPublicClientConfig.OpenIdConfig.UserInfoEndpoint userinfoEndpoint = new IdpPublicClientConfig.OpenIdConfig.UserInfoEndpoint();
         userinfoEndpoint.setUri("https://idp1.com/userinfo");
         userinfoEndpoint.setUserNameAttributeName("email");
         return userinfoEndpoint;
     }
 
-    private IdpPublicClientConfig.BaseEndpoint buildEndSessionEndpoint() {
-        IdpPublicClientConfig.BaseEndpoint userinfoEndpoint = new IdpPublicClientConfig.BaseEndpoint();
+    private IdpPublicClientConfig.OpenIdConfig.BaseEndpoint buildEndSessionEndpoint() {
+        IdpPublicClientConfig.OpenIdConfig.BaseEndpoint userinfoEndpoint = new IdpPublicClientConfig.OpenIdConfig.BaseEndpoint();
         userinfoEndpoint.setUri("https://idp1.com/logout");
         return userinfoEndpoint;
     }
 
-    private IdpPublicClientConfig.BaseEndpoint buildJwksEndpoint() {
-        IdpPublicClientConfig.BaseEndpoint userinfoEndpoint = new IdpPublicClientConfig.BaseEndpoint();
+    private IdpPublicClientConfig.OpenIdConfig.BaseEndpoint buildJwksEndpoint() {
+        IdpPublicClientConfig.OpenIdConfig.BaseEndpoint userinfoEndpoint = new IdpPublicClientConfig.OpenIdConfig.BaseEndpoint();
         userinfoEndpoint.setUri("https://idp1.com/.well-known/jwks.json");
         return userinfoEndpoint;
     }
 
-    private IdpPublicClientConfig.TokenEndpoint buildTokenEndpoint() {
-        IdpPublicClientConfig.TokenEndpoint tokenEndpoint = new IdpPublicClientConfig.TokenEndpoint();
+    private IdpPublicClientConfig.OpenIdConfig.TokenEndpoint buildTokenEndpoint() {
+        IdpPublicClientConfig.OpenIdConfig.TokenEndpoint tokenEndpoint = new IdpPublicClientConfig.OpenIdConfig.TokenEndpoint();
         tokenEndpoint.setUri("https://idp1.com/oauth/token");
         tokenEndpoint.setGrantType("authorization_code");
         return tokenEndpoint;
     }
 
-    private IdpPublicClientConfig.AuthorizationEndpoint buildAuthorizationEndpoint() {
-        IdpPublicClientConfig.AuthorizationEndpoint authorizationEndpoint = new IdpPublicClientConfig.AuthorizationEndpoint();
+    private IdpPublicClientConfig.OpenIdConfig.AuthorizationEndpoint buildAuthorizationEndpoint() {
+        IdpPublicClientConfig.OpenIdConfig.AuthorizationEndpoint authorizationEndpoint = new IdpPublicClientConfig.OpenIdConfig.AuthorizationEndpoint();
 
         authorizationEndpoint.setUri("https://idp1.com/authorize");
         authorizationEndpoint.setResponseType("code");
         authorizationEndpoint.setAdditionalParams(Map.of("connection", "google-oauth2"));
 
-        IdpPublicClientConfig.AuthorizationEndpoint.Features features = new IdpPublicClientConfig.AuthorizationEndpoint.Features();
+        IdpPublicClientConfig.OpenIdConfig.AuthorizationEndpoint.Features features = new IdpPublicClientConfig.OpenIdConfig.AuthorizationEndpoint.Features();
         features.setState(true);
         authorizationEndpoint.setFeatures(features);
 
