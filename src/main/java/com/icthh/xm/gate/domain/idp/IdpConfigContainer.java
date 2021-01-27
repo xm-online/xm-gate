@@ -18,8 +18,7 @@ public class IdpConfigContainer {
      *
      * @return true if both configs are valid, otherwise false
      */
-    public boolean isApplicable(String tenantKey) {
-        return IdpConfigUtils.isPublicConfigValid(tenantKey, this.idpPublicClientConfig)
-            && !IdpConfigUtils.isPrivateConfigValid(tenantKey, this.idpPrivateClientConfig);
+    public boolean isApplicable() {
+        return idpPublicClientConfig != null && idpPrivateClientConfig != null;
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
+import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
 import com.icthh.xm.commons.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import com.icthh.xm.commons.domain.idp.IdpPublicConfig;
@@ -101,7 +102,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         Map<String, IdpConfigContainer> applicablyIdpConfigs = idpConfigContainers
             .entrySet()
             .stream()
-            .filter(entry -> entry.getValue().isApplicable(tenantKey))
+            .filter(entry -> entry.getValue().isApplicable())
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
@@ -149,10 +150,12 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                 .getConfig()
                 .getClients()
                 .forEach(publicIdpConf -> {
-                        String idpConfKey = publicIdpConf.getKey();
+                        if (IdpConfigUtils.isPublicConfigValid(tenantKey, publicIdpConf)) {
+                            String idpConfKey = publicIdpConf.getKey();
 
-                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
-                        idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+                            IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
+                            idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+                        }
                     }
                 );
         }
@@ -175,10 +178,12 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                 .getConfig()
                 .getClients()
                 .forEach(privateIdpConf -> {
-                        String idpConfKey = privateIdpConf.getKey();
+                        if (IdpConfigUtils.isPrivateConfigValid(tenantKey, privateIdpConf)) {
+                            String idpConfKey = privateIdpConf.getKey();
 
-                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
-                        idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
+                            IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
+                            idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
+                        }
                     }
                 );
         }
