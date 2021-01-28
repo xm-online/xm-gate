@@ -3,6 +3,7 @@ package com.icthh.xm.gate.security.oauth2;
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_BEARIRNG;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
+import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.commons.exceptions.BusinessException;
@@ -19,6 +20,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.github.jhipster.config.JHipsterProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -71,7 +73,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             // TODO Stateful not implemented for now
             throw new UnsupportedOperationException("Stateful mode not supported yet");
         } else {
-            ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication);
+            ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication, request);
             prepareStatelessResponse(xmUaaTokenResponse, features, authentication, response);
         }
     }
@@ -92,24 +94,33 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
         return idpConfigContainer.getIdpPublicClientConfig();
     }
 
-    private ResponseEntity<Map<String, Object>> getXmUaaToken(String tenantKey, Authentication authentication) {
+    private ResponseEntity<Map<String, Object>> getXmUaaToken(String tenantKey,
+                                                              Authentication authentication,
+                                                              HttpServletRequest request) {
         String idpIdToken = getIdpToken(authentication);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.set(HttpHeaders.AUTHORIZATION, "Basic aW50ZXJuYWw6aW50ZXJuYWw=");//TODO think how to provide creds here
-        headers.set("x-tenant", tenantKey);
+        headers.set(HttpHeaders.AUTHORIZATION, "Basic d2ViYXBwOndlYmFwcA==");//TODO webapp:webapp;
+        //TODO use
+//        security:
+    //        client-authorization:
+    //        access-token-uri: http://uaa/oauth/token
+    //        token-service-id: uaa
+    //        client-id: internal
+    //        client-secret: internal
+        headers.set(HEADER_TENANT, tenantKey);
 
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("grant_type", "idp_token");
         requestBody.add("token", idpIdToken);
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(requestBody, headers);
+        HttpEntity<MultiValueMap<String, String>> uaaTokenRequest = new HttpEntity<>(requestBody, headers);
 
         return restTemplate.exchange(
             "http://uaa/oauth/token",
             HttpMethod.POST,
-            request,
+            uaaTokenRequest,
             new ParameterizedTypeReference<>() {
             });
     }
