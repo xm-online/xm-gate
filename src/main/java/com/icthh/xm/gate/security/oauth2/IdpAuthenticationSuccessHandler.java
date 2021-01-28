@@ -6,11 +6,12 @@ import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig.Features;
 import com.icthh.xm.commons.exceptions.BusinessException;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
-import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
-import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig.Features;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -87,8 +88,8 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             .get(clientRegistrationId);
 
         if (idpConfigContainer == null) {
-            throw new BusinessException("IDP configuration not found for tenant: " + tenantKey
-                + " and clientRegistrationId: " + clientRegistrationId);
+            throw new BusinessException("IDP configuration not found for tenant: [" + tenantKey
+                + "] and clientRegistrationId: [" + clientRegistrationId + "]");
         }
 
         return idpConfigContainer.getIdpPublicClientConfig();

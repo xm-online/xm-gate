@@ -4,15 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
+import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
+import com.icthh.xm.commons.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig;
+import com.icthh.xm.commons.domain.idp.IdpPrivateConfig;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
-import com.icthh.xm.gate.domain.idp.IdpPrivateConfig;
-import com.icthh.xm.gate.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
-import com.icthh.xm.gate.domain.idp.IdpPublicConfig;
-import com.icthh.xm.gate.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -54,8 +56,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * In memory storage.
      * Stores information about tenant IDP clients public/private configuration that currently in process.
      * We need to store this information in memory cause:
-     *  - public/private configuration could be loaded and processed in random order.
-     *  - to avoid corruption previously registered in-memory tenant clients config
+     * - public/private configuration could be loaded and processed in random order.
+     * - to avoid corruption previously registered in-memory tenant clients config
      * For correct tenant IDP clients registration both configs should be loaded and processed.
      */
     private final Map<String, Map<String, IdpConfigContainer>> tmpIdpClientConfigs = new ConcurrentHashMap<>();
@@ -148,10 +150,12 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                 .getConfig()
                 .getClients()
                 .forEach(publicIdpConf -> {
-                        String idpConfKey = publicIdpConf.getKey();
+                        if (IdpConfigUtils.isPublicConfigValid(tenantKey, publicIdpConf)) {
+                            String idpConfKey = publicIdpConf.getKey();
 
-                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
-                        idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+                            IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
+                            idpConfigContainer.setIdpPublicClientConfig(publicIdpConf);
+                        }
                     }
                 );
         }
@@ -174,10 +178,12 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                 .getConfig()
                 .getClients()
                 .forEach(privateIdpConf -> {
-                        String idpConfKey = privateIdpConf.getKey();
+                        if (IdpConfigUtils.isPrivateConfigValid(tenantKey, privateIdpConf)) {
+                            String idpConfKey = privateIdpConf.getKey();
 
-                        IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
-                        idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
+                            IdpConfigContainer idpConfigContainer = getIdpConfigContainer(tenantKey, idpConfKey);
+                            idpConfigContainer.setIdpPrivateClientConfig(privateIdpConf);
+                        }
                     }
                 );
         }
@@ -244,13 +250,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .redirectUri(idpPublicClientConfig.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationUri(idpPublicClientConfig.getAuthorizationEndpoint().getUri())
-            .tokenUri(idpPublicClientConfig.getTokenEndpoint().getUri())
-            .userInfoUri(idpPublicClientConfig.getUserinfoEndpoint().getUri())
-            .userNameAttributeName(idpPublicClientConfig.getUserinfoEndpoint().getUserNameAttributeName())
+            .authorizationUri(idpPublicClientConfig.getOpenIdConfig().getAuthorizationEndpoint().getUri())
+            .tokenUri(idpPublicClientConfig.getOpenIdConfig().getTokenEndpoint().getUri())
+            .userInfoUri(idpPublicClientConfig.getOpenIdConfig().getUserinfoEndpoint().getUri())
+            .userNameAttributeName(idpPublicClientConfig.getOpenIdConfig().getUserinfoEndpoint().getUserNameAttributeName())
             .clientName(idpPublicClientConfig.getName())
             .clientId(idpPublicClientConfig.getClientId())
-            .jwkSetUri(idpPublicClientConfig.getJwksEndpoint().getUri())
+            .jwkSetUri(idpPublicClientConfig.getOpenIdConfig().getJwksEndpoint().getUri())
             .clientSecret(privateIdpConfig.getClientSecret())
             .scope(privateIdpConfig.getScope())
             .build();
