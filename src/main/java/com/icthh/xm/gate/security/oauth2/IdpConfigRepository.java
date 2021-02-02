@@ -14,7 +14,6 @@ import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 
+import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN;
+import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN;
+
+
 /**
  * This class reads and process both IDP clients public and private configuration for each tenant.
  * Tenant IDP clients created for each successfully loaded config. If config not fully loaded it skipped.
@@ -38,8 +41,6 @@ import org.springframework.util.CollectionUtils;
 @RequiredArgsConstructor
 public class IdpConfigRepository implements RefreshableConfiguration {
 
-    private static final String PUBLIC_SETTINGS_CONFIG_PATH_PATTERN = "/config/tenants/{tenant}/webapp/settings-public.yml";
-    private static final String PRIVATE_SETTINGS_CONFIG_PATH_PATTERN = "/config/tenants/{tenant}/idp-config.yml";
     private static final String KEY_TENANT = "tenant";
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
@@ -80,8 +81,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @Override
     public boolean isListeningConfiguration(String updatedKey) {
-        return matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, updatedKey)
-            || matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, updatedKey);
+        return matcher.match(IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, updatedKey)
+            || matcher.match(IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, updatedKey);
     }
 
     @Override
@@ -131,16 +132,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private String getTenantKey(String configKey) {
-        if (matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
-            return extractTenantKeyFromPath(configKey, PUBLIC_SETTINGS_CONFIG_PATH_PATTERN);
+        if (matcher.match(IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
+            return extractTenantKeyFromPath(configKey, IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN);
         } else {
-            return extractTenantKeyFromPath(configKey, PRIVATE_SETTINGS_CONFIG_PATH_PATTERN);
+            return extractTenantKeyFromPath(configKey, IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN);
         }
     }
 
     //TODO processPrivateConfiguration and  processPublicConfiguration very similar, think how to combine them
     private void processPublicConfiguration(String tenantKey, String configKey, String config) {
-        if (!matcher.match(PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
+        if (!matcher.match(IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return;
         }
         IdpPublicConfig idpPublicConfig = parseConfig(tenantKey, config, IdpPublicConfig.class);
@@ -167,7 +168,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     private void processPrivateConfiguration(String tenantKey, String configKey, String config) {
-        if (!matcher.match(PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
+        if (!matcher.match(IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return;
         }
 
