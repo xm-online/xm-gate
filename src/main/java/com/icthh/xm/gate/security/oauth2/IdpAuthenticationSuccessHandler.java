@@ -111,6 +111,8 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             jhipsterProperties.getSecurity().getClientAuthorization().getAccessTokenUri(),
             HttpMethod.POST,
             uaaTokenRequest,
+            // do not optimize code cause of compiler issue. It will broke pipeline
+            // https://bugs.openjdk.java.net/browse/JDK-8212586
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
     }
