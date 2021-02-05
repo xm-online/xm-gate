@@ -111,7 +111,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             jhipsterProperties.getSecurity().getClientAuthorization().getAccessTokenUri(),
             HttpMethod.POST,
             uaaTokenRequest,
-            new ParameterizedTypeReference<>() {
+            new ParameterizedTypeReference<Map<String, Object>>() {
             });
     }
 
