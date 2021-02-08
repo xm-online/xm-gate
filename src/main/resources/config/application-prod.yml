@@ -101,6 +101,12 @@ jhipster:
     logs: # Reports metrics in the logs
       enabled: false
       report-frequency: 60 # in seconds
+  security:
+    client-authorization:
+      access-token-uri: http://uaa/oauth/token
+      token-service-id: uaa
+      client-id: internal
+      client-secret: internal
   logging:
     use-json-format: false # By default, logs are not in Json format
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
