@@ -1,7 +1,7 @@
 package com.icthh.xm.gate.security.oauth2;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
-import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_BEARIRNG;
+import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_BEARING;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
@@ -42,10 +42,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * XM Strategy used to handle a successful Auth0 user authentication.
+ * XM Strategy used to handle a successful Auth0 user authentication. //FIXME do not mention Auth0, it is only one possible impl
  */
 @Slf4j
 @Component
+// FIXME: Why we do not have a unit test for this class?
 public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private static final String GRANT_TYPE_ATTR = "grant_type";
@@ -85,12 +86,16 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication);
             prepareStatelessResponse(xmUaaTokenResponse, features, authentication, response);
         }
+        // FIXME: do we need some logging here just to understand that authentication was success?
     }
 
     private IdpPublicClientConfig getIdpClientConfig(String tenantKey, Authentication authentication) {
         OAuth2AuthenticationToken authenticationToken = (OAuth2AuthenticationToken) authentication;
         String clientRegistrationId = authenticationToken.getAuthorizedClientRegistrationId();
 
+        // FIXME: suggest refactor idpConfigRepository.getIdpClientConfigs() to idpConfigRepository.getIdpClientConfig(clientRegistrationId)
+        //  and also resolve tenant inside (with code that throws business exception).
+        //  so resulting method getIdpClientConfig(...) will return exact client configuration for the tenant. and all tenants will not be exposed.
         IdpConfigContainer idpConfigContainer = idpConfigRepository.getIdpClientConfigs()
             .getOrDefault(tenantKey, Collections.emptyMap())
             .get(clientRegistrationId);
@@ -166,8 +171,11 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
         response.setStatus(xmUaaTokenResponse.getStatusCodeValue());
 
         //copy XM headers to authentication response
-        xmUaaTokenResponse.getHeaders().forEach((String headerName, List<String> headerValues)
-            -> headerValues.forEach(headerValue -> response.addHeader(headerName, headerValue)));
+        //FIXME: suggest to split complex inner lambda to methods as proposed
+        xmUaaTokenResponse.getHeaders()
+                          .forEach((header, values)-> addHeaderToResponse(response, header, values));
+//        xmUaaTokenResponse.getHeaders().forEach((String headerName, List<String> headerValues)
+//            -> headerValues.forEach(headerValue -> response.addHeader(headerName, headerValue)));
 
         Map<String, Object> xmUaaTokenResponseBody = xmUaaTokenResponse.getBody();
         if (xmUaaTokenResponseBody == null) {
@@ -176,13 +184,20 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
 
         Map<String, Object> statelessResponse = new LinkedHashMap<>();
 
-        //if bearirng feature is enabled - add IDP token to response
+        //if bearing feature is enabled - add IDP token to response
         if (features.getBearirng() != null && features.getBearirng().isEnabled()) {
+            // FIXME: I'm not sure that we need to pass here ID token.
+            //  Most probably it should be Access token because the idea of the feature that some system
+            //  (like AWS Gateway) will authorize subsequent requests.
             statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_TOKEN, getIdpToken(authentication));
-            statelessResponse.put(AUTH_RESPONSE_FIELD_BEARIRNG, features.getBearirng());
+            statelessResponse.put(AUTH_RESPONSE_FIELD_BEARING, features.getBearirng());
         }
 
         statelessResponse.putAll(xmUaaTokenResponseBody);
         response.getWriter().write(objectMapper.writeValueAsString(statelessResponse));
+    }
+
+    private void addHeaderToResponse(HttpServletResponse response, String header, List<String> values){
+        values.forEach(value -> response.addHeader(header, value));
     }
 }

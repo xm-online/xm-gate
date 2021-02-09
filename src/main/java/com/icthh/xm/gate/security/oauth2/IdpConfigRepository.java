@@ -61,6 +61,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * - to avoid corruption previously registered in-memory tenant clients config
      * For correct tenant IDP clients registration both configs should be loaded and processed.
      */
+    // FIXME: as i know recently new feature on the XM config was developed that allows to process multiple files.
+    //   please investigate if it can be used to simplify this case (contact S.Senko).
     private final Map<String, Map<String, IdpConfigContainer>> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
     /**
@@ -116,6 +118,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             // if both public and private tenant configs processed
             // and client configuration not present at all then all tenant client registrations should be removed
             if (isPublicConfigProcessed && isPrivateConfigProcess && isClientConfigurationEmpty) {
+                // FIXME: why do e need to print tenant name twice?
                 log.info("For tenant [{}] IDP client configs not specified. "
                     + "Removing all previously registered IDP clients for tenant [{}]", tenantKey, tenantKey);
                 clientRegistrationRepository.removeTenantClientRegistrations(tenantKey);
@@ -140,6 +143,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     //TODO processPrivateConfiguration and  processPublicConfiguration very similar, think how to combine them
+    //FIXME: agree, please resolve todo above!
     private void processPublicConfiguration(String tenantKey, String configKey, String config) {
         if (!matcher.match(IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN, configKey)) {
             return;
@@ -250,6 +254,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return ClientRegistration.withRegistrationId((registrationId))
             .redirectUri(idpPublicClientConfig.getRedirectUri())
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
+            // FIXME: why do you hardcode grant type here? Maybe it worth to define in the config (public i think)?
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizationUri(idpPublicClientConfig.getOpenIdConfig().getAuthorizationEndpoint().getUri())
             .tokenUri(idpPublicClientConfig.getOpenIdConfig().getTokenEndpoint().getUri())

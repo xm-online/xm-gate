@@ -42,6 +42,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
 
+    // FIXME: why dont use @RequiredArgConstructor?
     public MicroserviceSecurityConfiguration(DiscoveryClient discoveryClient,
                                              IdpAuthenticationSuccessHandler idpSuccessHandler) {
 
@@ -57,10 +58,10 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .headers()
             .frameOptions()
             .disable()
-            .and()
+            .and()// FIXME use original formatting
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
+            .and()// FIXME use original formatting
             .authorizeRequests()
             //convention: allow to process /api/public for all service
             .antMatchers("/*/api/public/**").permitAll()

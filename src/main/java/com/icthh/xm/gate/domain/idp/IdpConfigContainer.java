@@ -1,6 +1,5 @@
 package com.icthh.xm.gate.domain.idp;
 
-import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
 import com.icthh.xm.commons.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import lombok.Data;
