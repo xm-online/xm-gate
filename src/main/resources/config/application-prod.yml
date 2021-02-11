@@ -101,6 +101,14 @@ jhipster:
     logs: # Reports metrics in the logs
       enabled: false
       report-frequency: 60 # in seconds
+# CORS is only enabled by default with the "dev" profile, so BrowserSync can access the API
+  cors:
+    allowed-origins: '*'
+    allowed-methods: '*'
+    allowed-headers: '*'
+    exposed-headers: 'Authorization,Link,X-Total-Count'
+    allow-credentials: true
+    max-age: 1800
   security:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
