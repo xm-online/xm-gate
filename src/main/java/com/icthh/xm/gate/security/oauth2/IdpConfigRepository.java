@@ -9,8 +9,10 @@ import com.icthh.xm.commons.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPr
 import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import com.icthh.xm.commons.domain.idp.IdpPublicConfig;
 import com.icthh.xm.commons.domain.idp.IdpPrivateConfig;
+import com.icthh.xm.commons.exceptions.BusinessException;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -263,7 +265,18 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .build();
     }
 
-    protected Map<String, Map<String, IdpConfigContainer>> getIdpClientConfigs() {
+    public Map<String, Map<String, IdpConfigContainer>> getIdpClientConfigs() {
         return idpClientConfigs;
+    }
+
+    public IdpPublicClientConfig getTenantIdpPublicClientConfig(String tenantKey, String clientRegistrationId) {
+        IdpConfigContainer idpConfigContainer = idpClientConfigs.getOrDefault(tenantKey, Collections.emptyMap())
+            .get(clientRegistrationId);
+
+        if (idpConfigContainer == null) {
+            throw new BusinessException("IDP configuration not found for tenant: [" + tenantKey
+                + "] and clientRegistrationId: [" + clientRegistrationId + "]");
+        }
+        return idpConfigContainer.getIdpPublicClientConfig();
     }
 }
