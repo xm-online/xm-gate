@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
 import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
-import com.icthh.xm.commons.domain.idp.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
-import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
-import com.icthh.xm.commons.domain.idp.IdpPublicConfig;
-import com.icthh.xm.commons.domain.idp.IdpPrivateConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.exceptions.BusinessException;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 
