@@ -1,27 +1,28 @@
 package com.icthh.xm.gate.security.oauth2;
 
+import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN;
+import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
 import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
+import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
-import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.exceptions.BusinessException;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -29,10 +30,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
-
-import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN;
-import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN;
-
+import org.springframework.util.ObjectUtils;
 
 /**
  * This class reads and process both IDP clients public and private configuration for each tenant.
@@ -74,6 +72,10 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      */
     private final Map<String, MutablePair<Boolean, Boolean>> idpClientConfigProcessingState = new ConcurrentHashMap<>();
 
+    private final Map<String, Features> idpTenantFeaturesHolder = new ConcurrentHashMap<>();
+
+    private final Map<String, Features> tmpIdpTenantFeaturesHolder = new ConcurrentHashMap<>();
+
     private final IdpClientHolder clientRegistrationRepository;
 
     @Override
@@ -99,16 +101,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
         processPrivateConfiguration(tenantKey, configKey, config);
 
-        Map<String, IdpConfigContainer> idpConfigContainers =
-            tmpIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>());
-
-        Map<String, IdpConfigContainer> applicablyIdpConfigs = idpConfigContainers
+        Map<String, IdpConfigContainer> applicablyIdpConfigs = tmpIdpClientConfigs
+            .computeIfAbsent(tenantKey, key -> new HashMap<>())
             .entrySet()
             .stream()
             .filter(entry -> entry.getValue().isApplicable())
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
+        boolean isTenantFeaturesConfigurationEmpty = ObjectUtils.isEmpty(tmpIdpTenantFeaturesHolder.get(tenantKey));
+
+        if (CollectionUtils.isEmpty(applicablyIdpConfigs) || isTenantFeaturesConfigurationEmpty) {
             MutablePair<Boolean, Boolean> configProcessingState = idpClientConfigProcessingState.get(tenantKey);
 
             boolean isPublicConfigProcessed = configProcessingState.getLeft() != null && configProcessingState.getLeft();
@@ -117,7 +119,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
             // if both public and private tenant configs processed
             // and client configuration not present at all then all tenant client registrations should be removed
-            if (isPublicConfigProcessed && isPrivateConfigProcess && isClientConfigurationEmpty) {
+            if (isPublicConfigProcessed && isPrivateConfigProcess
+                && isClientConfigurationEmpty && isTenantFeaturesConfigurationEmpty) {
                 log.info("For tenant [{}] IDP client configs not specified. "
                     + "Removing all previously registered IDP clients for tenant [{}]", tenantKey, tenantKey);
                 clientRegistrationRepository.removeTenantClientRegistrations(tenantKey);
@@ -147,7 +150,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             return;
         }
         IdpPublicConfig idpPublicConfig = parseConfig(tenantKey, config, IdpPublicConfig.class);
-
         if (idpPublicConfig != null && idpPublicConfig.getConfig() != null) {
             idpPublicConfig
                 .getConfig()
@@ -161,6 +163,10 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                         }
                     }
                 );
+            Features features = idpPublicConfig.getConfig().getFeatures();
+            if (IdpConfigUtils.isTenantFeaturesConfigValid(features)) {
+                tmpIdpTenantFeaturesHolder.put(tenantKey, features);
+            }
         }
 
         MutablePair<Boolean, Boolean> configProcessingState =
@@ -218,6 +224,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private void updateInMemoryConfig(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
         tmpIdpClientConfigs.remove(tenantKey);
         idpClientConfigs.put(tenantKey, applicablyConfigs);
+        idpTenantFeaturesHolder.put(tenantKey, tmpIdpTenantFeaturesHolder.remove(tenantKey));
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
@@ -267,6 +274,10 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     public Map<String, Map<String, IdpConfigContainer>> getIdpClientConfigs() {
         return idpClientConfigs;
+    }
+
+    public Features getTenantFeatures(String tenantKey) {
+        return idpTenantFeaturesHolder.get(tenantKey);
     }
 
     public IdpPublicClientConfig getTenantIdpPublicClientConfig(String tenantKey, String clientRegistrationId) {

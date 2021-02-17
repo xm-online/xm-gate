@@ -6,23 +6,21 @@ import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig.Features;
-import com.icthh.xm.commons.exceptions.BusinessException;
+
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
+import io.github.jhipster.config.JHipsterProperties;
 
 import java.io.IOException;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import io.github.jhipster.config.JHipsterProperties;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
@@ -32,7 +30,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -76,7 +73,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
         String tenantKey = getRequiredTenantKeyValue(tenantContextHolder);
-        Features features = getIdpClientConfig(tenantKey, authentication).getFeatures();
+        Features features = idpConfigRepository.getTenantFeatures(tenantKey);
 
         if (features.isStateful()) {
             // TODO Stateful not implemented for now
@@ -85,22 +82,6 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication);
             prepareStatelessResponse(xmUaaTokenResponse, features, authentication, response);
         }
-    }
-
-    private IdpPublicClientConfig getIdpClientConfig(String tenantKey, Authentication authentication) {
-        OAuth2AuthenticationToken authenticationToken = (OAuth2AuthenticationToken) authentication;
-        String clientRegistrationId = authenticationToken.getAuthorizedClientRegistrationId();
-
-        IdpConfigContainer idpConfigContainer = idpConfigRepository.getIdpClientConfigs()
-            .getOrDefault(tenantKey, Collections.emptyMap())
-            .get(clientRegistrationId);
-
-        if (idpConfigContainer == null) {
-            throw new BusinessException("IDP configuration not found for tenant: [" + tenantKey
-                + "] and clientRegistrationId: [" + clientRegistrationId + "]");
-        }
-
-        return idpConfigContainer.getIdpPublicClientConfig();
     }
 
     private ResponseEntity<Map<String, Object>> getXmUaaToken(String tenantKey,

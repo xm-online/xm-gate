@@ -10,6 +10,7 @@ import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +48,7 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldNotRegisterAnyTenantClient() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
 
         String tenantKey = "tenant1";
         String registrationId = "Auth0_";
@@ -61,8 +62,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldSuccessfullyRegisterExactOneTenantClient() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
         String registrationId = "Auth0_";
@@ -79,8 +80,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldSuccessfullyRegisterOnlyOneTenantClient() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
         String registrationId = "Auth0_";
@@ -105,8 +106,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldSuccessfullyRegisterTwoClientsForTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
         String registrationId = "Auth0_";
@@ -125,8 +126,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldRemoveOneRegisteredClientForTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
 
@@ -160,8 +161,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldFixInMemoryClientConfigurationAndRegisterClientForTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
 
@@ -191,8 +192,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldRemoveAllRegisteredClientForTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
 
@@ -220,8 +221,8 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldSuccessfullyRegisterOneClientPerTenant() throws JsonProcessingException {
-        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/settings-public.yml";
-        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config.yml";
+        String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
+        String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
         String registrationId = "Auth0_";
@@ -235,8 +236,8 @@ public class IdpConfigRepositoryUnitTest {
 
         validateRegistration(tenantKey, "Auth0_0", idpPublicConfig, idpPrivateConfig);
 
-        publicSettingsConfigPath = "/config/tenants/tenant2/webapp/settings-public.yml";
-        privateSettingsConfigPath = "/config/tenants/tenant2/idp-config.yml";
+        publicSettingsConfigPath = "/config/tenants/tenant2/webapp/public/idp-config-public.yml";
+        privateSettingsConfigPath = "/config/tenants/tenant2/idp-config-private.yml";
 
         tenantKey = "tenant2";
         registrationId = "Auth0_";
@@ -309,6 +310,7 @@ public class IdpConfigRepositoryUnitTest {
             idpPublicClientConfigs.add(buildIdpPublicClientConfig(key + i));
         }
         config.setClients(idpPublicClientConfigs);
+        config.setFeatures(buildFeatures());
 
         idpPublicConfig.setConfig(config);
 
@@ -321,9 +323,8 @@ public class IdpConfigRepositoryUnitTest {
 
         idpPublicClientConfig.setKey(key);
         idpPublicClientConfig.setClientId("client-id");
+        idpPublicClientConfig.setName(key);
         idpPublicClientConfig.setRedirectUri("http://localhost:4200");
-
-        idpPublicClientConfig.setFeatures(buildFeatures());
 
         openIdConfig.setAuthorizationEndpoint(buildAuthorizationEndpoint());
         openIdConfig.setTokenEndpoint(buildTokenEndpoint());
@@ -376,13 +377,13 @@ public class IdpConfigRepositoryUnitTest {
         return authorizationEndpoint;
     }
 
-    private IdpPublicClientConfig.Features buildFeatures() {
-        IdpPublicClientConfig.Features features = new IdpPublicClientConfig.Features();
+    private Features buildFeatures() {
+        Features features = new Features();
 
         features.setPkce(false);
         features.setStateful(false);
 
-        IdpPublicClientConfig.Features.Bearirng bearirng = new IdpPublicClientConfig.Features.Bearirng();
+        Features.Bearirng bearirng = new Features.Bearirng();
         bearirng.setEnabled(true);
         bearirng.setIdpTokenHeader("Authorization");
         bearirng.setXmTokenHeader("X-Authorization");
@@ -414,7 +415,6 @@ public class IdpConfigRepositoryUnitTest {
         idpPrivateClientConfig.setKey(key);
         idpPrivateClientConfig.setClientSecret("client-secret");
         idpPrivateClientConfig.setScope(Set.of("openid", "profile", "email"));
-        idpPrivateClientConfig.setAdditionalParams(Map.of("audience", "https://idp1.com/api/v2/"));
 
         return idpPrivateClientConfig;
     }
