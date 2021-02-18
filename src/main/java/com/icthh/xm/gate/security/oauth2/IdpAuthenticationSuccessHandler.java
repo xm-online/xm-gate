@@ -7,7 +7,7 @@ import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import io.github.jhipster.config.JHipsterProperties;
 

@@ -2,7 +2,7 @@ package com.icthh.xm.gate.gateway;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
 
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
+import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.Features;
 
 import com.icthh.xm.commons.security.XmAuthenticationContext;
 

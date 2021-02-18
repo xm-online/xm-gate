@@ -251,7 +251,7 @@ dependencies {
     }
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.boot:spring-boot-test"
-    testImplementation 'org.mockito:mockito-junit-jupiter'
+    testImplementation "org.mockito:mockito-junit-jupiter"
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "com.tngtech.archunit:archunit-junit5-api:${archunit_junit5_version}"
     testRuntimeOnly "com.tngtech.archunit:archunit-junit5-engine:${archunit_junit5_version}"
