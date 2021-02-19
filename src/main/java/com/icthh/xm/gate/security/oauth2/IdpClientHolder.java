@@ -5,7 +5,6 @@ import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKe
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +25,13 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+// FIXME - suggest renaming to IdpClientRepository
+// FIXME: Why we do not have a unit test for this class?
 public class IdpClientHolder implements ClientRegistrationRepository {
 
     private final TenantContextHolder tenantContextHolder;
 
+    // FIXME: seems it worth to use ConcurrentHashMap here.
     private final Map<String, Map<String, ClientRegistration>> clientsHolder = new HashMap<>();
 
     /**
@@ -41,6 +43,8 @@ public class IdpClientHolder implements ClientRegistrationRepository {
     public void setRegistrations(String tenantKey, List<ClientRegistration> registrations) {
         Assert.notEmpty(registrations, "registrations cannot be empty");
         this.clientsHolder.put(tenantKey, createClientRegistrationIdToClientRegistration(registrations));
+        //FIXME: suggest add names of the registered clients:
+        //  log.info("IDP clients for tenant [{}] registered: [{}]", tenantKey, registrations.stream().map(ClientRegistration::getClientName).collect(Collectors.toList()));
         log.info("IDP clients for tenant [{}] registered", tenantKey);
     }
 
@@ -48,12 +52,14 @@ public class IdpClientHolder implements ClientRegistrationRepository {
         clientsHolder.remove(tenantKey);
     }
 
+    // FIXME: suggest renaming to mapRegistrationIdToClientRegistration
     private static Map<String, ClientRegistration> createClientRegistrationIdToClientRegistration(
         Collection<ClientRegistration> registrations) {
-        return Collections.unmodifiableMap(registrations
+        // FIXME: you can use Collectors.toUnmodifiableMap directly
+        return registrations
             .stream()
             .peek(registration -> Assert.notNull(registration, "registrations cannot contain null values"))
-            .collect(Collectors.toMap(ClientRegistration::getRegistrationId, Function.identity())));
+            .collect(Collectors.toUnmodifiableMap(ClientRegistration::getRegistrationId, Function.identity()));
     }
 
     @Override
@@ -64,12 +70,14 @@ public class IdpClientHolder implements ClientRegistrationRepository {
         Map<String, ClientRegistration> tenantClientsRegistration = clientsHolder.get(tenantKey);
 
         if (CollectionUtils.isEmpty(tenantClientsRegistration)) {
+            // FIXME: suggest increase logger level to WARN
             log.info("IDP clients for tenant [{}] not registered", tenantKey);
             return null;
         }
 
         ClientRegistration clientRegistration = tenantClientsRegistration.get(registrationId);
         if (clientRegistration == null) {
+            // FIXME: suggest increase logger level to WARN
             log.info("IDP client with registrationId [{}] for tenant [{}] not found", registrationId, tenantKey);
         }
         return clientRegistration;
@@ -81,10 +89,12 @@ public class IdpClientHolder implements ClientRegistrationRepository {
      * @param tenantKey Tenant key
      * @return Returns client registrations for specified tenant if they are present. Otherwise returns null
      */
+    // FIXME: Suggest making method package private as it is used only in tests
     public Map<String, ClientRegistration> findByTenantKey(String tenantKey) {
         Map<String, ClientRegistration> tenantClientsRegistration = clientsHolder.get(tenantKey);
 
         if (CollectionUtils.isEmpty(tenantClientsRegistration)) {
+            // FIXME: suggest increase logger level to WARN
             log.info("IDP clients for tenant [{}] not registered", tenantKey);
         }
         return tenantClientsRegistration;

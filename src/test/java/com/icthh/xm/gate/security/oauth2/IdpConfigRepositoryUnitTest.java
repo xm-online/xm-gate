@@ -62,11 +62,13 @@ public class IdpConfigRepositoryUnitTest {
 
     @Test
     public void test_shouldSuccessfullyRegisterExactOneTenantClient() throws JsonProcessingException {
+        // FIXME: please correct file names according to latest renames in all tests.
         String publicSettingsConfigPath = "/config/tenants/tenant1/webapp/public/idp-config-public.yml";
         String privateSettingsConfigPath = "/config/tenants/tenant1/idp-config-private.yml";
 
         String tenantKey = "tenant1";
         String registrationId = "Auth0_";
+        // FIXME: next 7 lines are repeated almost in any test. I think it worth to extract them to method and use it.
         IdpPublicConfig idpPublicConfig = buildPublicConfig(registrationId, 1);
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
         idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
