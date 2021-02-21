@@ -18,6 +18,10 @@ logging:
     ROOT: DEBUG
     io.github.jhipster: DEBUG
     com.icthh.xm.gate: DEBUG
+    com.nimbusds: INFO
+    org.springframework: INFO
+    org.springframework.security.oauth2.client: INFO
+    org.springframework.security.oauth2: INFO
 
 spring:
   profiles:

@@ -14,16 +14,7 @@ public final class Constants {
     public static final String HEADER_WEBAPP_URL = "x-webapp-url";
 
     public static final String AUTH_RESPONSE_FIELD_IDP_TOKEN = "idp_id_token";
-    // FIXME: think how to rename the feature. Variants:
-    //  IDP token exposure
-    //  IDP Access token exposure
-    //  IDP Access token inclusion
-    //  IDP Access token communication
-    //  IDP Access token transfer
-    //  IDP Access token supplement
-    //  IDP Access token extension
-    //  IDP Access token injection
-    public static final String AUTH_RESPONSE_FIELD_BEARING = "bearing";
+    public static final String AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION = "idpAccessTokenInclusion";
 
     public static final String CERTIFICATE = "X.509";
     public static final String PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----";

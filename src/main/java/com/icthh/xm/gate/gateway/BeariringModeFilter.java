@@ -2,7 +2,7 @@ package com.icthh.xm.gate.gateway;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
 
-import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.Features;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpAccessTokenInclusion;
 
 import com.icthh.xm.commons.security.XmAuthenticationContext;
 
@@ -29,7 +29,7 @@ public class BeariringModeFilter extends ZuulFilter {
 
         if (xmAuthenticationContext.hasAuthentication()) {
             String tenantKey = getRequiredTenantKeyValue(tenantContextHolder);
-            Features features = idpConfigRepository.getTenantFeatures(tenantKey);
+            IdpAccessTokenInclusion features = idpConfigRepository.getTenantFeatures(tenantKey);
 
             if (features.isStateful()) {
                 // TODO Stateful not implemented for now

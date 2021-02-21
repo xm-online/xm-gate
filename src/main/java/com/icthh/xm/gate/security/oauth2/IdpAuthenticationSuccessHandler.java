@@ -1,13 +1,13 @@
 package com.icthh.xm.gate.security.oauth2;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
-import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_BEARING;
+import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.icthh.xm.commons.domain.idp.IdpPublicConfig.IdpConfigContainer.Features;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpAccessTokenInclusion;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import io.github.jhipster.config.JHipsterProperties;
 
@@ -39,16 +39,16 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * XM Strategy used to handle a successful Auth0 user authentication. //FIXME do not mention Auth0, it is only one possible impl
+ * XM Strategy used to handle a successful IDP user authentication.
  */
 @Slf4j
 @Component
 // FIXME: Why we do not have a unit test for this class?
 public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    private static final String GRANT_TYPE_ATTR = "grant_type";
-    private static final String GRANT_TYPE_IDP_TOKEN = "idp_token";
-    private static final String TOKEN_ATTR = "token";
+    public static final String GRANT_TYPE_ATTR = "grant_type";
+    public static final String GRANT_TYPE_IDP_TOKEN = "idp_token";
+    public static final String TOKEN_ATTR = "token";
     public static final String COLON_SEPARATOR = ":";
 
     private final ObjectMapper objectMapper;
@@ -74,7 +74,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
         String tenantKey = getRequiredTenantKeyValue(tenantContextHolder);
-        Features features = idpConfigRepository.getTenantFeatures(tenantKey);
+        IdpAccessTokenInclusion features = idpConfigRepository.getTenantFeatures(tenantKey);
 
         if (features.isStateful()) {
             // TODO Stateful not implemented for now
@@ -83,7 +83,6 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             ResponseEntity<Map<String, Object>> xmUaaTokenResponse = getXmUaaToken(tenantKey, authentication);
             prepareStatelessResponse(xmUaaTokenResponse, features, authentication, response);
         }
-        // FIXME: do we need some logging here just to understand that authentication was success?
     }
 
     private ResponseEntity<Map<String, Object>> getXmUaaToken(String tenantKey,
@@ -141,7 +140,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
     }
 
     private void prepareStatelessResponse(ResponseEntity<Map<String, Object>> xmUaaTokenResponse,
-                                          Features features,
+                                          IdpAccessTokenInclusion features,
                                           Authentication authentication,
                                           HttpServletResponse response) throws IOException {
 
@@ -149,11 +148,8 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
         response.setStatus(xmUaaTokenResponse.getStatusCodeValue());
 
         //copy XM headers to authentication response
-        //FIXME: suggest to split complex inner lambda to methods as proposed
         xmUaaTokenResponse.getHeaders()
-                          .forEach((header, values)-> addHeaderToResponse(response, header, values));
-//        xmUaaTokenResponse.getHeaders().forEach((String headerName, List<String> headerValues)
-//            -> headerValues.forEach(headerValue -> response.addHeader(headerName, headerValue)));
+                          .forEach((header, values) -> addHeaderToResponse(response, header, values));
 
         Map<String, Object> xmUaaTokenResponseBody = xmUaaTokenResponse.getBody();
         if (xmUaaTokenResponseBody == null) {
@@ -168,14 +164,14 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
             //  Most probably it should be Access token because the idea of the feature that some system
             //  (like AWS Gateway) will authorize subsequent requests.
             statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_TOKEN, getIdpToken(authentication));
-            statelessResponse.put(AUTH_RESPONSE_FIELD_BEARING, features.getBearirng());
+            statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION, features.getBearirng());
         }
 
         statelessResponse.putAll(xmUaaTokenResponseBody);
         response.getWriter().write(objectMapper.writeValueAsString(statelessResponse));
     }
 
-    private void addHeaderToResponse(HttpServletResponse response, String header, List<String> values){
+    private void addHeaderToResponse(HttpServletResponse response, String header, List<String> values) {
         values.forEach(value -> response.addHeader(header, value));
     }
 }

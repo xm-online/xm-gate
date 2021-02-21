@@ -13,6 +13,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -34,6 +35,7 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
+@RequiredArgsConstructor
 @EnableResourceServer
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerAdapter {
@@ -41,14 +43,6 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     private final DiscoveryClient discoveryClient;
 
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
-
-    // FIXME: why dont use @RequiredArgConstructor?
-    public MicroserviceSecurityConfiguration(DiscoveryClient discoveryClient,
-                                             IdpAuthenticationSuccessHandler idpSuccessHandler) {
-
-        this.discoveryClient = discoveryClient;
-        this.idpSuccessHandler = idpSuccessHandler;
-    }
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
@@ -58,10 +52,10 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .headers()
             .frameOptions()
             .disable()
-            .and()// FIXME use original formatting
+        .and()
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()// FIXME use original formatting
+        .and()
             .authorizeRequests()
             //convention: allow to process /api/public for all service
             .antMatchers("/*/api/public/**").permitAll()
@@ -73,9 +67,9 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .antMatchers("/management/prometheus/**").permitAll()
             .antMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
             .antMatchers("/swagger-resources/configuration/ui").permitAll()
-            .and()
+        .and()
             .oauth2Client()
-            .and()
+        .and()
             .oauth2Login()
             .successHandler(idpSuccessHandler);
     }
