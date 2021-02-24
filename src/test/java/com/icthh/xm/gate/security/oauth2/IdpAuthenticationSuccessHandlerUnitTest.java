@@ -43,13 +43,19 @@ import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PRIVATE_SETTINGS_
 import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
-import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.*;
-import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.*;
+import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_ATTR;
+import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.TOKEN_ATTR;
+import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_IDP_TOKEN;
+import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildAuthentication;
+import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildPublicConfig;
+import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildPrivateConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.eq;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 
@@ -259,7 +265,7 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
 
         IdpPublicConfig idpPublicConfig = buildPublicConfig(clientKeyPrefix, clientsAmount, "client-id", buildValidConfig);
         if (isStateful) {
-            idpPublicConfig.getConfig().getIdpAccessTokenInclusion().setStateful(true);
+            idpPublicConfig.getConfig().getFeatures().setStateful(true);
         }
         String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
 

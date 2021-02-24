@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpAccessTokenInclusion;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import org.springframework.util.StringUtils;
 
@@ -85,19 +85,19 @@ public class IdpTestUtils {
         return authorizationEndpoint;
     }
 
-    public static IdpAccessTokenInclusion buildFeatures() {
-        IdpAccessTokenInclusion features = new IdpAccessTokenInclusion();
+    private static IdpPublicConfig.IdpConfigContainer.Features buildFeatures() {
+        IdpPublicConfig.IdpConfigContainer.Features features = new IdpPublicConfig.IdpConfigContainer.Features();
 
         features.setPkce(false);
         features.setStateful(false);
 
-        IdpAccessTokenInclusion.Bearirng idpAccessTokenInclusion = new IdpAccessTokenInclusion.Bearirng();
+        Features.IdpAccessTokenInclusion idpAccessTokenInclusion = new Features.IdpAccessTokenInclusion();
 
         idpAccessTokenInclusion.setEnabled(true);
         idpAccessTokenInclusion.setIdpTokenHeader("Authorization");
         idpAccessTokenInclusion.setXmTokenHeader("X-Authorization");
 
-        features.setBearirng(idpAccessTokenInclusion);
+        features.setIdpAccessTokenInclusion(idpAccessTokenInclusion);
 
         return features;
     }
@@ -133,7 +133,6 @@ public class IdpTestUtils {
     }
 
     public static Authentication buildAuthentication(String userNameAttributeName) {
-        userNameAttributeName = "email";
         Set<GrantedAuthority> authorities = Set.of(new SimpleGrantedAuthority("ADMIN"));
 
         OidcIdToken oidcIdToken = buildOidcToken(
@@ -180,7 +179,7 @@ public class IdpTestUtils {
             idpPublicClientConfigs.add(buildIdpPublicClientConfig(key + i, clientId + i));
         }
         config.setClients(idpPublicClientConfigs);
-        config.setIdpAccessTokenInclusion(buildFeatures());
+        config.setFeatures(buildFeatures());
 
         idpPublicConfig.setConfig(config);
 

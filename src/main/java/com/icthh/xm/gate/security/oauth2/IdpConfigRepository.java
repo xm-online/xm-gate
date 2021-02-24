@@ -10,7 +10,7 @@ import com.icthh.xm.commons.config.client.api.RefreshableConfiguration;
 import com.icthh.xm.commons.domain.idp.IdpConfigUtils;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpAccessTokenInclusion;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -63,8 +64,6 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * - to avoid corruption previously registered in-memory tenant clients config
      * For correct tenant IDP clients registration both configs should be loaded and processed.
      */
-    // FIXME: as i know recently new feature on the XM config was developed that allows to process multiple files.
-    //   please investigate if it can be used to simplify this case (contact S.Senko).
     private final Map<String, Map<String, IdpConfigContainer>> tmpIdpClientConfigs = new ConcurrentHashMap<>();
 
     /**
@@ -76,9 +75,9 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      */
     private final Map<String, MutablePair<Boolean, Boolean>> idpClientConfigProcessingState = new ConcurrentHashMap<>();
 
-    private final Map<String, IdpAccessTokenInclusion> idpTenantFeaturesHolder = new ConcurrentHashMap<>();
+    private final Map<String, Features> idpTenantFeaturesHolder = new ConcurrentHashMap<>();
 
-    private final Map<String, IdpAccessTokenInclusion> tmpIdpTenantFeaturesHolder = new ConcurrentHashMap<>();
+    private final Map<String, Features> tmpIdpTenantFeaturesHolder = new ConcurrentHashMap<>();
 
     private final IdpClientRepository clientRegistrationRepository;
 
@@ -114,7 +113,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
         boolean isTenantFeaturesConfigurationEmpty = ObjectUtils.isEmpty(tmpIdpTenantFeaturesHolder.get(tenantKey));
 
-        if (CollectionUtils.isEmpty(applicablyIdpConfigs) || isTenantFeaturesConfigurationEmpty) {
+        if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
             MutablePair<Boolean, Boolean> configProcessingState = idpClientConfigProcessingState.get(tenantKey);
 
             boolean isPublicConfigProcessed = configProcessingState.getLeft() != null && configProcessingState.getLeft();
@@ -123,14 +122,13 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
             // if both public and private tenant configs processed
             // and client configuration not present at all then all tenant client registrations should be removed
-            if (isPublicConfigProcessed && isPrivateConfigProcess
-                && isClientConfigurationEmpty && isTenantFeaturesConfigurationEmpty) {
-                log.info("For tenant [{}] IDP client configs not specified. "
+            if (isPublicConfigProcessed && isPrivateConfigProcess && isClientConfigurationEmpty) {
+                log.warn("For tenant [{}] IDP client configs not specified. "
                     + "Removing all previously registered IDP clients.", tenantKey);
                 clientRegistrationRepository.removeTenantClientRegistrations(tenantKey);
                 idpClientConfigProcessingState.remove(tenantKey);
             } else {
-                log.info("For tenant [{}] IDP configs not fully loaded or it has lack of configuration", tenantKey);
+                log.warn("For tenant [{}] IDP configs not fully loaded or it has lack of configuration", tenantKey);
             }
 
             return;
@@ -170,12 +168,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .forEach(publicIdpConf -> setIdpPublicClientConfig(tenantKey, publicIdpConf));
     }
 
+    @SneakyThrows
     private void processFeatures(String tenantKey, String config) {
         IdpPublicConfig idpPublicConfig = parseConfig(tenantKey, config, IdpPublicConfig.class);
         if (idpPublicConfig != null && idpPublicConfig.getConfig() != null) {
-            IdpAccessTokenInclusion features = idpPublicConfig.getConfig().getIdpAccessTokenInclusion();
+            Features features = idpPublicConfig.getConfig().getFeatures();
             if (IdpConfigUtils.isTenantFeaturesConfigValid(features)) {
                 tmpIdpTenantFeaturesHolder.put(tenantKey, features);
+            } else {
+                log.error("Features configuration invalid for tenant [{}]. " +
+                    "See log for more details", tenantKey);
             }
         }
     }
@@ -289,7 +291,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return idpClientConfigs;
     }
 
-    public IdpAccessTokenInclusion getTenantFeatures(String tenantKey) {
+    public Features getTenantFeatures(String tenantKey) {
         return idpTenantFeaturesHolder.get(tenantKey);
     }
 }

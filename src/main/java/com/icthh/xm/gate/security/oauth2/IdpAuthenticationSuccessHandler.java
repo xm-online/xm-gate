@@ -7,7 +7,7 @@ import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpAccessTokenInclusion;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import io.github.jhipster.config.JHipsterProperties;
 
@@ -43,7 +43,6 @@ import org.springframework.web.client.RestTemplate;
  */
 @Slf4j
 @Component
-// FIXME: Why we do not have a unit test for this class?
 public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     public static final String GRANT_TYPE_ATTR = "grant_type";
@@ -74,7 +73,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
         String tenantKey = getRequiredTenantKeyValue(tenantContextHolder);
-        IdpAccessTokenInclusion features = idpConfigRepository.getTenantFeatures(tenantKey);
+        Features features = idpConfigRepository.getTenantFeatures(tenantKey);
 
         if (features.isStateful()) {
             // TODO Stateful not implemented for now
@@ -140,7 +139,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
     }
 
     private void prepareStatelessResponse(ResponseEntity<Map<String, Object>> xmUaaTokenResponse,
-                                          IdpAccessTokenInclusion features,
+                                          Features features,
                                           Authentication authentication,
                                           HttpServletResponse response) throws IOException {
 
@@ -159,12 +158,12 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
         Map<String, Object> statelessResponse = new LinkedHashMap<>();
 
         //if bearing feature is enabled - add IDP token to response
-        if (features.getBearirng() != null && features.getBearirng().isEnabled()) {
+        if (features.getIdpAccessTokenInclusion() != null && features.getIdpAccessTokenInclusion().isEnabled()) {
             // FIXME: I'm not sure that we need to pass here ID token.
             //  Most probably it should be Access token because the idea of the feature that some system
             //  (like AWS Gateway) will authorize subsequent requests.
             statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_TOKEN, getIdpToken(authentication));
-            statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION, features.getBearirng());
+            statelessResponse.put(AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION, features.getIdpAccessTokenInclusion());
         }
 
         statelessResponse.putAll(xmUaaTokenResponseBody);
