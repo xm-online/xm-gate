@@ -164,7 +164,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .map(IdpPublicConfig.IdpConfigContainer::getClients)
             .orElseGet(Collections::emptyList)
             .stream()
-            .filter(IdpConfigUtils::isPublicConfigValid)
+            .filter(IdpConfigUtils::isPublicClientConfigValid)
             .forEach(publicIdpConf -> setIdpPublicClientConfig(tenantKey, publicIdpConf));
     }
 
@@ -193,7 +193,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .map(IdpPrivateConfig.IdpConfigContainer::getClients)
             .orElseGet(Collections::emptyList)
             .stream()
-            .filter(IdpConfigUtils::isPrivateConfigValid)
+            .filter(IdpConfigUtils::isPrivateClientConfigValid)
             .forEach(privateIdpConf -> setIdpPrivateClientConfig(tenantKey, privateIdpConf));
 
         idpClientConfigProcessingState.computeIfAbsent(tenantKey, key -> new MutablePair<>()).setRight(true);
