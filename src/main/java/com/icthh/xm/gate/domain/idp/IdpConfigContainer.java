@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class IdpConfigContainer {
 
+    private static final String KEY_EMPTY = "EMPTY";
+
     private IdpPublicClientConfig idpPublicClientConfig;
     private IdpPrivateClientConfig idpPrivateClientConfig;
 
@@ -19,7 +21,12 @@ public class IdpConfigContainer {
      */
     public boolean isApplicable(String tenantKey) {
         String clientKey = idpPublicClientConfig != null ? idpPublicClientConfig.getKey() :
-            idpPrivateClientConfig != null ? idpPrivateClientConfig.getKey() : "EMPTY";
+            idpPrivateClientConfig != null ? idpPrivateClientConfig.getKey() : KEY_EMPTY;
+
+        if (KEY_EMPTY.equals(clientKey)) {
+            log.warn("For tenant [{}] public and private idp configs not specified.", tenantKey);
+            return false;
+        }
 
         if (idpPublicClientConfig == null) {
             log.warn("For tenant [{}] public idp config not specified for client with key [{}].", tenantKey, clientKey);
