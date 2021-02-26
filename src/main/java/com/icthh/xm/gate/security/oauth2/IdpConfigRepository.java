@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -43,6 +44,7 @@ import org.springframework.util.CollectionUtils;
 public class IdpConfigRepository implements RefreshableConfiguration {
 
     private static final String KEY_TENANT = "tenant";
+    public static final String IDP_EMPTY_CONFIG = "idp:";
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
@@ -108,16 +110,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .computeIfAbsent(tenantKey, key -> new HashMap<>())
             .entrySet()
             .stream()
-            .filter(entry -> entry.getValue().isApplicable())
+            .filter(entry -> entry.getValue().isApplicable(tenantKey))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
-            boolean isNewClientConfigurationsEmpty = CollectionUtils.isEmpty(tmpValidIdpClientConfigs.get(tenantKey));
+            boolean isValidClientConfigurationsEmpty = CollectionUtils.isEmpty(tmpValidIdpClientConfigs.get(tenantKey));
             boolean isRawClientConfigurationEmpty = CollectionUtils.isEmpty(tmpRawIdpClientConfigs.get(tenantKey));
 
             // if both public and private tenant configs processed
             // and client configuration not present at all then all tenant client registrations should be removed
-            if (isRawClientConfigurationEmpty && isNewClientConfigurationsEmpty) {
+            if (isRawClientConfigurationEmpty && isValidClientConfigurationsEmpty) {
                 log.warn("For tenant [{}] IDP client configs not specified. "
                     + "Removing all previously registered IDP clients.", tenantKey);
                 clientRegistrationRepository.removeTenantClientRegistrations(tenantKey);
@@ -200,12 +202,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         return matcher.match(IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN, configKey);
     }
 
+    @SneakyThrows
     private <T> T parseConfig(String tenantKey, String config, Class<T> configType) {
+        if (StringUtils.isEmpty(config)) {
+            config = IDP_EMPTY_CONFIG;
+        }
         T parsedConfig = null;
         try {
             parsedConfig = objectMapper.readValue(config, configType);
         } catch (JsonProcessingException e) {
-            log.error("Something went wrong during attempt to read {} for tenant:{}", config.getClass(), tenantKey, e);
+            log.error("Something went wrong during attempt to read {} for tenant:{}", config, tenantKey, e);
         }
         return parsedConfig;
     }
@@ -235,7 +241,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                                                      String tenantKey,
                                                      String registrationId) {
         return storage.computeIfAbsent(tenantKey, key -> new HashMap<>())
-            .computeIfAbsent(registrationId, key -> new IdpConfigContainer());
+            .computeIfAbsent(registrationId, clientId -> new IdpConfigContainer());
     }
 
     private void setIdpPublicClientConfig(Map<String, Map<String, IdpConfigContainer>> storage,
