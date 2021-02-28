@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -67,19 +67,15 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     private final Map<String, Map<String, IdpConfigContainer>> tmpValidIdpClientConfigs = new ConcurrentHashMap<>();
 
     /**
-     * In memory storage.
-     * Stores information about all tenant IDP clients public/private configuration that currently in process.
+     * In memory storage for storing information is tenant public/private configuration process state.
      * Generally speaking this information allows to understand is tenant public & private configuration loaded and processed.
-     * Also we need to store this information in memory cause:
-     * - public/private configuration could be loaded and processed in random order.
-     * - to avoid corruption previously registered in-memory tenant clients config
-     * For correct tenant IDP clients registration both configs should be loaded and processed.
+     * We need to store this information in memory cause public/private configuration could be loaded and processed in random order.
+     * Map key respond for tenant name, map value respond for config process state.
+     * Left pair value relates to public config process state, right pair value relates to private config process state.
      */
-    private final Map<String, Map<String, IdpConfigContainer>> tmpRawIdpClientConfigs = new ConcurrentHashMap<>();
+    private final Map<String, MutablePair<Boolean, Boolean>> idpClientConfigProcessingState = new ConcurrentHashMap<>();
 
     private final Map<String, Features> idpTenantFeaturesHolder = new ConcurrentHashMap<>();
-
-    private final Map<String, Features> tmpIdpTenantFeaturesHolder = new ConcurrentHashMap<>();
 
     private final IdpClientRepository clientRegistrationRepository;
 
@@ -114,15 +110,19 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (CollectionUtils.isEmpty(applicablyIdpConfigs)) {
+            MutablePair<Boolean, Boolean> configProcessingState = idpClientConfigProcessingState.get(tenantKey);
+
+            boolean isPublicConfigProcessed = configProcessingState.getLeft() != null && configProcessingState.getLeft();
+            boolean isPrivateConfigProcess = configProcessingState.getRight() != null && configProcessingState.getRight();
             boolean isValidClientConfigurationsEmpty = CollectionUtils.isEmpty(tmpValidIdpClientConfigs.get(tenantKey));
-            boolean isRawClientConfigurationEmpty = CollectionUtils.isEmpty(tmpRawIdpClientConfigs.get(tenantKey));
 
             // if both public and private tenant configs processed
             // and client configuration not present at all then all tenant client registrations should be removed
-            if (isRawClientConfigurationEmpty && isValidClientConfigurationsEmpty) {
+            if (isPublicConfigProcessed && isPrivateConfigProcess && isValidClientConfigurationsEmpty) {
                 log.warn("For tenant [{}] IDP client configs not specified. "
                     + "Removing all previously registered IDP clients.", tenantKey);
                 clientRegistrationRepository.removeTenantClientRegistrations(tenantKey);
+                idpClientConfigProcessingState.remove(tenantKey);
             } else {
                 log.warn("For tenant [{}] IDP configs not fully loaded or it has lack of configuration", tenantKey);
             }
@@ -146,9 +146,12 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         if (!isPublicIdpConfig(configKey)) {
             return;
         }
+        log.info("Processing public idp configuration for tenant [{}]", tenantKey);
         processFeatures(tenantKey, config);
 
         processPublicClientsConfiguration(tenantKey, config);
+
+        idpClientConfigProcessingState.computeIfAbsent(tenantKey, key -> new MutablePair<>()).setLeft(true);
 
     }
 
@@ -158,23 +161,29 @@ public class IdpConfigRepository implements RefreshableConfiguration {
             .map(IdpPublicConfig.IdpConfigContainer::getClients)
             .orElseGet(Collections::emptyList)
             .stream()
-            .peek(publicIdpConf -> setIdpPublicClientConfig(tmpRawIdpClientConfigs, tenantKey, publicIdpConf))
             .filter(IdpConfigUtils::isPublicClientConfigValid)
-            .forEach(publicIdpConf -> setIdpPublicClientConfig(tmpValidIdpClientConfigs, tenantKey, publicIdpConf));
+            .forEach(publicIdpConf -> setIdpPublicClientConfig(tenantKey, publicIdpConf));
     }
 
     @SneakyThrows
     private void processFeatures(String tenantKey, String config) {
         IdpPublicConfig idpPublicConfig = parseConfig(tenantKey, config, IdpPublicConfig.class);
+
+        Features validFeatures = new Features();//instantiate default idp features configuration
+
         if (idpPublicConfig != null && idpPublicConfig.getConfig() != null) {
-            Features features = idpPublicConfig.getConfig().getFeatures();
-            if (IdpConfigUtils.isTenantFeaturesConfigValid(features)) {
-                tmpIdpTenantFeaturesHolder.put(tenantKey, features);
-            } else {
-                log.error("Features configuration invalid for tenant [{}]. " +
+            Features tenantFeaturesConfig = idpPublicConfig.getConfig().getFeatures();
+
+            if (!IdpConfigUtils.isTenantFeaturesConfigValid(tenantFeaturesConfig)) {
+                log.error("Features configuration invalid for tenant [{}]. Applying default config." +
                     "See log for more details", tenantKey);
+            } else {
+                validFeatures = tenantFeaturesConfig;
             }
+        } else {
+            log.warn("Features configuration not specified for tenant [{}]. Applying default config.", tenantKey);
         }
+        idpTenantFeaturesHolder.put(tenantKey, validFeatures);
     }
 
     private void processPrivateConfiguration(String tenantKey, String configKey, String config) {
@@ -182,15 +191,17 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         if (!isPrivateIdpConfig(configKey)) {
             return;
         }
+        log.info("Processing private idp configuration for tenant [{}]", tenantKey);
 
         Optional.ofNullable(parseConfig(tenantKey, config, IdpPrivateConfig.class))
             .map(IdpPrivateConfig::getConfig)
             .map(IdpPrivateConfig.IdpConfigContainer::getClients)
             .orElseGet(Collections::emptyList)
             .stream()
-            .peek(privateIdpConf -> setIdpPrivateClientConfig(tmpValidIdpClientConfigs, tenantKey, privateIdpConf))
             .filter(IdpConfigUtils::isPrivateClientConfigValid)
-            .forEach(privateIdpConf -> setIdpPrivateClientConfig(tmpValidIdpClientConfigs, tenantKey, privateIdpConf));
+            .forEach(privateIdpConf -> setIdpPrivateClientConfig(tenantKey, privateIdpConf));
+
+        idpClientConfigProcessingState.computeIfAbsent(tenantKey, key -> new MutablePair<>()).setRight(true);
 
     }
 
@@ -204,15 +215,16 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     @SneakyThrows
     private <T> T parseConfig(String tenantKey, String config, Class<T> configType) {
-        if (StringUtils.isEmpty(config)) {
-            config = IDP_EMPTY_CONFIG;
-        }
-        T parsedConfig = null;
+        T parsedConfig;
+
         try {
             parsedConfig = objectMapper.readValue(config, configType);
         } catch (JsonProcessingException e) {
-            log.error("Something went wrong during attempt to read {} for tenant:{}", config, tenantKey, e);
+            log.error("Something went wrong during attempt to read config [{}] for tenant [{}]. " +
+                "Creating default config.", config, tenantKey, e);
+            parsedConfig = objectMapper.readValue(IDP_EMPTY_CONFIG, configType);
         }
+
         return parsedConfig;
     }
 
@@ -223,13 +235,12 @@ public class IdpConfigRepository implements RefreshableConfiguration {
      * </p>
      *
      * @param tenantKey         tenant key
-     * @param applicablyConfigs fully loaded configs for processing
+     * @param applicablyConfigs fully loaded valid configs for processing
      */
     private void updateInMemoryConfig(String tenantKey, Map<String, IdpConfigContainer> applicablyConfigs) {
         tmpValidIdpClientConfigs.remove(tenantKey);
-        tmpRawIdpClientConfigs.remove(tenantKey);
+        idpClientConfigProcessingState.remove(tenantKey);
         idpClientConfigs.put(tenantKey, applicablyConfigs);
-        idpTenantFeaturesHolder.put(tenantKey, tmpIdpTenantFeaturesHolder.remove(tenantKey));
     }
 
     private String extractTenantKeyFromPath(String configKey, String settingsConfigPath) {
@@ -237,25 +248,19 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
     }
 
-    private IdpConfigContainer getIdpConfigContainer(Map<String, Map<String, IdpConfigContainer>> storage,
-                                                     String tenantKey,
-                                                     String registrationId) {
-        return storage.computeIfAbsent(tenantKey, key -> new HashMap<>())
-            .computeIfAbsent(registrationId, clientId -> new IdpConfigContainer());
-    }
-
-    private void setIdpPublicClientConfig(Map<String, Map<String, IdpConfigContainer>> storage,
-                                          String tenantKey,
-                                          IdpPublicClientConfig publicConfig) {
-        getIdpConfigContainer(storage, tenantKey, publicConfig.getKey())
+    private void setIdpPublicClientConfig(String tenantKey, IdpPublicClientConfig publicConfig) {
+        getIdpConfigContainer(tenantKey, publicConfig.getKey())
             .setIdpPublicClientConfig(publicConfig);
     }
 
-    private void setIdpPrivateClientConfig(Map<String, Map<String, IdpConfigContainer>> storage,
-                                           String tenantKey,
-                                           IdpPrivateClientConfig privateConfig) {
-        getIdpConfigContainer(storage, tenantKey, privateConfig.getKey())
+    private void setIdpPrivateClientConfig(String tenantKey, IdpPrivateClientConfig privateConfig) {
+        getIdpConfigContainer(tenantKey, privateConfig.getKey())
             .setIdpPrivateClientConfig(privateConfig);
+    }
+
+    private IdpConfigContainer getIdpConfigContainer(String tenantKey, String registrationId) {
+        return tmpValidIdpClientConfigs.computeIfAbsent(tenantKey, key -> new HashMap<>())
+            .computeIfAbsent(registrationId, clientId -> new IdpConfigContainer());
     }
 
     private List<ClientRegistration> buildClientRegistrations(Map<String, IdpConfigContainer> applicablyConfigs) {
