@@ -33,6 +33,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 /**
  * This class reads and process both IDP clients public and private configuration for each tenant.
@@ -302,6 +303,14 @@ public class IdpConfigRepository implements RefreshableConfiguration {
     }
 
     public Features getTenantFeatures(String tenantKey) {
-        return idpTenantFeaturesHolder.get(tenantKey);
+        Features features = idpTenantFeaturesHolder.get(tenantKey);
+
+        if (ObjectUtils.isEmpty(features)) {
+            log.warn("Features configuration not specified for tenant [{}]. Setting default config.", tenantKey);
+            features = new Features();
+            idpTenantFeaturesHolder.put(tenantKey, features);
+        }
+
+        return features;
     }
 }

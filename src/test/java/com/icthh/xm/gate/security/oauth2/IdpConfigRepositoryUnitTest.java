@@ -10,6 +10,8 @@ import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
+import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
+import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -26,6 +28,8 @@ import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @ExtendWith(MockitoExtension.class)
 public class IdpConfigRepositoryUnitTest {
@@ -174,6 +178,21 @@ public class IdpConfigRepositoryUnitTest {
         validateRegistration(tenantKey, clientKeyPrefix, clientsAmount, idpPublicConfig, idpPrivateConfig);
     }
 
+    @Test
+    public void validateFeaturePresenceForTenant(){
+        String tenantKey = "tenant1";
+        Features tenantFeatures = idpConfigRepository.getTenantFeatures(tenantKey);
+
+        assertNotNull(tenantFeatures);
+        assertFalse(tenantFeatures.isStateful());
+        assertFalse(tenantFeatures.isPkce());
+
+        Features.IdpAccessTokenInclusion idpAccessTokenInclusion = tenantFeatures.getIdpAccessTokenInclusion();
+        assertNotNull(idpAccessTokenInclusion);
+        assertTrue(StringUtils.isNotEmpty(idpAccessTokenInclusion.getIdpTokenHeader()));
+        assertTrue(StringUtils.isNotEmpty(idpAccessTokenInclusion.getXmTokenHeader()));
+    }
+
     private IdpPublicConfig registerPublicConfigs(String clientKeyPrefix,
                                                   String tenantKey,
                                                   int clientsAmount,
@@ -259,7 +278,5 @@ public class IdpConfigRepositoryUnitTest {
         assertNotNull(idpConfigContainer.getIdpPublicClientConfig());
         assertNotNull(idpConfigContainer.getIdpPrivateClientConfig());
     }
-
-
 
 }
