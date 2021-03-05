@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class BeariringModeFilter extends ZuulFilter {
+public class IdpStatefulModeFilter extends ZuulFilter {
 
     private final TenantContextHolder tenantContextHolder;
     private final IdpConfigRepository idpConfigRepository;
