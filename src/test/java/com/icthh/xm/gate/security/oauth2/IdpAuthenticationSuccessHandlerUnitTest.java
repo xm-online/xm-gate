@@ -122,11 +122,10 @@ public class IdpAuthenticationSuccessHandlerUnitTest extends AbstractIdpUnitTest
         idpAuthenticationSuccessHandler.onAuthenticationSuccess(null, response, buildAuthentication("email"));
 
         //Capture and validate args
-        ArgumentCaptor<String> accessTokenUriCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Object> uaaTokenRequestCaptor = ArgumentCaptor.forClass(Object.class);
 
-        verify(restTemplate, times(1)).exchange(
-            accessTokenUriCaptor.capture(),
+        verify(restTemplate).exchange(
+            eq("http://uaa.com"),
             eq(HttpMethod.POST),
             (HttpEntity<?>) uaaTokenRequestCaptor.capture(),
             (ParameterizedTypeReference<Map<String, Object>>) any()
@@ -134,7 +133,6 @@ public class IdpAuthenticationSuccessHandlerUnitTest extends AbstractIdpUnitTest
 
         HttpEntity<MultiValueMap<String, String>> uaaTokenRequestCaptorValues = (HttpEntity<MultiValueMap<String, String>>) uaaTokenRequestCaptor.getValue();
 
-        assertEquals("http://uaa.com", accessTokenUriCaptor.getValue());
         validateRequestHeaders(uaaTokenRequestCaptorValues, tenantKey);
         validateRequestBody(uaaTokenRequestCaptorValues);
 
