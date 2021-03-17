@@ -124,6 +124,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
                     + "Removing all previously registered IDP clients.", tenantKey);
                 clientRegistrationRepository.removeTenantClientRegistrations(tenantKey);
                 idpClientConfigProcessingState.remove(tenantKey);
+                idpClientConfigs.remove(tenantKey);
             } else {
                 log.warn("For tenant [{}] IDP configs not fully loaded or it has lack of configuration", tenantKey);
             }
