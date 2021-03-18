@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class IdpStatefulModeFilter extends ZuulFilter {
 
+    private static final int FILTER_ORDER_PRIORITY = 10000;//filter order priority
     private final TenantContextHolder tenantContextHolder;
     private final IdpConfigRepository idpConfigRepository;
     private final XmAuthenticationContextHolder authenticationContextHolder;
@@ -54,7 +55,7 @@ public class IdpStatefulModeFilter extends ZuulFilter {
 
     @Override
     public int filterOrder() {
-        return 10000;
+        return FILTER_ORDER_PRIORITY;
     }
 
 }

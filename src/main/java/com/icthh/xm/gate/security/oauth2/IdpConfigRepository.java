@@ -45,7 +45,7 @@ import org.springframework.util.ObjectUtils;
 public class IdpConfigRepository implements RefreshableConfiguration {
 
     private static final String KEY_TENANT = "tenant";
-    public static final String IDP_EMPTY_CONFIG = "idp:";
+    private static final String IDP_EMPTY_CONFIG = "idp:";
 
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     private final AntPathMatcher matcher = new AntPathMatcher();
