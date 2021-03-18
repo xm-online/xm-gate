@@ -41,9 +41,8 @@ public class IdpClientRepository implements ClientRegistrationRepository {
         Assert.notEmpty(registrations, "registrations cannot be empty");
         this.clientsHolder.put(tenantKey, mapRegistrationIdToClientRegistration(registrations));
 
-        List<String> clientsName = registrations.stream()
-            .map(ClientRegistration::getClientName)
-            .collect(Collectors.toList());
+        Map<String, String> clientsName = registrations.stream()
+            .collect(Collectors.toMap(ClientRegistration::getRegistrationId, ClientRegistration::getClientName));
 
         log.info("IDP clients for tenant [{}] registered: {}", tenantKey, clientsName);
     }

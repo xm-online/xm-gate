@@ -134,6 +134,7 @@ public class IdpConfigRepository implements RefreshableConfiguration {
 
         clientRegistrationRepository.setRegistrations(tenantKey, buildClientRegistrations(applicablyIdpConfigs));
         updateInMemoryConfig(tenantKey, applicablyIdpConfigs);
+        XmJwtDecoderFactory.clearJwtDecodersCache(tenantKey);
     }
 
     private String getTenantKey(String configKey) {
