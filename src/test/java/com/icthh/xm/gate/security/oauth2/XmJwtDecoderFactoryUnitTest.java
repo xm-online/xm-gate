@@ -43,6 +43,7 @@ public class XmJwtDecoderFactoryUnitTest {
         assertNotNull(createdJwtDecoder);
         Map<String, JwtDecoder> cachedJwtDecoders = XmJwtDecoderFactory.getJwtDecoders(tenantKey);
         assertNotNull(cachedJwtDecoders);
+
         JwtDecoder cachedJwtDecoder = cachedJwtDecoders.get(registrationId);
         assertNotNull(cachedJwtDecoder);
     }
