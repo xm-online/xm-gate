@@ -109,7 +109,7 @@ public class IdpAuthenticationSuccessHandlerUnitTest extends AbstractIdpUnitTest
         jhipsterProperties.getSecurity().getClientAuthorization().setAccessTokenUri("http://uaa.com");
 
         when(restTemplate.exchange(
-            anyString(),
+            eq("http://uaa.com"),
             eq(HttpMethod.POST),
             any(),
             (ParameterizedTypeReference<Map<String, Object>>) any()))
