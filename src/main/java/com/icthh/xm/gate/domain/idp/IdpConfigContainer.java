@@ -24,16 +24,16 @@ public class IdpConfigContainer {
             idpPrivateClientConfig != null ? idpPrivateClientConfig.getKey() : KEY_EMPTY;
 
         if (KEY_EMPTY.equals(clientKey)) {
-            log.warn("For tenant [{}] public and private idp configs not specified.", tenantKey);
+            log.warn("For tenant [{}] valid public and private idp configs not specified.", tenantKey);
             return false;
         }
 
         if (idpPublicClientConfig == null) {
-            log.warn("For tenant [{}] public idp config not specified for client with key [{}].", tenantKey, clientKey);
+            log.warn("For tenant [{}] valid public idp config not present for client with key [{}].", tenantKey, clientKey);
             return false;
         }
         if (idpPrivateClientConfig == null) {
-            log.warn("For tenant [{}] private idp config not specified for client with key [{}].", tenantKey, clientKey);
+            log.warn("For tenant [{}] valid private idp config not present for client with key [{}].", tenantKey, clientKey);
             return false;
         }
         return true;

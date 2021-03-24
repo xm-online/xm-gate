@@ -1,15 +1,25 @@
 package com.icthh.xm.gate.security.oauth2;
 
+import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
+import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
+import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_ATTR;
+import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_IDP_TOKEN;
+import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.TOKEN_ATTR;
+import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildAuthentication;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
-import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig.IdpConfigContainer.IdpPrivateClientConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
-import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.IdpPublicClientConfig;
-import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
-import com.icthh.xm.commons.tenant.internal.DefaultTenantContextHolder;
-import com.icthh.xm.gate.domain.idp.IdpConfigContainer;
 import io.github.jhipster.config.JHipsterProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,52 +35,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN;
-import static com.icthh.xm.commons.domain.idp.IdpConstants.IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN;
-import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_TOKEN;
-import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
-import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_ATTR;
-import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.TOKEN_ATTR;
-import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_IDP_TOKEN;
-import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildAuthentication;
-import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildPublicConfig;
-import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildPrivateConfig;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.eq;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-
 @ExtendWith(MockitoExtension.class)
-public class IdpAuthenticationSuccessHandlerUnitTest {
+public class IdpAuthenticationSuccessHandlerUnitTest extends AbstractIdpUnitTest {
 
-    private static final String TENANT_REPLACE_PATTERN = "{tenant}";
     @Mock
     private RestTemplate restTemplate;
 
     private final JHipsterProperties jhipsterProperties = new JHipsterProperties();
-    private final TenantContextHolder tenantContextHolder = new DefaultTenantContextHolder();
-    private final IdpClientRepository clientRegistrationRepository = new IdpClientRepository(tenantContextHolder);
-    private final IdpConfigRepository idpConfigRepository = new IdpConfigRepository(clientRegistrationRepository);
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private IdpAuthenticationSuccessHandler idpAuthenticationSuccessHandler;
 
@@ -110,6 +91,7 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void test_shouldSuccessfullyReturnData() throws IOException {
 
@@ -127,11 +109,11 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
         jhipsterProperties.getSecurity().getClientAuthorization().setAccessTokenUri("http://uaa.com");
 
         when(restTemplate.exchange(
-            anyString(),
+            eq("http://uaa.com"),
             eq(HttpMethod.POST),
             any(),
             (ParameterizedTypeReference<Map<String, Object>>) any()))
-            .thenReturn(buildResponce(true));
+            .thenReturn(buildResponse(true));
 
         this.idpAuthenticationSuccessHandler =
             new IdpAuthenticationSuccessHandler(objectMapper, restTemplate, tenantContextHolder, idpConfigRepository, jhipsterProperties);
@@ -140,11 +122,10 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
         idpAuthenticationSuccessHandler.onAuthenticationSuccess(null, response, buildAuthentication("email"));
 
         //Capture and validate args
-        ArgumentCaptor<String> accessTokenUriCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Object> uaaTokenRequestCaptor = ArgumentCaptor.forClass(Object.class);
 
-        verify(restTemplate, times(1)).exchange(
-            accessTokenUriCaptor.capture(),
+        verify(restTemplate).exchange(
+            eq("http://uaa.com"),
             eq(HttpMethod.POST),
             (HttpEntity<?>) uaaTokenRequestCaptor.capture(),
             (ParameterizedTypeReference<Map<String, Object>>) any()
@@ -152,7 +133,6 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
 
         HttpEntity<MultiValueMap<String, String>> uaaTokenRequestCaptorValues = (HttpEntity<MultiValueMap<String, String>>) uaaTokenRequestCaptor.getValue();
 
-        assertEquals("http://uaa.com", accessTokenUriCaptor.getValue());
         validateRequestHeaders(uaaTokenRequestCaptorValues, tenantKey);
         validateRequestBody(uaaTokenRequestCaptorValues);
 
@@ -225,7 +205,7 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
         assertEquals("LOGIN.EMAIL", secondLogin.get("typeKey"));
     }
 
-    private ResponseEntity<Map<String, Object>> buildResponce(boolean buildValidResponse) {
+    private ResponseEntity<Map<String, Object>> buildResponse(boolean buildValidResponse) {
         if (!buildValidResponse) {
             new ResponseEntity<Map<String, Object>>(null, null, HttpStatus.BAD_REQUEST);
         }
@@ -253,97 +233,6 @@ public class IdpAuthenticationSuccessHandlerUnitTest {
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
 
         return new ResponseEntity<>(body, headers, status);
-    }
-
-    private IdpPublicConfig registerPublicConfigs(String clientKeyPrefix,
-                                                  String tenantKey,
-                                                  int clientsAmount,
-                                                  boolean buildValidConfig,
-                                                  boolean onInit,
-                                                  boolean isStateful) throws JsonProcessingException {
-        String publicSettingsConfigPath = IDP_PUBLIC_SETTINGS_CONFIG_PATH_PATTERN.replace(TENANT_REPLACE_PATTERN, tenantKey);
-
-        IdpPublicConfig idpPublicConfig = buildPublicConfig(clientKeyPrefix, clientsAmount, "client-id", buildValidConfig);
-        if (isStateful) {
-            idpPublicConfig.getConfig().getFeatures().setStateful(true);
-        }
-        String publicConfigAsString = objectMapper.writeValueAsString(idpPublicConfig);
-
-        if (onInit) {
-            idpConfigRepository.onInit(publicSettingsConfigPath, publicConfigAsString);
-        } else {
-            idpConfigRepository.onRefresh(publicSettingsConfigPath, publicConfigAsString);
-        }
-
-        return idpPublicConfig;
-    }
-
-    private IdpPrivateConfig registerPrivateConfigs(String clientKeyPrefix,
-                                                    String tenantKey,
-                                                    int clientsAmount,
-                                                    boolean buildValidConfig, boolean onInit) throws JsonProcessingException {
-        String privateSettingsConfigPath = IDP_PRIVATE_SETTINGS_CONFIG_PATH_PATTERN.replace(TENANT_REPLACE_PATTERN, tenantKey);
-
-        IdpPrivateConfig idpPrivateConfig = buildPrivateConfig(clientKeyPrefix, clientsAmount, buildValidConfig);
-        String privateConfigAsString = objectMapper.writeValueAsString(idpPrivateConfig);
-
-        if (onInit) {
-            idpConfigRepository.onInit(privateSettingsConfigPath, privateConfigAsString);
-        } else {
-            idpConfigRepository.onRefresh(privateSettingsConfigPath, privateConfigAsString);
-        }
-        return idpPrivateConfig;
-    }
-
-    private void validateRegistration(String tenantKey, String clientKeyPrefix, int clientsAmount, IdpPublicConfig idpPublicConfig, IdpPrivateConfig idpPrivateConfig) {
-        TenantContextUtils.setTenant(tenantContextHolder, tenantKey);
-
-        for (int i = 0; i < clientsAmount; i++) {
-            String registrationId = clientKeyPrefix + i;
-            ClientRegistration clientRegistration = clientRegistrationRepository.findByRegistrationId(registrationId);
-
-            assertNotNull(clientRegistration);
-            validateClientRegistration(registrationId, idpPublicConfig, idpPrivateConfig, clientRegistration);
-            validateInMemoryIdpConfigs(tenantKey, registrationId);
-        }
-
-        tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
-    }
-
-    private void validateClientRegistration(String registrationId,
-                                            IdpPublicConfig idpPublicConfig,
-                                            IdpPrivateConfig idpPrivateConfig,
-                                            ClientRegistration registration) {
-        IdpPublicClientConfig idpPublicClientConfig = idpPublicConfig.getConfig()
-            .getClients()
-            .stream()
-            .filter(config -> registrationId.equals(config.getKey())).findAny()
-            .orElseThrow();
-
-        IdpPrivateClientConfig idpPrivateClientConfig = idpPrivateConfig.getConfig()
-            .getClients()
-            .stream()
-            .filter(config -> registrationId.equals(config.getKey())).findAny()
-            .orElseThrow();
-
-        assertEquals(registrationId, registration.getRegistrationId());
-        assertEquals(idpPublicClientConfig.getClientId(), registration.getClientId());
-        assertEquals(ClientAuthenticationMethod.BASIC, registration.getClientAuthenticationMethod());
-        assertEquals(AuthorizationGrantType.AUTHORIZATION_CODE, registration.getAuthorizationGrantType());
-        assertEquals(idpPublicClientConfig.getRedirectUri(), registration.getRedirectUri());
-        assertEquals(idpPrivateClientConfig.getScope(), registration.getScopes());
-        assertEquals(registrationId, registration.getClientName());
-        assertEquals(idpPrivateClientConfig.getClientSecret(), registration.getClientSecret());
-    }
-
-    private void validateInMemoryIdpConfigs(String tenantKey, String clientRegistrationId) {
-        IdpConfigContainer idpConfigContainer = idpConfigRepository.getIdpClientConfigs()
-            .getOrDefault(tenantKey, Collections.emptyMap())
-            .get(clientRegistrationId);
-
-        assertNotNull(idpConfigContainer);
-        assertNotNull(idpConfigContainer.getIdpPublicClientConfig());
-        assertNotNull(idpConfigContainer.getIdpPrivateClientConfig());
     }
 
 }
