@@ -86,7 +86,7 @@ public class MonitoringResourceIntTest {
         MvcResult result = mvc
             .perform(get("/api/monitoring/services"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].name").value(containsInAnyOrder("uaa", "gate")))
             .andExpect(jsonPath("$.[*].instances[*]").isNotEmpty())
             .andExpect(jsonPath("$.[*].instances[*].id")
@@ -121,7 +121,7 @@ public class MonitoringResourceIntTest {
         MvcResult result = mvc
             .perform(get("/api/monitoring/services/gate/health"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*]").isNotEmpty())
             .andExpect(jsonPath("$.[*].health").isNotEmpty())
             .andExpect(jsonPath("$.[*].health.details").isNotEmpty())
@@ -142,7 +142,7 @@ public class MonitoringResourceIntTest {
         MvcResult result = mvc
             .perform(get("/api/monitoring/services/gate/metrics"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*]").isNotEmpty())
             .andExpect(jsonPath("$.[*].metrics").isNotEmpty())
             .andExpect(jsonPath("$.[*].instanceId").value(containsInAnyOrder("gate1", "gate2")))

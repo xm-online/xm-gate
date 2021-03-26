@@ -1,9 +1,21 @@
 package com.icthh.xm.gate.config;
 
 import com.icthh.xm.commons.permission.constants.RoleConstant;
-import io.github.jhipster.config.JHipsterProperties;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
+
+import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -17,6 +29,9 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.oidc.authentication.OidcAuthorizationCodeAuthenticationProvider;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.provider.token.TokenStore;
@@ -24,29 +39,17 @@ import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenCo
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.PublicKey;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
-
 @Configuration
+@RequiredArgsConstructor
 @EnableResourceServer
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerAdapter {
 
-    private final JHipsterProperties jHipsterProperties;
-
     private final DiscoveryClient discoveryClient;
 
-    public MicroserviceSecurityConfiguration(JHipsterProperties jHipsterProperties,
-                                             DiscoveryClient discoveryClient) {
+    private final TenantContextHolder tenantContextHolder;
 
-        this.jHipsterProperties = jHipsterProperties;
-        this.discoveryClient = discoveryClient;
-    }
+    private final IdpAuthenticationSuccessHandler idpSuccessHandler;
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
@@ -64,16 +67,37 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             //convention: allow to process /api/public for all service
             .antMatchers("/*/api/public/**").permitAll()
             .antMatchers("/api/profile-info").permitAll()
+            .antMatchers("/oauth2/authorization/**").permitAll()
+            .antMatchers("/login/oauth2/code/**").permitAll()
             .antMatchers("/api/**").authenticated()
             .antMatchers("/management/health").permitAll()
             .antMatchers("/management/prometheus/**").permitAll()
             .antMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
-            .antMatchers("/swagger-resources/configuration/ui").permitAll();
+            .antMatchers("/swagger-resources/configuration/ui").permitAll()
+        .and()
+            .oauth2Client()
+        .and().authenticationProvider(provider())
+            .oauth2Login()
+            .successHandler(idpSuccessHandler);
     }
 
     @Bean
     public TokenStore tokenStore(JwtAccessTokenConverter jwtAccessTokenConverter) {
         return new JwtTokenStore(jwtAccessTokenConverter);
+    }
+
+    public OidcAuthorizationCodeAuthenticationProvider provider() {
+        DefaultAuthorizationCodeTokenResponseClient defaultAuthorizationCodeTokenResponseClient =
+            new DefaultAuthorizationCodeTokenResponseClient();
+
+        OidcUserService oidcUserService = new OidcUserService();
+
+        OidcAuthorizationCodeAuthenticationProvider oidcAuthorizationCodeAuthenticationProvider =
+            new OidcAuthorizationCodeAuthenticationProvider(defaultAuthorizationCodeTokenResponseClient, oidcUserService);
+
+        oidcAuthorizationCodeAuthenticationProvider.setJwtDecoderFactory(new XmJwtDecoderFactory(tenantContextHolder));
+
+        return oidcAuthorizationCodeAuthenticationProvider;
     }
 
     @Bean
@@ -113,7 +137,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             throw new CertificateException("Received empty certificate from config.");
         }
 
-        try(InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
+        try (InputStream fin = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
 
             CertificateFactory f = CertificateFactory.getInstance(Constants.CERTIFICATE);
             X509Certificate certificate = (X509Certificate) f.generateCertificate(fin);

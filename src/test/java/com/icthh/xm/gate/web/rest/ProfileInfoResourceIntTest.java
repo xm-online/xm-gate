@@ -52,7 +52,7 @@ public class ProfileInfoResourceIntTest {
     public void getProfileInfoWithRibbon() throws Exception {
         restProfileMockMvc.perform(get("/api/profile-info"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE));
     }
 
     @Test
@@ -63,6 +63,6 @@ public class ProfileInfoResourceIntTest {
 
         restProfileMockMvc.perform(get("/api/profile-info"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE));
     }
 }

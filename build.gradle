@@ -116,6 +116,7 @@ test {
     // uncomment if the tests reports are not generated
     // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
     // ignoreFailures true
+    useJUnitPlatform()
     reports.html.enabled = false
     testLogging {
         exceptionFormat = 'full'
@@ -225,9 +226,10 @@ dependencies {
     implementation "org.springframework.security:spring-security-data"
     implementation "org.springframework.security:spring-security-web"
     implementation "org.springframework.security:spring-security-messaging"
-    implementation "org.springframework.security.oauth:spring-security-oauth2"
-    implementation "org.springframework.security:spring-security-jwt"
-    implementation ("io.springfox:springfox-swagger2") {
+    implementation "org.springframework.security:spring-security-oauth2-jose:${spring_security_version}"
+    implementation "org.springframework.security:spring-security-oauth2-client:${spring_security_version}"
+    implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
+    implementation("io.springfox:springfox-swagger2") {
         exclude module: "mapstruct"
     }
     implementation "io.springfox:springfox-bean-validators"
@@ -235,10 +237,6 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstruct_version}"
     implementation "org.apache.httpcomponents:httpclient"
     implementation "com.hazelcast:hazelcast-spring"
-    implementation "org.springframework.social:spring-social-security:${spring_social_security_version}"
-    implementation "org.springframework.social:spring-social-google:${spring_social_google_version}"
-    implementation "org.springframework.social:spring-social-facebook:${spring_social_facebook_version}"
-    implementation "org.springframework.social:spring-social-twitter:${spring_social_google_version}"
     implementation "io.github.openfeign:feign-jackson"
     annotationProcessor ("org.springframework.boot:spring-boot-configuration-processor:${spring_boot_version}") {
         exclude group: "com.vaadin.external.google", module: "android-json"
@@ -252,6 +250,7 @@ dependencies {
     }
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.boot:spring-boot-test"
+    testImplementation "org.mockito:mockito-junit-jupiter"
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "com.tngtech.archunit:archunit-junit5-api:${archunit_junit5_version}"
     testRuntimeOnly "com.tngtech.archunit:archunit-junit5-engine:${archunit_junit5_version}"
@@ -267,6 +266,7 @@ dependencies {
         exclude group: "io.github.jhipster", module: "jhipster"
     }
     implementation "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-idp:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-i18n:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-metric:${xm_commons_metric_version}"
@@ -283,7 +283,7 @@ spotbugs {
 
 pmd {
     rulePriority = 3
-    toolVersion = '5.5.4'
+    toolVersion = '6.31.0'
     ignoreFailures = true
     ruleSetFiles = files("./qa/pmd.xml")
 }
@@ -297,7 +297,7 @@ task cleanResources(type: Delete) {
 }
 
 wrapper {
-    gradleVersion = "6.0.1"
+    gradleVersion = "6.5"
 }
 
 task stage(dependsOn: 'bootWar') {
