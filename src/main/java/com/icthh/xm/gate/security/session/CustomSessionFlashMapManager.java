@@ -35,7 +35,8 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
             log.warn("Session created at '{}'", convertToDate(session.getCreationTime()));
             log.warn("Session last accessed at '{}'", convertToDate(session.getLastAccessedTime()));
             List.of(servletRequest.getCookies()).forEach(cookie -> {
-                log.warn("Session cookie name '{}', value '{}', maxage '{}'", cookie.getName(), cookie.getValue(), cookie.getMaxAge());
+                log.warn("Session cookie name '{}', value '{}', maxage '{}'",
+                    cookie.getName(), cookie.getValue(), cookie.getMaxAge());
             });
 
             servletRequest.logout();
