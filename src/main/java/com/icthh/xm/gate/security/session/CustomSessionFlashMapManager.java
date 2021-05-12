@@ -3,6 +3,7 @@ package com.icthh.xm.gate.security.session;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
 
@@ -30,15 +31,20 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
         } catch (IllegalStateException illegalStateException) {
             log.error("{}", illegalStateException.getMessage());
 
-            HttpSession session = servletRequest.getSession(false);
-            log.warn("Session with JSESSIONID {} invalid. Clearing cookies and perform logout.", session.getId());
-            log.warn("Session created at '{}'", convertToDate(session.getCreationTime()));
-            log.warn("Session last accessed at '{}'", convertToDate(session.getLastAccessedTime()));
-            List.of(servletRequest.getCookies()).forEach(cookie -> {
-                log.warn("Session cookie name '{}', value '{}', maxage '{}'",
-                    cookie.getName(), cookie.getValue(), cookie.getMaxAge());
-            });
+            SecurityContextHolder.clearContext();
 
+            HttpSession session = servletRequest.getSession(false);
+
+            if (session != null) {
+                log.warn("Session with JSESSIONID '{}' invalid.", session.getId());
+                log.warn("Session '{}' created at '{}'", session.getId(), convertToDate(session.getCreationTime()));
+                log.warn("Session '{}' last accessed at '{}'", session.getId(), convertToDate(session.getLastAccessedTime()));
+                List.of(servletRequest.getCookies()).forEach(cookie -> {
+                    log.warn("Session cookie name '{}', value '{}', maxage '{}'",
+                        cookie.getName(), cookie.getValue(), cookie.getMaxAge());
+                });
+            }
+            log.warn("Clearing cookies and perform logout.");
             servletRequest.logout();
         }
         return null;
@@ -46,8 +52,9 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
 
     private String convertToDate(long timeStamp) {
         Date date = new Date(timeStamp);
-        DateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         return formatter.format(date);
     }
 }
