@@ -15,6 +15,7 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 
 import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
+import com.icthh.xm.gate.security.session.CustomSessionFlashMapManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,7 +38,10 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.R
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.support.SessionFlashMapManager;
 
 @Configuration
 @RequiredArgsConstructor
@@ -59,6 +63,10 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             .headers()
             .frameOptions()
             .disable()
+        .and().logout()
+            .logoutUrl("/")
+            .addLogoutHandler(logoutHandler())
+            .permitAll()
         .and()
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -145,4 +153,14 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
             return String.format(Constants.PUBLIC_KEY, new String(Base64.getEncoder().encode(pk.getEncoded())));
         }
     }
+
+    @Bean
+    public SessionFlashMapManager flashMapManager(){
+        return new CustomSessionFlashMapManager();
+    }
+
+    public LogoutHandler logoutHandler(){
+        return new CookieClearingLogoutHandler("JSESSIONID");
+    }
+
 }
