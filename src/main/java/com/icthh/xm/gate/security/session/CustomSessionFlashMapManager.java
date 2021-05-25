@@ -38,7 +38,6 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
                         cookie.getName(), cookie.getValue(), cookie.getMaxAge());
                 });
             }
-        } finally {
             log.warn("Clearing cookies and perform logout.");
             servletRequest.logout();
         }
