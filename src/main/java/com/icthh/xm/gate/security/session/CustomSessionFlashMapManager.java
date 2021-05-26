@@ -10,6 +10,7 @@ import org.springframework.web.servlet.support.SessionFlashMapManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 public class CustomSessionFlashMapManager extends SessionFlashMapManager {
@@ -33,11 +34,15 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
 
             if (session != null) {
                 log.warn("Session with JSESSIONID '{}' invalid.", session.getId());
-                List.of(servletRequest.getCookies()).forEach(cookie -> {
+
+
+            }
+            Optional.ofNullable(servletRequest.getCookies()).ifPresent(cookies -> {
+                List.of(cookies).forEach(cookie -> {
                     log.warn("Session cookie name '{}', value '{}', maxage '{}'",
                         cookie.getName(), cookie.getValue(), cookie.getMaxAge());
                 });
-            }
+            });
             log.warn("Clearing cookies and perform logout.");
             servletRequest.logout();
         }
