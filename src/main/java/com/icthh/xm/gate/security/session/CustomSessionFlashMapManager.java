@@ -9,8 +9,11 @@ import org.springframework.web.servlet.support.SessionFlashMapManager;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
 
 @Slf4j
 public class CustomSessionFlashMapManager extends SessionFlashMapManager {
@@ -25,8 +28,8 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
     protected List<FlashMap> retrieveFlashMaps(HttpServletRequest servletRequest) {
         try {
             return super.retrieveFlashMaps(servletRequest);
-        } catch (IllegalStateException illegalStateException) {
-            log.error("{}", illegalStateException.getMessage());
+        } catch (IllegalStateException e) {
+            log.error("Handling session error: {}", e.getMessage());
 
             SecurityContextHolder.clearContext();
 
@@ -34,18 +37,20 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
 
             if (session != null) {
                 log.warn("Session with JSESSIONID '{}' invalid.", session.getId());
-
-
             }
-            Optional.ofNullable(servletRequest.getCookies()).ifPresent(cookies -> {
-                List.of(cookies).forEach(cookie -> {
-                    log.warn("Session cookie name '{}', value '{}', maxage '{}'",
+
+            Optional.ofNullable(servletRequest.getCookies())
+                .stream()
+                .flatMap(Arrays::stream)
+                .forEach(cookie -> {
+                    log.warn("Existing cookie name '{}', value '{}', maxage '{}'",
                         cookie.getName(), cookie.getValue(), cookie.getMaxAge());
                 });
-            });
-            log.warn("Clearing cookies and perform logout.");
+
+            log.warn("Clearing cookie [" + JSESSIONID_COOKIE_NAME + "] and perform logout.");
             servletRequest.logout();
+
+            return null;
         }
-        return null;
     }
 }

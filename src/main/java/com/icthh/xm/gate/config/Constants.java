@@ -24,6 +24,8 @@ public final class Constants {
     public static final int FILTER_ORDER_TENANT_INIT = Ordered.HIGHEST_PRECEDENCE;
     public static final int FILTER_ORDER_TFA_TOKEN_DETECTION = FILTER_ORDER_TENANT_INIT + 1;
 
+    public static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
+
     private Constants() {
     }
 }

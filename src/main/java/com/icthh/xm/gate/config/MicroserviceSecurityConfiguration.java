@@ -43,6 +43,8 @@ import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
 
+import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
+
 @Configuration
 @RequiredArgsConstructor
 @EnableResourceServer
@@ -160,7 +162,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     }
 
     public LogoutHandler logoutHandler(){
-        return new CookieClearingLogoutHandler("JSESSIONID");
+        return new CookieClearingLogoutHandler(JSESSIONID_COOKIE_NAME);
     }
 
 }
