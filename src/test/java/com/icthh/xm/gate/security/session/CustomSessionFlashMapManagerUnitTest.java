@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.security.session;
 
+import lombok.SneakyThrows;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +33,7 @@ public class CustomSessionFlashMapManagerUnitTest {
         MockitoAnnotations.initMocks(this);
     }
 
+    @SneakyThrows
     @Test
     public void test_shouldHandleException() {
         MockHttpSession mockHttpSession = new MockHttpSession();
@@ -46,5 +49,6 @@ public class CustomSessionFlashMapManagerUnitTest {
         List<FlashMap> flashMaps = customSessionFlashMapManager.retrieveFlashMaps(httpServletRequest);
 
         Assertions.assertNull(flashMaps);
+        verify(httpServletRequest).logout();
     }
 }
