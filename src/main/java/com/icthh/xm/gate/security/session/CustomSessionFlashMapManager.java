@@ -4,10 +4,14 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.List;
@@ -31,8 +35,6 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
         } catch (IllegalStateException e) {
             log.error("Handling session error: {}", e.getMessage());
 
-            SecurityContextHolder.clearContext();
-
             HttpSession session = servletRequest.getSession(false);
 
             if (session != null) {
@@ -47,8 +49,19 @@ public class CustomSessionFlashMapManager extends SessionFlashMapManager {
                         cookie.getName(), cookie.getValue(), cookie.getMaxAge());
                 });
 
-            log.warn("Clearing cookie [" + JSESSIONID_COOKIE_NAME + "] and perform logout.");
-            servletRequest.logout();
+            ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+            if (requestAttributes != null && requestAttributes.getResponse() != null) {
+                log.warn("Clearing cookie [" + JSESSIONID_COOKIE_NAME + "] and perform logout.");
+                CookieClearingLogoutHandler clearingLogoutHandler = new CookieClearingLogoutHandler(JSESSIONID_COOKIE_NAME);
+
+                HttpServletResponse httpServletResponse = requestAttributes.getResponse();
+                httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+                clearingLogoutHandler.logout(servletRequest, httpServletResponse, SecurityContextHolder.getContext().getAuthentication());
+                SecurityContextHolder.getContext().setAuthentication(null);
+                SecurityContextHolder.clearContext();
+            }
 
             return null;
         }
