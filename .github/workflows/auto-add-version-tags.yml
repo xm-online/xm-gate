@@ -1,5 +1,3 @@
-s (40 sloc)  1.08 KB
-
 name: set tags project version
 
 on:
@@ -18,18 +16,17 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      - name: Set up JDK
-        uses: actions/setup-java@v1
+      - name: Set up nodejs
+        uses: actions/setup-node@v2
         with:
-          java-version: '11'
-          distribution: 'adopt'
+          node-version: '14'
 
       - name: Set Tag
         run: |
           set -e
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          version=`./gradlew -q  getProjectVersion`
+          version=`npm -s run-script get-version`
           tags=$(echo -n $version |  awk -F '.' '{printf $0" "$1"."$2" "$1}')
           for tag in $tags
           do
