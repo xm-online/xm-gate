@@ -1,25 +1,21 @@
 package com.icthh.xm.gate.web.rest;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.springframework.test.web.client.ExpectedCount.once;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.icthh.xm.commons.exceptions.ErrorConstants;
+import com.icthh.xm.commons.i18n.error.web.ExceptionTranslator;
 import com.icthh.xm.gate.GateApp;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
-import java.net.URI;
 import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryProperties.SimpleServiceInstance;
 import org.springframework.cloud.client.loadbalancer.ServiceInstanceChooser;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -29,13 +25,31 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.support.RestGatewaySupport;
 
+import java.net.URI;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.springframework.test.web.client.ExpectedCount.once;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {GateApp.class, SecurityBeanOverrideConfiguration.class})
 public class UploadResourceTest {
 
-    private RestTemplate notBufferRestTemplate = new RestTemplate();
+    @SpyBean
+    @Qualifier("notBufferRestTemplate")
+    private RestTemplate notBufferRestTemplate;
     private MockRestServiceServer mockServer;
     private MockMvc mockMvc;
+
+    @Autowired
+    private ExceptionTranslator exceptionTranslator;
 
     @Before
     public void before() {
@@ -45,6 +59,7 @@ public class UploadResourceTest {
         ServiceInstanceChooser serviceInstanceChooser = (name) -> new SimpleServiceInstance(toUri(name));
         this.mockMvc = MockMvcBuilders
             .standaloneSetup(new UploadResource(notBufferRestTemplate, serviceInstanceChooser))
+            .setControllerAdvice(exceptionTranslator)
             .build();
     }
 
@@ -65,6 +80,56 @@ public class UploadResourceTest {
         mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload").file(file))
             .andDo(print())
             .andExpect(status().isOk());
+
+        mockServer.verify();
+    }
+
+    @Test
+    @SneakyThrows
+    public void testCallUploadEndpointWithInternalServerError() {
+
+        mockServer.expect(once(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload"))
+            .andDo(print())
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_INTERNAL_SERVER_ERROR))
+            .andExpect(jsonPath("$.error_description").value("Internal server error, please try later"));
+
+        mockServer.verify();
+    }
+
+    @Test
+    @SneakyThrows
+    public void testCallUploadEndpointWithBusinessError() {
+
+        mockServer.expect(once(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.BAD_REQUEST));
+
+        mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload"))
+            .andDo(print())
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_BUSINESS));
+
+        mockServer.verify();
+    }
+
+    @Test
+    @SneakyThrows
+    public void testCallUploadEndpointWithAccessDeniedError() {
+
+        mockServer.expect(once(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.FORBIDDEN));
+
+        mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload"))
+            .andDo(print())
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_ACCESS_DENIED))
+            .andExpect(jsonPath("$.error_description").value("Access denied"));
 
         mockServer.verify();
     }
