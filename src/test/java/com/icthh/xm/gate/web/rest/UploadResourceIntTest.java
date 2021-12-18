@@ -1,8 +1,10 @@
 package com.icthh.xm.gate.web.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.commons.exceptions.ErrorConstants;
 import com.icthh.xm.commons.i18n.error.web.ExceptionTranslator;
 import com.icthh.xm.gate.GateApp;
+import com.icthh.xm.gate.config.RestTemplateErrorHandler.BusinessDto;
 import com.icthh.xm.gate.config.SecurityBeanOverrideConfiguration;
 import lombok.SneakyThrows;
 import org.junit.Before;
@@ -28,6 +30,7 @@ import org.springframework.web.client.support.RestGatewaySupport;
 import java.net.URI;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Map.of;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -40,8 +43,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {GateApp.class, SecurityBeanOverrideConfiguration.class})
-public class UploadResourceTest {
+public class UploadResourceIntTest {
 
+    public static final String TEST_RID = "testRid";
+    public static final String ERROR_CODE_TEST = "error.code.test";
+    public static final String EXCEPTION_MESSAGE = "exception message";
     @SpyBean
     @Qualifier("notBufferRestTemplate")
     private RestTemplate notBufferRestTemplate;
@@ -105,14 +111,21 @@ public class UploadResourceTest {
     @SneakyThrows
     public void testCallUploadEndpointWithBusinessError() {
 
+        var map = of("param1", "value1", "param2", "value2");
+        var body = new ObjectMapper().writeValueAsString(new BusinessDto(TEST_RID, ERROR_CODE_TEST, EXCEPTION_MESSAGE, map));
+
         mockServer.expect(once(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload"))
             .andExpect(method(HttpMethod.POST))
-            .andRespond(withStatus(HttpStatus.BAD_REQUEST));
+            .andRespond(withStatus(HttpStatus.BAD_REQUEST).body(body));
 
         mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload"))
             .andDo(print())
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error").value(ErrorConstants.ERR_BUSINESS));
+            .andExpect(jsonPath("$.error").value(ERROR_CODE_TEST))
+            .andExpect(jsonPath("$.error_description").value(EXCEPTION_MESSAGE))
+            .andExpect(jsonPath("$.requestId").value(TEST_RID))
+            .andExpect(jsonPath("$.params.param1").value("value1"))
+            .andExpect(jsonPath("$.params.param2").value("value2"));
 
         mockServer.verify();
     }
