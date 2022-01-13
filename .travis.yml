@@ -9,6 +9,7 @@ addons:
       secure: h3cnCin1WHOMCYIhKKFZ1buVoHt7RJSWhrHGoixKMBh+4bKohto7kh1v9X5lDdcQq9ZmFbb3QBjGlg/im0LJLSXsdq6kbHWsCzDN98K7AT6P4lNNeLzBsS3dK2VW1/rGWJDk2JFLuUZCrkfI0YdhJGQBxrV6tSFjDhv0LsCT2WWomfMVlsxrqHEuahbDsdDpYHgvgpJSXnsNV44qtrm8adtUNykfMjHCSEr4EMbEI8Gq+nXBafMF2JbdKmZmGx+CIXWkiJO7F9wMD56yQt7IGcGL6wkIeYqqG1sIygqx8eM4xl/LvfQMYlKgFbzUJr6dit3d8Ys9fODcz5shM0RaErpCVOAhR7UFmcDUJPLiqCwGFETojST3TXDW7StAi/Yr8GEvN5109k6c+s9+6g/Y4HAb7Cr0MiD3f42ofWdUJRjtAwt4vnkG8OLTUH5+UbhyAuduZubjlEzjb/xuSoHKbvJc/aAbhKky3d4QF9/8zJMhxnBr36cfdU+uur8rYpvgFi1O0oNJPNXTX+XVxo+uwXuRp9S156yxjFspElISynEEpJl3qhCvRthdf4cUWOVq4tbiBH/PAVDnTy4qgE3EdQdqP4Nj8UME0aKMSZiHzH9JcEWzHdVsCZB4b6p4H004GbTiejFwDoEOb1pDdHQ3l/BmDbVzsyP6YcCM+vrxtcc=
     branches:
     - master
+    - main
 script:
   - set -e
   - "./gradlew --no-daemon --refresh-dependencies clean check test"
@@ -17,7 +18,7 @@ script:
   - export DOCKER_REPO=$(echo  -n $TRAVIS_REPO_SLUG | sed -e 's/^xm-online\//xmonline\//g')
   - export IMAGE_BRANCH=$(echo -n $TRAVIS_BRANCH | sed -e 's/\//-/g')
   - export PROJECT_VERSION="$IMAGE_BRANCH"
-  - if [ "$IMAGE_BRANCH" == "master" ]; 
+  - if [ "$IMAGE_BRANCH" == "master" ] || [ "$IMAGE_BRANCH" == "main" ]; 
     then 
         PROJECT_VERSION=$(./gradlew -q  getProjectVersion);
         export SONAR_PK=$(echo  -n $TRAVIS_REPO_SLUG | sed -e 's/\//:/g');
@@ -47,3 +48,8 @@ notifications:
   slack:
     rooms:
       secure: o2dq2zuT3LvAouDdEU4TuKvT1TrAlMAZasdLCjOWb6TfuQGvsKAYrIm384R93U4LhtJ7r8syDnj7EL0/0wVWE6RHhNPuDoH3kdK3kL22mVYpfpHj2E1QvtY1vB5M/sD9uTEgdt6wJmdpEHdW6fN0rfLbSmmnWqewRXytsaQJ1ahH1aHrYUkHl77AoRGdp//yiOIOBeoP2WPa0zEFyFbXavcZfbq90WgHFbeixiYc2fYemg/98BIyheyN4BT3mOAkr3n8ioNIKb6FdANzDNeRy/QLPflPTvbBtPavPixrVYpSOhYWJofp9iF9XazmF5DT42KUhswdzCEAGquBWc0kvNHtfqI9t4HqSc15AhkiTomINv23M6wWazXzJo5sQD8ss8NHj2yLdeYDwufBEy8ugOU1ce/541Rt7NblwlG1ENEWgSh9xJBA2PegdV6a5TGOY9TFGqsfb/VibIlQQntOyt8mXvAdHIzwAIJvjrvzdvyEezb8r8zfSgKj6hZSdwjg40jdGfjv432ZJmvseGzpA6Vg/Vekhj1eYdLi5MZGyU81+im7qx9av9dEIT5FOlLCkvSKikmHIXmih/TBzWuOQDTdAzcQuGRoPG84FBcoPpu8Pdf28zjKNktr0kHhlil2vho3TAjoFmLGR8RU6ZOB01fN5t/FY8QjvrY4pQB9ZKM=
+
+branches:
+    only:
+      - master
+      - main
