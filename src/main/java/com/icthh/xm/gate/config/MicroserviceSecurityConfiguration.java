@@ -57,6 +57,8 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
 
+    private final RestTemplateErrorHandler restTemplateErrorHandler;
+
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http
@@ -133,6 +135,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setBufferRequestBody(false);
         restTemplate.setRequestFactory(requestFactory);
+        restTemplate.setErrorHandler(restTemplateErrorHandler);
         return restTemplate;
     }
 
