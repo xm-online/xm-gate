@@ -6,12 +6,13 @@ import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.
 import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.GRANT_TYPE_IDP_TOKEN;
 import static com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler.TOKEN_ATTR;
 import static com.icthh.xm.gate.security.oauth2.IdpTestUtils.buildAuthentication;
+import org.junit.Before;
+import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.anyString;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -21,12 +22,7 @@ import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
 import io.github.jhipster.config.JHipsterProperties;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -45,19 +41,19 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 
-@ExtendWith(MockitoExtension.class)
 public class IdpAuthenticationSuccessHandlerUnitTest extends AbstractIdpUnitTest {
 
-    @Mock
     private RestTemplate restTemplate;
 
     private final JHipsterProperties jhipsterProperties = new JHipsterProperties();
 
     private IdpAuthenticationSuccessHandler idpAuthenticationSuccessHandler;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
+        restTemplate = Mockito.mock(RestTemplate.class);
         tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
+
     }
 
     @Test

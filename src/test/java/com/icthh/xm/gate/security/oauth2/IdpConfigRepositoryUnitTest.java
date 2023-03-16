@@ -1,16 +1,12 @@
 package com.icthh.xm.gate.security.oauth2;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@ExtendWith(MockitoExtension.class)
 public class IdpConfigRepositoryUnitTest extends AbstractIdpUnitTest {
 
     @Test

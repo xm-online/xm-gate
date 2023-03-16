@@ -3,10 +3,8 @@ package com.icthh.xm.gate.security.oauth2;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
 import com.icthh.xm.commons.tenant.internal.DefaultTenantContextHolder;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -16,13 +14,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.security.oauth2.core.AuthorizationGrantType.AUTHORIZATION_CODE;
 
-@ExtendWith(MockitoExtension.class)
 public class XmJwtDecoderFactoryUnitTest {
 
     private final TenantContextHolder tenantContextHolder = new DefaultTenantContextHolder();
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
     }
 
