@@ -143,7 +143,6 @@ public class UploadResourceIntTest {
     @Test
     @SneakyThrows
     public void testCallUploadEndpointWithBusinessError() {
-
         var map = of("param1", "value1", "param2", "value2");
         var body = new ObjectMapper().writeValueAsString(new BusinessDto(TEST_RID, ERROR_CODE_TEST, EXCEPTION_MESSAGE, map));
 
