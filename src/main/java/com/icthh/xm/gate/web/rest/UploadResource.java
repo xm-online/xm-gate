@@ -2,6 +2,7 @@ package com.icthh.xm.gate.web.rest;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import org.apache.commons.lang.StringUtils;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.springframework.http.HttpHeaders.ACCEPT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
@@ -10,13 +11,13 @@ import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
 import org.springframework.cloud.client.loadbalancer.ServiceInstanceChooser;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -49,6 +50,8 @@ import org.springframework.web.util.UrlPathHelper;
 @RestController
 public class UploadResource {
 
+    private static final String [] EXCLUDE_LIST = {"https://", "http://", "file://"};
+
     private static final String UPLOAD_PREFIX = "/upload/";
     private final UrlPathHelper urlHelper = new UrlPathHelper();
     private final RestTemplate restTemplate;
@@ -75,19 +78,26 @@ public class UploadResource {
         HttpHeaders requestHeaders = request.getRequestHeaders();
         requestHeaders.setContentLength(-1L); // for avoid read request to memory in message converter
         requestHeaders.set(ACCEPT_ENCODING, "*");
-
-        return restTemplate.exchange(extractPath(request), request.getRequestMethod(),
+        String servicePath = extractPath(request);
+        return restTemplate.exchange(servicePath, request.getRequestMethod(),
                                      new HttpEntity<>(requestParts, requestHeaders), Object.class);
     }
 
     private String extractPath(HttpServletRequest request) {
-        String path = urlHelper.getPathWithinApplication(request).substring(UPLOAD_PREFIX.length());
-        String serviceName = path.substring(0, path.indexOf("/"));
-        path = path.substring(path.indexOf("/"));
+        final String path = urlHelper.getPathWithinApplication(request).substring(UPLOAD_PREFIX.length());
+        final String serviceName = path.substring(0, path.indexOf("/"));
+        if (!StringUtils.isAlphanumeric(serviceName)) {
+            throw new IllegalArgumentException("Service name should be alphanumeric");
+        }
+        final String subPath = path.substring(path.indexOf("/"));
         String query = isBlank(request.getQueryString()) ? "" : "?" + request.getQueryString();
+        boolean filterPath = Arrays.stream(EXCLUDE_LIST).anyMatch(query::contains);
+        if (filterPath) {
+            throw new IllegalArgumentException("Query string contains reference");
+        }
         ServiceInstance serviceInstance = serviceInstanceChooser.choose(serviceName);
         assertNotNull(serviceName, serviceInstance);
-        return serviceInstance.getUri().toString() + path + query;
+        return serviceInstance.getUri().toString() + subPath + query;
     }
 
     private void assertNotNull(String serviceName, ServiceInstance serviceInstance) {
