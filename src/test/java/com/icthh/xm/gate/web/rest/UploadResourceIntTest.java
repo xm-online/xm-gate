@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringRunner;
+import static org.springframework.test.web.client.ExpectedCount.never;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -92,6 +93,38 @@ public class UploadResourceIntTest {
 
     @Test
     @SneakyThrows
+    public void testFailCallUploadEndpointWithQueryParams() {
+
+        mockServer.expect(never(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload?token=https://token"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        MockMultipartFile file = new MockMultipartFile("file", "orig", "text/plain", "test no json content" .getBytes(UTF_8));
+        mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload?token=https://token").file(file))
+            .andDo(print())
+            .andExpect(status().isInternalServerError());
+
+        mockServer.verify();
+    }
+
+    @Test
+    @SneakyThrows
+    public void testCallUploadEndpointWithQueryParams() {
+
+        mockServer.expect(once(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload?token=token"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        MockMultipartFile file = new MockMultipartFile("file", "orig", "text/plain", "test no json content" .getBytes(UTF_8));
+        mockMvc.perform(multipart("/upload/entity/api/functions/UPLOAD/upload?token=token").file(file))
+            .andDo(print())
+            .andExpect(status().isOk());
+
+        mockServer.verify();
+    }
+
+    @Test
+    @SneakyThrows
     public void testCallUploadEndpointWithInternalServerError() {
 
         mockServer.expect(once(), requestTo("http://hostentity:7000/api/functions/UPLOAD/upload"))
@@ -110,7 +143,6 @@ public class UploadResourceIntTest {
     @Test
     @SneakyThrows
     public void testCallUploadEndpointWithBusinessError() {
-
         var map = of("param1", "value1", "param2", "value2");
         var body = new ObjectMapper().writeValueAsString(new BusinessDto(TEST_RID, ERROR_CODE_TEST, EXCEPTION_MESSAGE, map));
 

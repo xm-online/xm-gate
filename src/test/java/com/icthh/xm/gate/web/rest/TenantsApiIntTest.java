@@ -70,9 +70,10 @@ public class TenantsApiIntTest {
     TenantListRepository tenantListRepository;
 
     @Before
-    public void setup() {
+    public void setup() throws InterruptedException {
         MockitoAnnotations.initMocks(this);
 
+        tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
         TenantContextUtils.setTenant(tenantContextHolder, "XM");
 
         TenantsApi controller = new TenantsApiController(new TenantResource(tenantManager));
