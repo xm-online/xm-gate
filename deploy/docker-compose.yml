@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.8'
 services:
     gate-app:
         image: xmonline/xm-gate:${IMAGE_XM_GATE_TAG:-latest}
