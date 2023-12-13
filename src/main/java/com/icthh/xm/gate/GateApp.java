@@ -18,7 +18,7 @@ import org.springframework.core.env.Environment;
 import tech.jhipster.config.DefaultProfileUtil;
 import tech.jhipster.config.JHipsterConstants;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.icthh.xm")
 @EnableConfigurationProperties({ ApplicationProperties.class })
 public class GateApp {
 

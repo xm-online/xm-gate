@@ -44,7 +44,7 @@ class ModifyServersOpenApiFilterTest {
         ServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // apply the filter to the request
-        ModifyServersOpenApiFilter modifyServersOpenApiFilter = spy(new ModifyServersOpenApiFilter());
+        ModifyServersOpenApiFilter modifyServersOpenApiFilter = spy(new ModifyServersOpenApiFilter(routeLocator));
         modifyServersOpenApiFilter.filter(exchange, filterChain).subscribe();
 
         verify(modifyServersOpenApiFilter, times(1))
@@ -61,7 +61,7 @@ class ModifyServersOpenApiFilterTest {
         ServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // apply the filter to the request
-        ModifyServersOpenApiFilter modifyServersOpenApiFilter = spy(new ModifyServersOpenApiFilter());
+        ModifyServersOpenApiFilter modifyServersOpenApiFilter = spy(new ModifyServersOpenApiFilter(routeLocator));
         modifyServersOpenApiFilter.filter(exchange, filterChain).subscribe();
 
         verify(modifyServersOpenApiFilter, times(0))
@@ -70,7 +70,7 @@ class ModifyServersOpenApiFilterTest {
 
     @Test
     void shouldOrderToMinusOne() {
-        ModifyServersOpenApiFilter modifyServersOpenApiFilter = new ModifyServersOpenApiFilter();
+        ModifyServersOpenApiFilter modifyServersOpenApiFilter = new ModifyServersOpenApiFilter(routeLocator);
         assertEquals(modifyServersOpenApiFilter.getOrder(), -1);
     }
 
@@ -80,7 +80,7 @@ class ModifyServersOpenApiFilterTest {
         private final String path = "/services/service-test/instance-test/v3/api-docs";
         private final MockServerHttpRequest request = MockServerHttpRequest.get(path).build();
         private final ServerWebExchange exchange = MockServerWebExchange.from(request);
-        private final ModifyServersOpenApiFilter modifyServersOpenApiFilter = new ModifyServersOpenApiFilter();
+        private final ModifyServersOpenApiFilter modifyServersOpenApiFilter = new ModifyServersOpenApiFilter(routeLocator);
 
         @Test
         void shouldRewriteBodyWhenBodyIsFluxAndResponseIsNotZipped() {

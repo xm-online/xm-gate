@@ -14,6 +14,11 @@
 # http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 # ===================================================================
 
+logging:
+  level:
+    ROOT: DEBUG
+    io.github.jhipster: DEBUG
+    com.icthh.xm.gate: DEBUG
 ---
 # Conditionally disable springdoc on missing api-docs profile
 spring:
@@ -100,10 +105,15 @@ spring:
   application:
     name: gate
   cloud:
+    inetutils:
+      preferredNetworks:
+        - 192.168
+        - 10.0.0
+        - 172.20
     consul:
       discovery:
         healthCheckPath: /management/health
-        instanceId: gate:${spring.application.instance-id:${random.value}}
+        instanceId: ${spring.application.name}:${spring.application.instance-id:${random.value}}
         service-name: gate
       config:
         watch:
@@ -118,12 +128,14 @@ spring:
           predicates:
             - name: Path
               args:
-                pattern: "'/services/'+serviceId.toLowerCase()+'/**'"
+                pattern: "'/'+serviceId.toLowerCase()+'/**'"
           filters:
             - name: RewritePath
               args:
-                regexp: "'/services/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
+                regexp: "'/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
                 replacement: "'/${remaining}'"
+      authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible
+        app1: /api,/v2/api-docs # recommended dev configuration
       httpclient:
         pool:
           max-connections: 1000
@@ -144,6 +156,7 @@ spring:
     basename: i18n/messages
   main:
     allow-bean-definition-overriding: true
+    web-application-type: reactive
   webflux:
     problemdetails:
       enabled: true
@@ -165,15 +178,25 @@ spring:
       console-available: true
   security:
     oauth2:
-      client:
-        provider:
-          oidc:
-            issuer-uri: http://localhost:9080/realms/jhipster
-        registration:
-          oidc:
-            client-id: web_app
-            client-secret: web_app
-            scope: openid, profile, email, offline_access # last one for refresh tokens
+      resourceserver:
+        jwt:
+          issuer-uri: http://uaa:9999
+#      client:
+#        provider:
+#          oidc:
+#            issuer-uri: http://localhost:9080/realms/jhipster
+#        registration:
+#          oidc:
+#            client-id: web_app
+#            client-secret: web_app
+#            scope: openid, profile, email, offline_access # last one for refresh tokens
+
+xm-config:
+  enabled: true
+#  xm-config-url: http://config:8084
+  configMode: FILE
+  configDirPath: /home/vosiievska/work/dila/xm-ms-config-repository # this one
+  kafka-config-topic: config_topic
 
 server:
   servlet:
@@ -221,6 +244,11 @@ jhipster:
     license: unlicensed
     license-url:
   security:
+    client-authorization:
+      access-token-uri: http://uaa:9999/oauth/token
+      token-service-id: uaa
+      client-id: internal
+      client-secret: internal
     oauth2:
       audience:
         - account
@@ -235,3 +263,22 @@ jhipster:
 # ===================================================================
 
 # application:
+application:
+  specification-folder-path-pattern: /config/tenants/{tenantName}/gate/xmgatespec/*.yml
+  specification-path-pattern: /config/tenants/{tenantName}/gate/${application.specification-name}
+  specification-name: xmgatespec.yml
+
+  tenant-properties-path-pattern: /config/tenants/{tenantName}/gate/${application.tenant-properties-name}
+  tenant-properties-name: gate.yml
+  tenant-properties-domains-config-key: /config/tenants/tenant-domains.yml
+  tenant-properties-list-config-key: /config/tenants/tenants-list.json
+
+  hosts:
+    - localhost
+    - local
+  kafka-enabled: true
+  kafka-system-queue: system_queue
+  retry:
+    max-attempts: 3
+    delay: 1000 #in milliseconds
+    multiplier: 2

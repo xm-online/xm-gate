@@ -16,13 +16,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.springframework.beans.factory.annotation.Value;
+
+import com.icthh.xm.gate.web.filter.TenantInitFilter;
+import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -42,28 +46,32 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
-import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
 import org.springframework.security.web.server.header.XFrameOptionsServerHttpHeadersWriter.Mode;
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
 import tech.jhipster.config.JHipsterProperties;
 import tech.jhipster.web.filter.reactive.CookieCsrfFilter;
 
 @Configuration
+//@EnableWebSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfiguration {
 
     private final JHipsterProperties jHipsterProperties;
 
-    @Value("${spring.security.oauth2.client.provider.oidc.issuer-uri}")
-    private String issuerUri;
+//    @Value("${spring.security.oauth2.client.provider.oidc.issuer-uri}")
+//    private String issuerUri;
 
     private final ReactiveClientRegistrationRepository clientRegistrationRepository;
+    private final ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager;
 
     // See https://github.com/jhipster/generator-jhipster/issues/18868
     // We don't use a distributed cache or the user selected cache implementation here on purpose
@@ -74,9 +82,12 @@ public class SecurityConfiguration {
         .recordStats()
         .build();
 
-    public SecurityConfiguration(ReactiveClientRegistrationRepository clientRegistrationRepository, JHipsterProperties jHipsterProperties) {
+    public SecurityConfiguration(ReactiveClientRegistrationRepository clientRegistrationRepository,
+                                 JHipsterProperties jHipsterProperties,
+                                 ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager) {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.jHipsterProperties = jHipsterProperties;
+        this.reactiveAuthorizationManager = reactiveAuthorizationManager;
     }
 
     @Bean
@@ -88,12 +99,7 @@ public class SecurityConfiguration {
                 )
             )
             .cors(withDefaults())
-            .csrf(csrf ->
-                csrf
-                    .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
-                    // See https://stackoverflow.com/q/74447118/65681
-                    .csrfTokenRequestHandler(new ServerCsrfTokenRequestAttributeHandler())
-            )
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
             // See https://github.com/spring-projects/spring-security/issues/5766
             .addFilterAt(new CookieCsrfFilter(), SecurityWebFiltersOrder.REACTOR_CONTEXT)
             .headers(headers ->
@@ -115,7 +121,7 @@ public class SecurityConfiguration {
                     .pathMatchers("/api/authenticate").permitAll()
                     .pathMatchers("/api/auth-info").permitAll()
                     .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
-                    .pathMatchers("/api/**").authenticated()
+//                    .pathMatchers("/api/**").permitAll()
                     .pathMatchers("/services/*/management/health/readiness").permitAll()
                     .pathMatchers("/services/*/v3/api-docs").hasAuthority(AuthoritiesConstants.ADMIN)
                     .pathMatchers("/services/**").authenticated()
@@ -124,11 +130,22 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/health/**").permitAll()
                     .pathMatchers("/management/info").permitAll()
                     .pathMatchers("/management/prometheus").permitAll()
+//                    .pathMatchers("/test/oauth/token").permitAll()
+                    .pathMatchers("/api/gateway/routes").permitAll()
+                    .pathMatchers("/api/functions/anonymous/**").permitAll()
+
                     .pathMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
+                    .anyExchange().access(reactiveAuthorizationManager)
             )
             .oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
             .oauth2Client(withDefaults())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt
+//                    .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
+                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                )
+            )
+        ;
         return http.build();
     }
 
@@ -138,9 +155,9 @@ public class SecurityConfiguration {
         DefaultServerOAuth2AuthorizationRequestResolver authorizationRequestResolver = new DefaultServerOAuth2AuthorizationRequestResolver(
             clientRegistrationRepository
         );
-        if (this.issuerUri.contains("auth0.com")) {
-            authorizationRequestResolver.setAuthorizationRequestCustomizer(authorizationRequestCustomizer());
-        }
+//        if (this.issuerUri.contains("auth0.com")) {
+//            authorizationRequestResolver.setAuthorizationRequestCustomizer(authorizationRequestCustomizer());
+//        }
         return authorizationRequestResolver;
     }
 
@@ -189,7 +206,7 @@ public class SecurityConfiguration {
         };
     }
 
-    @Bean
+//    @Bean
     ReactiveJwtDecoder jwtDecoder(ReactiveClientRegistrationRepository registrations) {
         Mono<ClientRegistration> clientRegistration = registrations.findByRegistrationId("oidc");
 
