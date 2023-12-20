@@ -1,13 +1,3 @@
-buildscript {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        gradlePluginPortal()
-        maven { url "https://repo.spring.io/plugins-release" }
-    }
-    dependencies {
-    }
-}
 
 plugins {
     id "java"
@@ -24,7 +14,7 @@ plugins {
     // jhipster-needle-gradle-plugins - JHipster will add additional gradle plugins here
 }
 
-import com.gorylenko.GenerateGitPropertiesTask
+//import com.gorylenko.GenerateGitPropertiesTask
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 group = "com.icthh.xm.gate"
@@ -149,9 +139,9 @@ gitProperties {
     keys = ["git.branch", "git.commit.id.abbrev", "git.commit.id.describe"]
 }
 
-tasks.withType(GenerateGitPropertiesTask).configureEach {
-  outputs.doNotCacheIf("Task is always executed") { true }
-}
+//tasks.withType(GenerateGitPropertiesTask).configureEach {
+//  outputs.doNotCacheIf("Task is always executed") { true }
+//}
 
 checkstyle {
     toolVersion "${checkstyleVersion}"
@@ -171,7 +161,6 @@ repositories {
     // Local maven repository is required for libraries built locally with maven like development jhipster-bom.
     mavenLocal()
     mavenCentral()
-    jcenter()
     // jhipster-needle-gradle-repositories - JHipster will add additional repositories
 }
 
