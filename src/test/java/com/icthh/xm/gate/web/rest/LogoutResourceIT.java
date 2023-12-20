@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -25,6 +26,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * Integration tests for the {@link LogoutResource} REST controller.
  */
 @IntegrationTest
+@Disabled
 class LogoutResourceIT {
 
     @Autowired

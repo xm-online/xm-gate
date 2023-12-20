@@ -29,28 +29,6 @@ public final class OpenPolicyAgentAuthorizationManager implements ReactiveAuthor
 
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext context) {
-
-//        return authentication.map(auth -> {
-//            log.info("AUTH HERE STARTS");
-//            ServerHttpRequest request = context.getExchange().getRequest();
-//            Set<String> registeredServiceIds = gatewayService.getRegisteredServiceIds();
-//
-//            var uriElements = request.getPath().elements();
-//
-//            if (uriElements.size() < 2) {
-//                return new AuthorizationDecision(false);
-//            }
-//
-//            String serviceName = uriElements.get(1).value();
-//            String requestUri = request.getPath().pathWithinApplication().value();
-//
-//            boolean isGranted = registeredServiceIds.contains(serviceName) && isAuthorizedRequest(serviceName, requestUri);
-//
-//            log.info("AUTH HERE ENDS: {}", isGranted);
-//
-//            return new AuthorizationDecision(false);
-//        });
-
         ServerHttpRequest request = context.getExchange().getRequest();
         Set<String> registeredServiceIds = gatewayService.getRegisteredServiceIds();
 
@@ -65,7 +43,6 @@ public final class OpenPolicyAgentAuthorizationManager implements ReactiveAuthor
 
         boolean isGranted = registeredServiceIds.contains(serviceName) && isAuthorizedRequest(serviceName, requestUri);
 
-//        return Mono.just(new AuthorizationDecision(true));
         return Mono.just(new AuthorizationDecision(isGranted));
     }
 

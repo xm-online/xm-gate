@@ -121,7 +121,6 @@ public class SecurityConfiguration {
                     .pathMatchers("/api/authenticate").permitAll()
                     .pathMatchers("/api/auth-info").permitAll()
                     .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
-//                    .pathMatchers("/api/**").permitAll()
                     .pathMatchers("/services/*/management/health/readiness").permitAll()
                     .pathMatchers("/services/*/v3/api-docs").hasAuthority(AuthoritiesConstants.ADMIN)
                     .pathMatchers("/services/**").authenticated()
@@ -130,10 +129,7 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/health/**").permitAll()
                     .pathMatchers("/management/info").permitAll()
                     .pathMatchers("/management/prometheus").permitAll()
-//                    .pathMatchers("/test/oauth/token").permitAll()
-                    .pathMatchers("/api/gateway/routes").permitAll()
                     .pathMatchers("/api/functions/anonymous/**").permitAll()
-
                     .pathMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
                     .anyExchange().access(reactiveAuthorizationManager)
             )
