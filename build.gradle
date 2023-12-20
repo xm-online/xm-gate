@@ -171,6 +171,7 @@ repositories {
     // Local maven repository is required for libraries built locally with maven like development jhipster-bom.
     mavenLocal()
     mavenCentral()
+    jcenter()
     // jhipster-needle-gradle-repositories - JHipster will add additional repositories
 }
 
