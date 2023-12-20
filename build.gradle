@@ -1,3 +1,13 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://repo.spring.io/plugins-release" }
+    }
+    dependencies {
+    }
+}
 
 plugins {
     id "java"
@@ -80,9 +90,6 @@ idea {
         excludeDirs += files("node_modules")
     }
 }
-
-sourceSets.main.java.srcDirs += ['src/main/lep']
-sourceSets.test.java.srcDirs += ['src/test/lep']
 
 eclipse {
     sourceSets {
