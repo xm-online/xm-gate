@@ -1,3 +1,5 @@
+import com.gorylenko.GenerateGitPropertiesTask
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 plugins {
     id "java"
@@ -139,7 +141,7 @@ gitProperties {
     keys = ["git.branch", "git.commit.id.abbrev", "git.commit.id.describe"]
 }
 
-tasks.withType(com.gorylenko.GenerateGitPropertiesTask).configureEach {
+tasks.withType(GenerateGitPropertiesTask).configureEach {
   outputs.doNotCacheIf("Task is always executed") { true }
 }
 
@@ -217,8 +219,8 @@ dependencies {
     implementation "org.springframework.cloud:spring-cloud-starter-consul-config"
     implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "io.dropwizard.metrics:metrics-core"
-    OperatingSystem os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem();
-    Architecture arch = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentArchitecture();
+    OperatingSystem os = DefaultNativePlatform.getCurrentOperatingSystem();
+    Architecture arch = DefaultNativePlatform.getCurrentArchitecture();
     if (os.isMacOsX() && !arch.isAmd64()) {
         implementation("io.netty:netty-resolver-dns-native-macos") {
             artifact {
