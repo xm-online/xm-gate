@@ -1,0 +1,13 @@
+apply plugin: "war"
+
+bootWar {
+    mainClass = "com.icthh.xm.gate.GateApp"
+    includes = ["WEB-INF/**", "META-INF/**"]
+}
+
+war {
+    enabled = true
+    archiveExtension = "war.original"
+    includes = ["WEB-INF/**", "META-INF/**"]
+
+}
