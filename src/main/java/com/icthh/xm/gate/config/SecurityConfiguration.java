@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.oauth2.core.oidc.StandardClaimNames.PREFERRED_USERNAME;
 import static org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -154,6 +155,7 @@ public class SecurityConfiguration {
     Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter() {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new JwtGrantedAuthorityConverter());
+        jwtAuthenticationConverter.setPrincipalClaimName(PREFERRED_USERNAME);
         return new ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter);
     }
 
@@ -184,7 +186,7 @@ public class SecurityConfiguration {
                             }
                         });
 
-                    return new DefaultOidcUser(mappedAuthorities, user.getIdToken(), user.getUserInfo());
+                    return new DefaultOidcUser(mappedAuthorities, user.getIdToken(), user.getUserInfo(), PREFERRED_USERNAME);
                 });
         };
     }
