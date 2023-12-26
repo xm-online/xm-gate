@@ -7,7 +7,7 @@
   "scripts": {
     "app:start": "./gradlew",
     "app:up": "docker compose -f src/main/docker/app.yml up --wait",
-    "backend:build-cache": "npm run backend:info && npm run backend:nohttp:test && npm run ci:e2e:package",
+    "backend:build-cache": "npm run backend:info && npm run backend:nohttp:test && npm run ci:e2e:package -- -x webapp -x webapp_test",
     "backend:doc:test": "./gradlew javadoc ",
     "backend:info": "./gradlew -v",
     "backend:nohttp:test": "./gradlew checkstyleNohttp ",
@@ -49,7 +49,7 @@
     "packaging": "jar"
   },
   "devDependencies": {
-    "generator-jhipster": "8.0.0"
+    "generator-jhipster": "8.1.0"
   },
   "engines": {
     "node": ">=18.18.2"
