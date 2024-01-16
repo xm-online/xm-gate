@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.net.URL;
 
+import static com.icthh.xm.gate.config.Constants.FILTER_DOMAIN_RELAY_ORDER;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 import static com.icthh.xm.gate.config.Constants.HEADER_WEBAPP_URL;
 
@@ -24,7 +26,7 @@ import static com.icthh.xm.gate.config.Constants.HEADER_WEBAPP_URL;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DomainRelayFilter implements GlobalFilter {
+public class DomainRelayFilter implements GlobalFilter, Ordered {
 
     private final TenantMappingService tenantMappingService;
 
@@ -38,6 +40,11 @@ public class DomainRelayFilter implements GlobalFilter {
         headers.add(HEADER_WEBAPP_URL, getRefererUri(exchange.getRequest()));
 
         return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return FILTER_DOMAIN_RELAY_ORDER;
     }
 
     private static String getRefererUri(ServerHttpRequest request) {

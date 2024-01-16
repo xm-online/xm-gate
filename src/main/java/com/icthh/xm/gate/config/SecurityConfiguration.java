@@ -134,14 +134,14 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
                     .anyExchange().access(reactiveAuthorizationManager)
             )
-            .oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
-            .oauth2Client(withDefaults())
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt
-//                    .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
-                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                )
-            )
+//            .oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
+//            .oauth2Client(withDefaults())
+//            .oauth2ResourceServer(oauth2 -> oauth2
+//                .jwt(jwt -> jwt
+////                    .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
+//                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
+//                )
+//            )
         ;
         return http.build();
     }
