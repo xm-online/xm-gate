@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.icthh.xm.gate.utils.RouteUtils.clearRouteId;
+
 @Service
 public class GatewayServiceImpl implements GatewayService {
 
@@ -21,7 +23,7 @@ public class GatewayServiceImpl implements GatewayService {
         Set<String> registeredServiceIds = new HashSet<>();
 
         routeLocator.getRoutes().subscribe(route -> {
-            registeredServiceIds.add(route.getId().substring(route.getId().indexOf("_") + 1).toLowerCase());
+            registeredServiceIds.add(clearRouteId(route.getId()));
         });
         return  registeredServiceIds;
     }

@@ -11,6 +11,8 @@ import reactor.core.publisher.Flux;
 
 import java.util.Objects;
 
+import static com.icthh.xm.gate.utils.RouteUtils.clearRouteId;
+
 @Component
 public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClientRouteDefinitionLocator {
 
@@ -35,7 +37,7 @@ public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClie
     }
 
     private RouteDefinition enrichRouteDefinition(RouteDefinition routeDefinition) {
-        String routeId = routeDefinition.getId().split("_")[1]; // ReactiveCompositeDiscoveryClient adds prefix to the route IDs to avoid naming conflicts and clearly indicate their origin
+        String routeId = clearRouteId(routeDefinition.getId()); // ReactiveCompositeDiscoveryClient adds prefix to the route IDs to avoid naming conflicts and clearly indicate their origin
         var redisRateLimiterProperties = applicationProperties.getRedisRateLimiter().get(routeId);
 
         if (Objects.nonNull(redisRateLimiterProperties)) {
