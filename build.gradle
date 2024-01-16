@@ -217,6 +217,7 @@ dependencies {
     implementation "org.springframework.cloud:spring-cloud-starter-consul-config"
     implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "io.dropwizard.metrics:metrics-core"
+    implementation "org.bitbucket.b_c:jose4j:${jose4jVersion}"
     OperatingSystem os = DefaultNativePlatform.getCurrentOperatingSystem();
     Architecture arch = DefaultNativePlatform.getCurrentArchitecture();
     if (os.isMacOsX() && !arch.isAmd64()) {

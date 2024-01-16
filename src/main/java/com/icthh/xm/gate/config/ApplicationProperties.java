@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Properties specific to Gate.
@@ -31,7 +32,7 @@ public class ApplicationProperties {
     private String specificationFolderPathPattern;
     private String specificationPathPattern;
     private String specificationName;
-
+    private Map<String, List<RedisRateLimiterProperties>> redisRateLimiter;
     @Getter
     @Setter
     private static class Retry {
@@ -39,5 +40,14 @@ public class ApplicationProperties {
         private int maxAttempts;
         private long delay;
         private int multiplier;
+    }
+
+    @Getter
+    @Setter
+    public static class RedisRateLimiterProperties {
+        private String replenishRate;
+        private String burstCapacity;
+        private String requestedTokens;
+        private String keyResolver;
     }
 }
