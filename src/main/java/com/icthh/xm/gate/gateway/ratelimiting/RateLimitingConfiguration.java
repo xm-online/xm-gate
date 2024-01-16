@@ -1,11 +1,10 @@
 package com.icthh.xm.gate.gateway.ratelimiting;
 
 import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
-import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
-import org.springframework.cloud.gateway.route.RouteLocator;
-import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -13,41 +12,40 @@ import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.security.oauth2.core.OAuth2TokenIntrospectionClaimNames.CLIENT_ID;
+
 @Configuration
-@ConfigurationProperties(prefix = "spring.cloud.gateway.redis-rate-limiter")
 @Setter
 public class RateLimitingConfiguration {
-
-    private Integer replenishRate;
-    private Integer burstCapacity;
-    private Integer requestedTokens;
-
-    @Bean
-    public RedisRateLimiter redisRateLimiter() {
-        return new RedisRateLimiter(replenishRate, burstCapacity, requestedTokens);
-    }
-
-    @Bean
-    KeyResolver keyResolver() {
-        return exchange -> Mono.just(exchange.getRequest().getURI().getPath());
-    }
-
-    @Bean
-    public RouteLocator routeLocator(RouteLocatorBuilder builder) {
-        return builder.routes()
-            .route("uaa", p -> p
-                .path("/uaa/**")
-                .filters(f -> f.stripPrefix(1)
-                    .requestRateLimiter(r -> r.setRateLimiter(redisRateLimiter())
-                    .setDenyEmptyKey(true)
-                    .setKeyResolver(keyResolver())))
-                .uri("http://uaa:9999"))
-            .build();
-    }
 
     @Bean
     @Primary
     public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
         return new LettuceConnectionFactory();
     }
+
+    @Bean
+    @Primary
+    public KeyResolver addressKeyResolver() {
+        return exchange -> Mono.just(exchange.getRequest().getURI().getPath());
+    }
+
+    @Bean
+    public KeyResolver clientKeyResolver() {
+        return exchange -> Mono.just(Objects.requireNonNull(exchange.getRequest().getHeaders().get(AUTHORIZATION)))
+            .map(p -> getClientIdFromToken(p.get(0)));
+    }
+
+    private String getClientIdFromToken(String jwtToken) {
+        try {
+            JwtConsumer jwtConsumer = new JwtConsumerBuilder().setSkipSignatureVerification().build();
+            return jwtConsumer.processToClaims(jwtToken.replace("Bearer ", "")).getClaimValueAsString(CLIENT_ID);
+        } catch (InvalidJwtException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
+

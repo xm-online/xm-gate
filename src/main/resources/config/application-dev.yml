@@ -39,10 +39,6 @@ spring:
     serialization:
       indent-output: true
   cloud:
-    gateway:
-      redis-rate-limiter.replenishRate: 10
-      redis-rate-limiter.burstCapacity: 20
-      redis-rate-limiter.requestedTokens: 1
     consul:
       config:
         fail-fast: false # if not in "prod" profile, do not force to use Spring Cloud Config
@@ -105,4 +101,14 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
+application:
+  redis-rate-limiter:
+    uaa:
+      - replenishRate: 1
+        burstCapacity: 1
+        requestedTokens: 1
+        keyResolver: "#{@clientKeyResolver}"
+      - replenishRate: 2
+        burstCapacity: 2
+        requestedTokens: 1
+        keyResolver: "#{@addressKeyResolver}"
