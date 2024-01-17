@@ -11,16 +11,15 @@ import reactor.core.publisher.Flux;
 
 import java.util.Objects;
 
+import static com.icthh.xm.gate.config.Constants.BURST_CAPACITY;
+import static com.icthh.xm.gate.config.Constants.FILTER_NAME;
+import static com.icthh.xm.gate.config.Constants.KEY_RESOLVER;
+import static com.icthh.xm.gate.config.Constants.REPLENISH_RATE;
+import static com.icthh.xm.gate.config.Constants.REQUESTED_TOKENS;
 import static com.icthh.xm.gate.utils.RouteUtils.clearRouteId;
 
 @Component
 public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClientRouteDefinitionLocator {
-
-    private static final String FILTER_NAME = "RequestRateLimiter";
-    private static final String REPLENISH_RATE = "redis-rate-limiter.replenishRate";
-    private static final String BURST_CAPACITY = "redis-rate-limiter.burstCapacity";
-    private static final String REQUESTED_TOKENS = "redis-rate-limiter.requestedTokens";
-    private static final String KEY_RESOLVER = "key-resolver";
 
     private final ApplicationProperties applicationProperties;
 
