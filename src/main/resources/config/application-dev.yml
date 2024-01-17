@@ -107,7 +107,7 @@ application:
       - replenishRate: 1
         burstCapacity: 1
         requestedTokens: 1
-        keyResolver: "#{@clientKeyResolver}"
+        keyResolver: "#{@tenantClientKeyResolver}"
       - replenishRate: 2
         burstCapacity: 2
         requestedTokens: 1

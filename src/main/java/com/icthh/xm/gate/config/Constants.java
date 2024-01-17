@@ -14,5 +14,12 @@ public final class Constants {
     public static final int FILTER_DOMAIN_RELAY_ORDER = Ordered.HIGHEST_PRECEDENCE + 1;
     public static final String DEFAULT_TENANT = "XM";
 
+    // rate limiting configuration constants
+    public static final String FILTER_NAME = "RequestRateLimiter";
+    public static final String REPLENISH_RATE = "redis-rate-limiter.replenishRate";
+    public static final String BURST_CAPACITY = "redis-rate-limiter.burstCapacity";
+    public static final String REQUESTED_TOKENS = "redis-rate-limiter.requestedTokens";
+    public static final String KEY_RESOLVER = "key-resolver";
+
     private Constants() {}
 }

@@ -12,7 +12,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
@@ -36,15 +35,18 @@ public class RateLimitingConfiguration {
     }
 
     @Bean
-    public KeyResolver clientKeyResolver() {
+    public KeyResolver tenantClientKeyResolver() {
         return exchange -> Mono.just(getClientIdFromToken(exchange.getRequest()));
     }
 
     private String getClientIdFromToken(ServerHttpRequest request) {
-        String jwtToken = Objects.requireNonNull(request.getHeaders().get(AUTHORIZATION)).get(0);
+        String tenantKey = getTenantKey(request);
+        String jwtToken = request.getHeaders().getFirst(AUTHORIZATION);
+        if (jwtToken == null || !jwtToken.startsWith("Bearer ")) {
+            return tenantKey;
+        }
         try {
             JwtConsumer jwtConsumer = new JwtConsumerBuilder().setSkipSignatureVerification().build();
-            String tenantKey = getTenantKey(request);
             String clientId = jwtConsumer.processToClaims(jwtToken.replace("Bearer ", "")).getClaimValueAsString(CLIENT_ID);
             return tenantKey + ":" + clientId;
         } catch (InvalidJwtException e) {

@@ -130,7 +130,6 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/health/**").permitAll()
                     .pathMatchers("/management/info").permitAll()
                     .pathMatchers("/management/prometheus").permitAll()
-                    .pathMatchers("/api/functions/anonymous/**").permitAll()
                     .pathMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
                     .anyExchange().access(reactiveAuthorizationManager)
             )
