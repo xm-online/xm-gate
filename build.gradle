@@ -234,10 +234,13 @@ dependencies {
     implementation 'org.springframework:spring-webmvc:6.1.0'
     implementation "javax.annotation:javax.annotation-api:1.3.2"
     implementation "jakarta.servlet:jakarta.servlet-api:6.0.0"
+    implementation 'io.micrometer:micrometer-tracing'
+    implementation 'io.micrometer:micrometer-core'
 
-    implementation "com.icthh.xm.commons:xm-commons-lep-groovy:${xm_commons_version}"
-    implementation "com.icthh.xm.commons:xm-commons-tenant:${xm_commons_version}"
-    implementation "com.icthh.xm.commons:xm-commons-config:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-lep-groovy:${xm_commons_version_local}"
+    implementation "com.icthh.xm.commons:xm-commons-tenant:${xm_commons_version_local}"
+    implementation "com.icthh.xm.commons:xm-commons-config:${xm_commons_version_local}"
+    implementation "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version_local}"
 }
 
 if (project.hasProperty("gae")) {
