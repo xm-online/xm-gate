@@ -18,6 +18,10 @@ import static com.icthh.xm.gate.config.Constants.REPLENISH_RATE;
 import static com.icthh.xm.gate.config.Constants.REQUESTED_TOKENS;
 import static com.icthh.xm.gate.utils.RouteUtils.clearRouteId;
 
+/**
+ * This class is used to enrich routes, discovered by consul, with RequestRateLimiter filter.
+ * Route will be supplemented if the appropriate configuration is available for this route.
+ */
 @Component
 public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClientRouteDefinitionLocator {
 
