@@ -34,10 +34,7 @@ public class TenantInitFilter implements WebFilter {
         String tenantKeyValue = tenantMappingService.getTenantKey(domain);
 
         TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue);
-        try {
-            return chain.filter(exchange);
-        } finally {
-            tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
-        }
+        return chain.filter(exchange)
+            .doOnEach(signal -> tenantContextHolder.getPrivilegedContext().destroyCurrentContext());
     }
 }

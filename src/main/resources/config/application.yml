@@ -103,6 +103,10 @@ management:
           enabled: true
 
 spring:
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
   application:
     name: gate
   cloud:
@@ -266,6 +270,9 @@ jhipster:
 
 # application:
 application:
+  security:
+    oauth2:
+      enabled: false
   specification-folder-path-pattern: /config/tenants/{tenantName}/gate/xmgatespec/*.yml
   specification-path-pattern: /config/tenants/{tenantName}/gate/${application.specification-name}
   specification-name: xmgatespec.yml

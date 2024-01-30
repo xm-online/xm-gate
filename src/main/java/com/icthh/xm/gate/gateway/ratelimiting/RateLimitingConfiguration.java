@@ -1,8 +1,7 @@
 package com.icthh.xm.gate.gateway.ratelimiting;
 
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import com.icthh.xm.gate.utils.ServerRequestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +16,6 @@ import java.util.Optional;
 import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.springframework.security.oauth2.core.OAuth2TokenIntrospectionClaimNames.CLIENT_ID;
 
 @Configuration
 public class RateLimitingConfiguration {
@@ -36,22 +34,14 @@ public class RateLimitingConfiguration {
 
     @Bean
     public KeyResolver tenantClientKeyResolver() {
-        return exchange -> Mono.just(getClientIdFromToken(exchange.getRequest()));
+        return exchange -> Mono.just(getClientIdKey(exchange.getRequest()));
     }
 
-    private String getClientIdFromToken(ServerHttpRequest request) {
+    private String getClientIdKey(ServerHttpRequest request) {
         String tenantKey = getTenantKey(request);
         String jwtToken = request.getHeaders().getFirst(AUTHORIZATION);
-        if (jwtToken == null || !jwtToken.startsWith("Bearer ")) {
-            return tenantKey;
-        }
-        try {
-            JwtConsumer jwtConsumer = new JwtConsumerBuilder().setSkipSignatureVerification().build();
-            String clientId = jwtConsumer.processToClaims(jwtToken.replace("Bearer ", "")).getClaimValueAsString(CLIENT_ID);
-            return tenantKey + ":" + clientId;
-        } catch (InvalidJwtException e) {
-            throw new RuntimeException(e);
-        }
+        String clientId = ServerRequestUtils.getClientIdFromToken(jwtToken);
+        return StringUtils.isBlank(clientId) ? tenantKey : tenantKey + ":" + clientId;
     }
 
     public String getTenantKey(ServerHttpRequest request) {

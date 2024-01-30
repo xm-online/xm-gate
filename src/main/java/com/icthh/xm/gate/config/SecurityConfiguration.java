@@ -6,6 +6,7 @@ import static org.springframework.security.web.server.util.matcher.ServerWebExch
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.icthh.xm.commons.permission.access.XmPermissionEvaluator;
 import com.icthh.xm.gate.security.AuthoritiesConstants;
 import com.icthh.xm.gate.security.SecurityUtils;
 import com.icthh.xm.gate.security.oauth2.AudienceValidator;
@@ -20,10 +21,13 @@ import java.util.function.Consumer;
 
 import com.icthh.xm.gate.web.filter.TenantInitFilter;
 import jakarta.servlet.Filter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
@@ -71,6 +75,9 @@ public class SecurityConfiguration {
 //    @Value("${spring.security.oauth2.client.provider.oidc.issuer-uri}")
 //    private String issuerUri;
 
+    @Value("${application.security.oauth2.enabled}")
+    private boolean oauth2Enabled;
+
     private final ReactiveClientRegistrationRepository clientRegistrationRepository;
     private final ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager;
 
@@ -89,6 +96,13 @@ public class SecurityConfiguration {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.jHipsterProperties = jHipsterProperties;
         this.reactiveAuthorizationManager = reactiveAuthorizationManager;
+    }
+
+    @Bean
+    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(XmPermissionEvaluator permissionEvaluator) {
+        DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+        expressionHandler.setPermissionEvaluator(permissionEvaluator);
+        return expressionHandler;
     }
 
     @Bean
@@ -119,6 +133,8 @@ public class SecurityConfiguration {
             .authorizeExchange(authz ->
                 // prettier-ignore
                 authz
+                    .pathMatchers("/api/allow").permitAll()
+                    .pathMatchers("/api/deny").permitAll()
                     .pathMatchers("/api/authenticate").permitAll()
                     .pathMatchers("/api/auth-info").permitAll()
                     .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
@@ -132,16 +148,17 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/prometheus").permitAll()
                     .pathMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
                     .anyExchange().access(reactiveAuthorizationManager)
-            )
-//            .oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
-//            .oauth2Client(withDefaults())
-//            .oauth2ResourceServer(oauth2 -> oauth2
-//                .jwt(jwt -> jwt
-////                    .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
-//                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
-//                )
-//            )
-        ;
+            );
+        if (oauth2Enabled) {
+            http.oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
+                .oauth2Client(withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                    .jwt(jwt -> jwt
+                        .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
+                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                    )
+                );
+        }
         return http.build();
     }
 
