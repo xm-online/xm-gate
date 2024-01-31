@@ -4,7 +4,6 @@ import com.icthh.xm.commons.logging.util.LogObjectPrinter;
 import com.icthh.xm.commons.logging.util.MdcUtils;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
-import com.icthh.xm.gate.service.TenantMappingService;
 import com.icthh.xm.gate.utils.ServerRequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,56 +30,55 @@ public class LoggingFilter implements WebFilter {
 
     private static final String MANAGEMENT_HEALTH_URI = "/management/health";
     private final TenantContextHolder tenantContextHolder;
-    private final TenantMappingService tenantMappingService;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
 
+        String requestUri = request.getURI().getPath();
+
+        if (MANAGEMENT_HEALTH_URI.equals(requestUri)) {
+            return chain.filter(exchange);
+        }
+        mdcPutUserAndTenantData(request.getHeaders().getFirst(AUTHORIZATION));
+
         StopWatch stopWatch = StopWatch.createStarted();
 
         String domain = request.getURI().getHost();
         String remoteAddr = Objects.requireNonNull(request.getRemoteAddress()).getAddress().getHostAddress();
+        String method = request.getMethod().name();
         Long contentLength = request.getHeaders().getContentLength();
 
-        TenantContextUtils.setTenant(tenantContextHolder, tenantMappingService.getTenantKey(domain)); // todo: remove
+        log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri, contentLength);
 
-        String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
-
-        String method = null;
-        String userLogin = null;
-        String requestUri = null;
-
-        try {
-            method = request.getMethod().name();
-            userLogin = ServerRequestUtils.getClientIdFromToken(request.getHeaders().getFirst(AUTHORIZATION));
-            requestUri = request.getURI().getPath();
-
-            if (MANAGEMENT_HEALTH_URI.equals(requestUri)) {
-                return chain.filter(exchange);
-            }
-            String oldRid = MdcUtils.getRid();
-            String rid = oldRid == null ? MdcUtils.generateRid() : oldRid;
-
-            MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);
-
-            log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri,
-                contentLength);
-
-            return chain.filter(exchange).doOnEach(signal -> {
+        return chain.filter(exchange)
+            .doOnSuccess(signal -> {
                 ServerHttpResponse response = exchange.getResponse();
                 Integer status = Objects.requireNonNull(response.getStatusCode()).value();
 
-                log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain,
-                    request.getMethod().name(), request.getURI().getPath(), status, stopWatch.getTime());
-            });
+                log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain, method, requestUri,
+                    status, stopWatch.getTime());
+            })
+            .doOnError(signal -> {
+                log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
+                    LogObjectPrinter.printException(signal.getCause()), stopWatch.getTime());
+                throw new RuntimeException(signal);
+            })
+            .doFinally(onFinally -> MdcUtils.clear())
+            .contextCapture();
+    }
 
-        } catch (Exception e) {
-            log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
-                LogObjectPrinter.printException(e), stopWatch.getTime());
+    private void mdcPutUserAndTenantData(String requestJwtToken) {
+        try {
+            String oldRid = MdcUtils.getRid();
+            String rid = oldRid == null ? MdcUtils.generateRid() : oldRid;
+            String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
+            String userLogin = ServerRequestUtils.getClientIdFromToken(requestJwtToken);
+            MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);
+
+        } catch (IllegalStateException e) {
+            log.error(e.getMessage());
             throw e;
-        } finally {
-            MdcUtils.clear();
         }
     }
 }

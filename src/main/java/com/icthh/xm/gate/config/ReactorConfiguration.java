@@ -11,5 +11,6 @@ public class ReactorConfiguration {
 
     public ReactorConfiguration() {
         Hooks.onOperatorDebug();
+        Hooks.enableAutomaticContextPropagation();
     }
 }

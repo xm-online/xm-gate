@@ -237,10 +237,10 @@ dependencies {
     implementation 'io.micrometer:micrometer-tracing'
     implementation 'io.micrometer:micrometer-core'
 
-    implementation "com.icthh.xm.commons:xm-commons-lep-groovy:${xm_commons_version_local}"
-    implementation "com.icthh.xm.commons:xm-commons-tenant:${xm_commons_version_local}"
-    implementation "com.icthh.xm.commons:xm-commons-config:${xm_commons_version_local}"
-    implementation "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version_local}"
+    implementation "com.icthh.xm.commons:xm-commons-lep-groovy:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-tenant:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-config:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
 }
 
 if (project.hasProperty("gae")) {
