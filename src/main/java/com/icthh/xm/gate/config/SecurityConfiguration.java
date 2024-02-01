@@ -6,8 +6,8 @@ import static org.springframework.security.web.server.util.matcher.ServerWebExch
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.icthh.xm.commons.permission.access.XmPermissionEvaluator;
-import com.icthh.xm.gate.security.AuthoritiesConstants;
+import com.icthh.xm.commons.permission.constants.RoleConstant;
+import com.icthh.xm.commons.security.jwt.TokenProvider;
 import com.icthh.xm.gate.security.SecurityUtils;
 import com.icthh.xm.gate.security.oauth2.AudienceValidator;
 import com.icthh.xm.gate.security.oauth2.JwtGrantedAuthorityConverter;
@@ -19,8 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import com.icthh.xm.gate.web.filter.TenantInitFilter;
-import jakarta.servlet.Filter;
+import com.icthh.xm.gate.web.filter.ReactiveJwtFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -69,8 +68,7 @@ public class SecurityConfiguration {
 
     private final JHipsterProperties jHipsterProperties;
 
-//    @Value("${spring.security.oauth2.client.provider.oidc.issuer-uri}")
-//    private String issuerUri;
+    private final TokenProvider tokenProvider;
 
     @Value("${application.security.oauth2.enabled}")
     private boolean oauth2Enabled;
@@ -88,18 +86,12 @@ public class SecurityConfiguration {
         .build();
 
     public SecurityConfiguration(ReactiveClientRegistrationRepository clientRegistrationRepository,
-                                 JHipsterProperties jHipsterProperties,
+                                 JHipsterProperties jHipsterProperties, TokenProvider tokenProvider,
                                  ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager) {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.jHipsterProperties = jHipsterProperties;
+        this.tokenProvider = tokenProvider;
         this.reactiveAuthorizationManager = reactiveAuthorizationManager;
-    }
-
-    @Bean
-    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(XmPermissionEvaluator permissionEvaluator) {
-        DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
-        expressionHandler.setPermissionEvaluator(permissionEvaluator);
-        return expressionHandler;
     }
 
     @Bean
@@ -142,7 +134,8 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
                     .pathMatchers("/swagger-resources/configuration/ui").permitAll()
                     .anyExchange().access(reactiveAuthorizationManager)
-            );
+            )
+            .addFilterAfter(new ReactiveJwtFilter(tokenProvider), SecurityWebFiltersOrder.REACTOR_CONTEXT);
         if (oauth2Enabled) {
             http.oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
                 .oauth2Client(withDefaults())
