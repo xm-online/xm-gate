@@ -1,5 +1,9 @@
 package com.icthh.xm.gate;
 
+import com.icthh.xm.commons.logging.util.MdcUtils;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantContextUtils;
+import com.icthh.xm.commons.tenant.TenantKey;
 import com.icthh.xm.gate.config.ApplicationProperties;
 import com.icthh.xm.gate.config.CRLFLogConverter;
 import jakarta.annotation.PostConstruct;
@@ -14,20 +18,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.core.env.Environment;
 import tech.jhipster.config.DefaultProfileUtil;
 import tech.jhipster.config.JHipsterConstants;
 
 @SpringBootApplication(scanBasePackages = "com.icthh.xm")
 @EnableConfigurationProperties({ ApplicationProperties.class })
+@EnableDiscoveryClient
 public class GateApp {
 
     private static final Logger log = LoggerFactory.getLogger(GateApp.class);
 
     private final Environment env;
+    private final TenantContextHolder tenantContextHolder;
 
-    public GateApp(Environment env) {
+    public GateApp(Environment env, TenantContextHolder tenantContextHolder) {
         this.env = env;
+        this.tenantContextHolder = tenantContextHolder;
     }
 
     /**
@@ -56,6 +64,15 @@ public class GateApp {
                 "You have misconfigured your application! It should not " + "run with both the 'dev' and 'cloud' profiles at the same time."
             );
         }
+        initContexts();
+    }
+
+    private void initContexts() {
+        // init tenant context, by default this is XM super tenant
+        TenantContextUtils.setTenant(tenantContextHolder, TenantKey.SUPER);
+
+        // init logger MDC context
+        MdcUtils.putRid(MdcUtils.generateRid() + "::" + TenantKey.SUPER.getValue());
     }
 
     /**

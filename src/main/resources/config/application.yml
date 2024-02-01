@@ -182,11 +182,6 @@ spring:
   output:
     ansi:
       console-available: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://uaa:9999
 #      client:
 #        provider:
 #          oidc:
@@ -199,7 +194,6 @@ spring:
 
 xm-config:
   enabled: true
-#  xm-config-url: http://config:8084
   configMode: FILE
   configDirPath: /home/vosiievska/work/dila/xm-ms-config-repository # this one
   kafka-config-topic: config_topic
