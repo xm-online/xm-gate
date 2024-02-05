@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.gateway.ratelimiting;
 
 import com.icthh.xm.gate.config.ApplicationProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.ReactiveDiscoveryClient;
 import org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocator;
 import org.springframework.cloud.gateway.discovery.DiscoveryLocatorProperties;
@@ -25,6 +26,7 @@ import static com.icthh.xm.gate.utils.RouteUtils.clearRouteId;
  * This class is used to enrich routes, discovered by consul, with RequestRateLimiter filter.
  * Route will be supplemented if the appropriate configuration is available for this route.
  */
+@Slf4j
 @Component
 public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClientRouteDefinitionLocator {
 
@@ -47,13 +49,21 @@ public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClie
         var redisRateLimiterProperties = applicationProperties.getRedisRateLimiter();
 
         if (Objects.nonNull(redisRateLimiterProperties)) {
-            Optional.ofNullable(redisRateLimiterProperties.get(routeId))
-                .orElse(Collections.emptyList())
-                .stream()
-                .map(DiscoveryClientRouteDefinitionLocatorEnhancer::buildRateLimiterFilter)
-                .forEach(f -> routeDefinition.getFilters().add(f));
+            Optional.ofNullable(redisRateLimiterProperties.get(routeId)).orElse(Collections.emptyList())
+                .forEach(properties -> addRateLimitingFilter(routeId, routeDefinition, properties));
         }
         return routeDefinition;
+    }
+
+    private void addRateLimitingFilter(String routeId, RouteDefinition routeDefinition,
+                                       ApplicationProperties.RedisRateLimiterProperties properties) {
+        FilterDefinition filterDefinition = buildRateLimiterFilter(properties);
+        routeDefinition.getFilters().add(filterDefinition);
+
+        log.debug("Successfully added RequestRateLimiter filter with parameters: replenishRate = {}, "
+            + "burstCapacity = {}, requestedTokens = {}, key-resolver = {}, deny-empty-key = {} to route with id: {}",
+            properties.getReplenishRate(), properties.getBurstCapacity(), properties.getRequestedTokens(),
+            properties.getKeyResolver(), properties.getDenyEmpty(), routeId);
     }
 
     private static FilterDefinition buildRateLimiterFilter(ApplicationProperties.RedisRateLimiterProperties args) {
