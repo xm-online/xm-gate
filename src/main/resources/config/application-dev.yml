@@ -118,13 +118,13 @@ jhipster:
 # ===================================================================
 
 application:
-  redis-rate-limiter:
-    uaa:
-      - replenishRate: 1
-        burstCapacity: 1
-        requestedTokens: 1
-        keyResolver: "#{@tenantClientKeyResolver}"
-      - replenishRate: 2
-        burstCapacity: 2
-        requestedTokens: 1
-        keyResolver: "#{@tenantKeyResolver}"
+#  redis-rate-limiter:
+#    uaa:
+#      - replenishRate: 1
+#        burstCapacity: 1
+#        requestedTokens: 1
+#        keyResolver: "#{@tenantClientKeyResolver}"
+#      - replenishRate: 2
+#        burstCapacity: 2
+#        requestedTokens: 1
+#        keyResolver: "#{@tenantKeyResolver}"

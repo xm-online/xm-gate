@@ -9,7 +9,9 @@ import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.icthh.xm.gate.config.Constants.BURST_CAPACITY;
 import static com.icthh.xm.gate.config.Constants.DENY_EMPTY;
@@ -42,10 +44,12 @@ public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClie
 
     private RouteDefinition enrichRouteDefinition(RouteDefinition routeDefinition) {
         String routeId = clearRouteId(routeDefinition.getId()); // ReactiveCompositeDiscoveryClient adds prefix to the route IDs to avoid naming conflicts and clearly indicate their origin
-        var redisRateLimiterProperties = applicationProperties.getRedisRateLimiter().get(routeId);
+        var redisRateLimiterProperties = applicationProperties.getRedisRateLimiter();
 
         if (Objects.nonNull(redisRateLimiterProperties)) {
-            redisRateLimiterProperties.stream()
+            Optional.of(redisRateLimiterProperties.get(routeId))
+                .orElse(Collections.emptyList())
+                .stream()
                 .map(DiscoveryClientRouteDefinitionLocatorEnhancer::buildRateLimiterFilter)
                 .forEach(f -> routeDefinition.getFilters().add(f));
         }
