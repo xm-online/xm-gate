@@ -47,7 +47,7 @@ public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClie
         var redisRateLimiterProperties = applicationProperties.getRedisRateLimiter();
 
         if (Objects.nonNull(redisRateLimiterProperties)) {
-            Optional.of(redisRateLimiterProperties.get(routeId))
+            Optional.ofNullable(redisRateLimiterProperties.get(routeId))
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(DiscoveryClientRouteDefinitionLocatorEnhancer::buildRateLimiterFilter)
