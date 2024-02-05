@@ -21,6 +21,8 @@ public class ServerRequestUtils {
     public static final String SESSION_ID_HEADER = "X-SESSIONID";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String BEARER_UPPER_PREFIX = "BEARER ";
+    private static final String MUTATED_REQUEST_CLASS_NAME = "MutatedServerHttpRequest";
+    private static final String ORIGINAL_REQUEST_FIELD_NAME = "originalRequest";
 
     public static String getClientIdFromToken(String jwtToken) {
         if (jwtToken == null || !jwtToken.startsWith(BEARER_PREFIX)) {
@@ -41,7 +43,7 @@ public class ServerRequestUtils {
 
         // ServerHttpRequest can mutate and lost the first path element containing service name. It's necessary
         // to get originalRequest to obtain a full path from it
-        if (request.getClass().getName().endsWith("MutatedServerHttpRequest")) {
+        if (request.getClass().getName().endsWith(MUTATED_REQUEST_CLASS_NAME)) {
             ServerHttpRequest originalRequest = getOriginalRequest(getOriginalRequest(request));
             uriElements = originalRequest.getPath().elements();
         }
@@ -63,7 +65,7 @@ public class ServerRequestUtils {
 
     private static ServerHttpRequest getOriginalRequest(ServerHttpRequest request) {
         try {
-            Field originalRequestField = request.getClass().getDeclaredField("originalRequest");
+            Field originalRequestField = request.getClass().getDeclaredField(ORIGINAL_REQUEST_FIELD_NAME);
             originalRequestField.setAccessible(true);
             return  (ServerHttpRequest) originalRequestField.get(request);
 
