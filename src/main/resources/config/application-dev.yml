@@ -128,12 +128,6 @@ application:
         burstCapacity: 2
         requestedTokens: 1
         keyResolver: "#{@tenantKeyResolver}"
-    order:
-      - replenishRate: 300
-        burstCapacity: 300
-        requestedTokens: 1
-        keyResolver: "#{@serviceSessionIdKeyResolver}"
-        denyEmpty: false
     cart:
       - replenishRate: 300
         burstCapacity: 300

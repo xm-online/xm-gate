@@ -2,12 +2,12 @@ package com.icthh.xm.gate.utils;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
 
@@ -21,15 +21,14 @@ public class ServerRequestUtils {
     public static final String SESSION_ID_HEADER = "X-SESSIONID";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String BEARER_UPPER_PREFIX = "BEARER ";
-    private static final String EMPTY = "";
 
     public static String getClientIdFromToken(String jwtToken) {
         if (jwtToken == null || !jwtToken.startsWith(BEARER_PREFIX)) {
-            return EMPTY;
+            return StringUtils.EMPTY;
         }
         try {
             JwtConsumer jwtConsumer = new JwtConsumerBuilder().setSkipSignatureVerification().build();
-            JwtClaims claims = jwtConsumer.processToClaims(jwtToken.replace(BEARER_PREFIX, EMPTY));
+            JwtClaims claims = jwtConsumer.processToClaims(jwtToken.replace(BEARER_PREFIX, StringUtils.EMPTY));
             return claims.getClaimValueAsString(CLIENT_ID);
 
         } catch (InvalidJwtException e) {
@@ -46,16 +45,16 @@ public class ServerRequestUtils {
             ServerHttpRequest originalRequest = getOriginalRequest(getOriginalRequest(request));
             uriElements = originalRequest.getPath().elements();
         }
-        return uriElements.size() < 2 ? EMPTY : uriElements.get(1).value();
+        return uriElements.size() < 2 ? StringUtils.EMPTY : uriElements.get(1).value();
     }
 
     public static String resolveTokenFromRequest(ServerHttpRequest request) {
         String bearerToken = request.getHeaders().getFirst(AUTHORIZATION);
-        if (StringUtils.hasText(bearerToken)
+        if (StringUtils.isNotBlank(bearerToken)
             && (bearerToken.startsWith(BEARER_PREFIX) || bearerToken.toUpperCase().startsWith(BEARER_UPPER_PREFIX))) {
 
             String token = bearerToken.substring(7);
-            return StringUtils.hasText(token) ? token.strip() : token;
+            return StringUtils.isNotBlank(token) ? token.strip() : token;
 
         } else {
             return null;
