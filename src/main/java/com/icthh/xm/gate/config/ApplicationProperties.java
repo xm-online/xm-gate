@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "application", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "application")
 public class ApplicationProperties {
 
     private final Retry retry = new Retry();

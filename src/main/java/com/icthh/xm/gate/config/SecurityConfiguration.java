@@ -6,6 +6,8 @@ import static org.springframework.security.web.server.util.matcher.ServerWebExch
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.icthh.xm.commons.permission.constants.RoleConstant;
+import com.icthh.xm.commons.security.jwt.TokenProvider;
 import com.icthh.xm.gate.security.AuthoritiesConstants;
 import com.icthh.xm.gate.security.SecurityUtils;
 import com.icthh.xm.gate.security.oauth2.AudienceValidator;
@@ -18,8 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import com.icthh.xm.gate.web.filter.TenantInitFilter;
-import jakarta.servlet.Filter;
+import com.icthh.xm.gate.web.filter.ReactiveJwtFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,7 +29,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -44,11 +45,13 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
-import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
@@ -56,20 +59,20 @@ import org.springframework.security.web.server.header.XFrameOptionsServerHttpHea
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
 import tech.jhipster.config.JHipsterProperties;
 import tech.jhipster.web.filter.reactive.CookieCsrfFilter;
 
 @Configuration
-//@EnableWebSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfiguration {
 
     private final JHipsterProperties jHipsterProperties;
 
-//    @Value("${spring.security.oauth2.client.provider.oidc.issuer-uri}")
-//    private String issuerUri;
+    private final TokenProvider tokenProvider;
+
+    @Value("${application.security.oauth2.enabled}")
+    private boolean oauth2Enabled;
 
     private final ReactiveClientRegistrationRepository clientRegistrationRepository;
     private final ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager;
@@ -84,10 +87,11 @@ public class SecurityConfiguration {
         .build();
 
     public SecurityConfiguration(ReactiveClientRegistrationRepository clientRegistrationRepository,
-                                 JHipsterProperties jHipsterProperties,
+                                 JHipsterProperties jHipsterProperties, TokenProvider tokenProvider,
                                  ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager) {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.jHipsterProperties = jHipsterProperties;
+        this.tokenProvider = tokenProvider;
         this.reactiveAuthorizationManager = reactiveAuthorizationManager;
     }
 
@@ -119,29 +123,28 @@ public class SecurityConfiguration {
             .authorizeExchange(authz ->
                 // prettier-ignore
                 authz
-                    .pathMatchers("/api/authenticate").permitAll()
-                    .pathMatchers("/api/auth-info").permitAll()
-                    .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
-                    .pathMatchers("/services/*/management/health/readiness").permitAll()
-                    .pathMatchers("/services/*/v3/api-docs").hasAuthority(AuthoritiesConstants.ADMIN)
-                    .pathMatchers("/services/**").authenticated()
-                    .pathMatchers("/v3/api-docs/**").hasAuthority(AuthoritiesConstants.ADMIN)
+                    .pathMatchers("/*/api/public/**").permitAll()
+                    .pathMatchers("/api/profile-info").permitAll()
+                    .pathMatchers("/oauth2/authorization/**").permitAll()
+                    .pathMatchers("/login/oauth2/code/**").permitAll()
+                    .pathMatchers("/api/**").authenticated()
                     .pathMatchers("/management/health").permitAll()
-                    .pathMatchers("/management/health/**").permitAll()
-                    .pathMatchers("/management/info").permitAll()
-                    .pathMatchers("/management/prometheus").permitAll()
-                    .pathMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
+                    .pathMatchers("/management/prometheus/**").permitAll()
+                    .pathMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
+                    .pathMatchers("/swagger-resources/configuration/ui").hasAuthority(AuthoritiesConstants.ADMIN)
                     .anyExchange().access(reactiveAuthorizationManager)
             )
-//            .oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
-//            .oauth2Client(withDefaults())
-//            .oauth2ResourceServer(oauth2 -> oauth2
-//                .jwt(jwt -> jwt
-////                    .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
-//                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
-//                )
-//            )
-        ;
+            .addFilterAfter(new ReactiveJwtFilter(tokenProvider), SecurityWebFiltersOrder.REACTOR_CONTEXT);
+        if (oauth2Enabled) {
+            http.oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
+                .oauth2Client(withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                    .jwt(jwt -> jwt
+                        .jwtDecoder(jwtDecoder(this.clientRegistrationRepository))
+                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                    )
+                );
+        }
         return http.build();
     }
 
@@ -151,9 +154,6 @@ public class SecurityConfiguration {
         DefaultServerOAuth2AuthorizationRequestResolver authorizationRequestResolver = new DefaultServerOAuth2AuthorizationRequestResolver(
             clientRegistrationRepository
         );
-//        if (this.issuerUri.contains("auth0.com")) {
-//            authorizationRequestResolver.setAuthorizationRequestCustomizer(authorizationRequestCustomizer());
-//        }
         return authorizationRequestResolver;
     }
 
@@ -203,7 +203,6 @@ public class SecurityConfiguration {
         };
     }
 
-//    @Bean
     ReactiveJwtDecoder jwtDecoder(ReactiveClientRegistrationRepository registrations) {
         Mono<ClientRegistration> clientRegistration = registrations.findByRegistrationId("oidc");
 

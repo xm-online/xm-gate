@@ -58,6 +58,19 @@ spring:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
   thymeleaf:
     cache: false
+  kafka:
+    bootstrap-servers: localhost:9092
+  security:
+    oauth2:
+      client:
+        provider:
+          uaa:
+            token-uri: http://uaa:9999/oauth/token
+        registration:
+          uaa:
+            authorization-grant-type: client_credentials
+            client-id: internal
+            client-secret: internal
 
 server:
   port: 8080
@@ -92,6 +105,9 @@ jhipster:
       host: localhost
       port: 5000
       ring-buffer-size: 512
+  security:
+    content-security-policy: "default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com data:"
+
 # ===================================================================
 # Application specific properties
 # Add your own application properties here, see the ApplicationProperties class
