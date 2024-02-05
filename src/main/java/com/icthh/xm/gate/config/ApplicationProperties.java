@@ -49,5 +49,6 @@ public class ApplicationProperties {
         private String burstCapacity;
         private String requestedTokens;
         private String keyResolver;
+        private String denyEmpty = "true";
     }
 }

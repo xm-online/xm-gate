@@ -37,6 +37,18 @@ public class RateLimitingConfiguration {
         return exchange -> Mono.just(getClientIdKey(exchange.getRequest()));
     }
 
+    @Bean
+    public KeyResolver serviceSessionIdKeyResolver() {
+        return exchange -> getSessionIdKey(exchange.getRequest());
+    }
+
+    private Mono<String> getSessionIdKey(ServerHttpRequest request) {
+        String sessionId = request.getHeaders().getFirst(ServerRequestUtils.SESSION_ID_HEADER);
+        String serviceName = ServerRequestUtils.getServiceNameFromRequestPath(request);
+        // if sessionId is blank, return Mono.empty() to disable rate limiting by this key
+        return StringUtils.isNotBlank(sessionId) ? Mono.just(serviceName + ":" + sessionId) : Mono.empty();
+    }
+
     private String getClientIdKey(ServerHttpRequest request) {
         String tenantKey = getTenantKey(request);
         String jwtToken = request.getHeaders().getFirst(AUTHORIZATION);
