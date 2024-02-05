@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import java.util.Objects;
 
 import static com.icthh.xm.gate.config.Constants.BURST_CAPACITY;
+import static com.icthh.xm.gate.config.Constants.DENY_EMPTY;
 import static com.icthh.xm.gate.config.Constants.FILTER_NAME;
 import static com.icthh.xm.gate.config.Constants.KEY_RESOLVER;
 import static com.icthh.xm.gate.config.Constants.REPLENISH_RATE;
@@ -58,6 +59,7 @@ public class DiscoveryClientRouteDefinitionLocatorEnhancer extends DiscoveryClie
         filterDefinition.addArg(BURST_CAPACITY, args.getBurstCapacity());
         filterDefinition.addArg(REQUESTED_TOKENS, args.getRequestedTokens());
         filterDefinition.addArg(KEY_RESOLVER, args.getKeyResolver());
+        filterDefinition.addArg(DENY_EMPTY, args.getDenyEmpty());
 
         return filterDefinition;
     }

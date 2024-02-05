@@ -20,6 +20,7 @@ public final class Constants {
     public static final String BURST_CAPACITY = "redis-rate-limiter.burstCapacity";
     public static final String REQUESTED_TOKENS = "redis-rate-limiter.requestedTokens";
     public static final String KEY_RESOLVER = "key-resolver";
+    public static final String DENY_EMPTY = "deny-empty-key";
 
     private Constants() {}
 }

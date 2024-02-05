@@ -133,8 +133,10 @@ application:
         burstCapacity: 300
         requestedTokens: 1
         keyResolver: "#{@serviceSessionIdKeyResolver}"
+        denyEmpty: false
     cart:
       - replenishRate: 300
         burstCapacity: 300
         requestedTokens: 1
         keyResolver: "#{@serviceSessionIdKeyResolver}"
+        denyEmpty: false

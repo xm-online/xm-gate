@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.SslInfo;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -40,14 +39,14 @@ public class RateLimitingConfiguration {
 
     @Bean
     public KeyResolver serviceSessionIdKeyResolver() {
-        return exchange -> Mono.just(getSessionIdKey(exchange.getRequest()));
+        return exchange -> getSessionIdKey(exchange.getRequest());
     }
 
-    private String getSessionIdKey(ServerHttpRequest request) {
-        SslInfo sslInfo = request.getSslInfo();
-        String sessionId = (sslInfo != null) ? sslInfo.getSessionId() : null;
+    private Mono<String> getSessionIdKey(ServerHttpRequest request) {
+        String sessionId = request.getHeaders().getFirst(ServerRequestUtils.SESSION_ID_HEADER);
         String serviceName = ServerRequestUtils.getServiceNameFromRequestPath(request);
-        return StringUtils.isBlank(sessionId) ? serviceName : sessionId + ":" + serviceName;
+        // if sessionId is blank, return Mono.empty() to disable rate limiting by this key
+        return StringUtils.isNotBlank(sessionId) ? Mono.just(serviceName + ":" + sessionId) : Mono.empty();
     }
 
     private String getClientIdKey(ServerHttpRequest request) {
