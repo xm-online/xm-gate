@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.SslInfo;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -35,6 +36,18 @@ public class RateLimitingConfiguration {
     @Bean
     public KeyResolver tenantClientKeyResolver() {
         return exchange -> Mono.just(getClientIdKey(exchange.getRequest()));
+    }
+
+    @Bean
+    public KeyResolver serviceSessionIdKeyResolver() {
+        return exchange -> Mono.just(getSessionIdKey(exchange.getRequest()));
+    }
+
+    private String getSessionIdKey(ServerHttpRequest request) {
+        SslInfo sslInfo = request.getSslInfo();
+        String sessionId = (sslInfo != null) ? sslInfo.getSessionId() : null;
+        String serviceName = ServerRequestUtils.getServiceNameFromRequestPath(request);
+        return StringUtils.isBlank(sessionId) ? serviceName : sessionId + ":" + serviceName;
     }
 
     private String getClientIdKey(ServerHttpRequest request) {

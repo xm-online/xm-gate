@@ -1,7 +1,9 @@
 package com.icthh.xm.gate.gateway.accesscontrol;
 
 import com.icthh.xm.gate.service.GatewayService;
+import com.icthh.xm.gate.utils.ServerRequestUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
@@ -32,14 +34,12 @@ public final class OpenPolicyAgentAuthorizationManager implements ReactiveAuthor
         ServerHttpRequest request = context.getExchange().getRequest();
         Set<String> registeredServiceIds = gatewayService.getRegisteredServiceIds();
 
-        var uriElements = request.getPath().elements();
+        String requestUri = request.getPath().pathWithinApplication().value();
+        String serviceName = ServerRequestUtils.getServiceNameFromRequestPath(request);
 
-        if (uriElements.size() < 2) {
+        if (StringUtils.isBlank(serviceName)) {
             return Mono.just(new AuthorizationDecision(false));
         }
-
-        String serviceName = uriElements.get(1).value();
-        String requestUri = request.getPath().pathWithinApplication().value();
 
         boolean isGranted = registeredServiceIds.contains(serviceName) && isAuthorizedRequest(serviceName, requestUri);
 

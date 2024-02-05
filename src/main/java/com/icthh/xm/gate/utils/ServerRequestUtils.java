@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.utils;
 
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -8,15 +9,18 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.StringUtils;
 
+import java.lang.reflect.Field;
+
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.security.oauth2.core.OAuth2TokenIntrospectionClaimNames.CLIENT_ID;
 
+@Slf4j
 @UtilityClass
 public class ServerRequestUtils {
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String BEARER_UPPER_PREFIX = "BEARER ";
-    private static final String EMPTY = " ";
+    private static final String EMPTY = "";
 
     public static String getClientIdFromToken(String jwtToken) {
         if (jwtToken == null || !jwtToken.startsWith(BEARER_PREFIX)) {
@@ -32,6 +36,16 @@ public class ServerRequestUtils {
         }
     }
 
+    public static String getServiceNameFromRequestPath(ServerHttpRequest request) {
+        var uriElements = request.getPath().elements();
+
+        if (request.getClass().getName().endsWith("MutatedServerHttpRequest")) {
+            ServerHttpRequest originalRequest = getOriginalRequest(getOriginalRequest(request));
+            uriElements = originalRequest.getPath().elements();
+        }
+        return uriElements.size() < 2 ? EMPTY : uriElements.get(1).value();
+    }
+
     public static String resolveTokenFromRequest(ServerHttpRequest request) {
         String bearerToken = request.getHeaders().getFirst(AUTHORIZATION);
         if (StringUtils.hasText(bearerToken)
@@ -42,6 +56,18 @@ public class ServerRequestUtils {
 
         } else {
             return null;
+        }
+    }
+
+    private static ServerHttpRequest getOriginalRequest(ServerHttpRequest request) {
+        try {
+            Field originalRequestField = request.getClass().getDeclaredField("originalRequest");
+            originalRequestField.setAccessible(true);
+            return  (ServerHttpRequest) originalRequestField.get(request);
+
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            log.error("Exception occurred while receiving original request path with message: {}", e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 }
