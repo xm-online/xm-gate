@@ -39,6 +39,8 @@ public class ServerRequestUtils {
     public static String getServiceNameFromRequestPath(ServerHttpRequest request) {
         var uriElements = request.getPath().elements();
 
+        // ServerHttpRequest can mutate and lost the first path element containing service name. It's necessary
+        // to get originalRequest to obtain a full path from it
         if (request.getClass().getName().endsWith("MutatedServerHttpRequest")) {
             ServerHttpRequest originalRequest = getOriginalRequest(getOriginalRequest(request));
             uriElements = originalRequest.getPath().elements();
