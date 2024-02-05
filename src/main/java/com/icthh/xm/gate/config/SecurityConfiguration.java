@@ -8,6 +8,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.icthh.xm.commons.permission.constants.RoleConstant;
 import com.icthh.xm.commons.security.jwt.TokenProvider;
+import com.icthh.xm.gate.security.AuthoritiesConstants;
 import com.icthh.xm.gate.security.SecurityUtils;
 import com.icthh.xm.gate.security.oauth2.AudienceValidator;
 import com.icthh.xm.gate.security.oauth2.JwtGrantedAuthorityConverter;
@@ -122,8 +123,6 @@ public class SecurityConfiguration {
             .authorizeExchange(authz ->
                 // prettier-ignore
                 authz
-                    .pathMatchers("/api/allow").permitAll()
-                    .pathMatchers("/api/deny").permitAll()
                     .pathMatchers("/*/api/public/**").permitAll()
                     .pathMatchers("/api/profile-info").permitAll()
                     .pathMatchers("/oauth2/authorization/**").permitAll()
@@ -132,7 +131,7 @@ public class SecurityConfiguration {
                     .pathMatchers("/management/health").permitAll()
                     .pathMatchers("/management/prometheus/**").permitAll()
                     .pathMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
-                    .pathMatchers("/swagger-resources/configuration/ui").permitAll()
+                    .pathMatchers("/swagger-resources/configuration/ui").hasAuthority(AuthoritiesConstants.ADMIN)
                     .anyExchange().access(reactiveAuthorizationManager)
             )
             .addFilterAfter(new ReactiveJwtFilter(tokenProvider), SecurityWebFiltersOrder.REACTOR_CONTEXT);
