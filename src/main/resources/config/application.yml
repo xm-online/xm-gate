@@ -192,12 +192,6 @@ spring:
 #            client-secret: web_app
 #            scope: openid, profile, email, offline_access # last one for refresh tokens
 
-xm-config:
-  enabled: true
-  configMode: FILE
-  configDirPath: /home/vosiievska/work/dila/xm-ms-config-repository # this one
-  kafka-config-topic: config_topic
-
 server:
   servlet:
     session:
