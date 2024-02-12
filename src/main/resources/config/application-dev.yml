@@ -75,6 +75,12 @@ spring:
 server:
   port: 8080
 
+#xm-config:
+#  enabled: true
+#  configMode: FILE
+#  configDirPath: /config-repository-path
+#  kafka-config-topic: config_topic
+
 # ===================================================================
 # JHipster specific properties
 #
