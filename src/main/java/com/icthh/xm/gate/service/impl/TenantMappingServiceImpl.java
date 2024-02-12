@@ -11,6 +11,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -40,7 +41,7 @@ public class TenantMappingServiceImpl implements TenantMappingService {
     private final ApplicationProperties applicationProperties;
 
     public TenantMappingServiceImpl(ApplicationProperties applicationProperties,
-                                    TenantDomainRepository tenantDomainRepository,
+                                    @Lazy TenantDomainRepository tenantDomainRepository,
                                     @Value("${spring.application.name}") String applicationName) {
         this.applicationProperties = applicationProperties;
         this.hosts = unmodifiableList(applicationProperties.getHosts());
