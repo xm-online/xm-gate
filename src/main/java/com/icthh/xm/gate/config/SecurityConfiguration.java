@@ -21,9 +21,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import com.icthh.xm.gate.web.filter.ReactiveJwtFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -87,7 +89,7 @@ public class SecurityConfiguration {
         .build();
 
     public SecurityConfiguration(ReactiveClientRegistrationRepository clientRegistrationRepository,
-                                 JHipsterProperties jHipsterProperties, TokenProvider tokenProvider,
+                                 JHipsterProperties jHipsterProperties, @Lazy TokenProvider tokenProvider,
                                  ReactiveAuthorizationManager<AuthorizationContext> reactiveAuthorizationManager) {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.jHipsterProperties = jHipsterProperties;
