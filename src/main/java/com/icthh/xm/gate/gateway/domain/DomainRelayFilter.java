@@ -1,11 +1,11 @@
 package com.icthh.xm.gate.gateway.domain;
 
 import com.icthh.xm.gate.service.TenantMappingService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -25,10 +25,13 @@ import static com.icthh.xm.gate.config.Constants.HEADER_WEBAPP_URL;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class DomainRelayFilter implements GlobalFilter, Ordered {
 
     private final TenantMappingService tenantMappingService;
+
+    public DomainRelayFilter(@Lazy TenantMappingService tenantMappingService) {
+        this.tenantMappingService = tenantMappingService;
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
