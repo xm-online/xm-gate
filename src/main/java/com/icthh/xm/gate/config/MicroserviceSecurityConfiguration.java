@@ -13,10 +13,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.List;
 
 import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
 import com.icthh.xm.gate.security.session.CustomSessionFlashMapManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -26,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -45,6 +48,7 @@ import org.springframework.web.servlet.support.SessionFlashMapManager;
 
 import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 @EnableResourceServer
@@ -131,7 +135,12 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     @Bean
     public RestTemplate notBufferRestTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate() {
+            @Override
+            public void setInterceptors(List<ClientHttpRequestInterceptor> interceptors) {
+                log.warn("Interceptors are not supported to by notBufferRestTemplate");
+            }
+        };
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setBufferRequestBody(false);
         restTemplate.setRequestFactory(requestFactory);
