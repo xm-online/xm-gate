@@ -1,10 +1,7 @@
 package com.icthh.xm.gate.gateway;
 
 import com.icthh.xm.commons.logging.util.LogObjectPrinter;
-import com.icthh.xm.commons.logging.util.MdcUtils;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.commons.tenant.TenantContextUtils;
-import com.icthh.xm.gate.utils.ServerRequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
@@ -17,8 +14,6 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
-
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
 
 /**
  * Filter for logging all HTTP requests and set MDC context RID variable.
@@ -40,7 +35,6 @@ public class LoggingFilter implements WebFilter {
         if (MANAGEMENT_HEALTH_URI.equals(requestUri)) {
             return chain.filter(exchange);
         }
-        mdcPutUserAndTenantData(request.getHeaders().getFirst(AUTHORIZATION));
 
         StopWatch stopWatch = StopWatch.createStarted();
 
@@ -64,21 +58,7 @@ public class LoggingFilter implements WebFilter {
                     LogObjectPrinter.printException(signal.getCause()), stopWatch.getTime());
                 throw new RuntimeException(signal);
             })
-            .doFinally(onFinally -> MdcUtils.clear())
             .contextCapture();
     }
 
-    private void mdcPutUserAndTenantData(String requestJwtToken) {
-        try {
-            String oldRid = MdcUtils.getRid();
-            String rid = oldRid == null ? MdcUtils.generateRid() : oldRid;
-            String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
-            String userLogin = ServerRequestUtils.getClientIdFromToken(requestJwtToken);
-            MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);
-
-        } catch (IllegalStateException e) {
-            log.error(e.getMessage());
-            throw e;
-        }
-    }
 }

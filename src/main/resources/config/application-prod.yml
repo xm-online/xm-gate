@@ -18,6 +18,7 @@ logging:
     ROOT: INFO
     tech.jhipster: INFO
     com.icthh.xm.gate: INFO
+    org.springframework.web.client.RestTemplate: DEBUG
 
 management:
   prometheus:
@@ -32,6 +33,15 @@ management:
       probability: 1.0 # report 100% of traces
 
 spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          uaa:
+            token-uri: http://uaa/oauth/token
+        registration:
+          uaa:
+            authorization-grant-type: client_credentials
   devtools:
     restart:
       enabled: false
@@ -41,7 +51,7 @@ spring:
     consul:
       discovery:
         prefer-ip-address: true
-      host: localhost
+      host: consul
       port: 8500
   thymeleaf:
     cache: true
@@ -98,5 +108,13 @@ jhipster:
 # More documentation is available at:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
+
+oauth2:
+  signature-verification:
+    public-key-endpoint-uri: 'http://config/api/token_key'
+
+xm-config:
+  enabled: true
+  xm-config-url: http://config
 
 # application:
