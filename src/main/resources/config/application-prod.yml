@@ -18,7 +18,6 @@ logging:
     ROOT: INFO
     tech.jhipster: INFO
     com.icthh.xm.gate: INFO
-    org.springframework.web.client.RestTemplate: DEBUG
 
 management:
   prometheus:
@@ -55,7 +54,12 @@ spring:
       port: 8500
   thymeleaf:
     cache: true
-
+  kafka:
+    bootstrap-servers: localhost:9092
+  data:
+    redis:
+      host: redis
+      port: 6379
 # ===================================================================
 # To enable TLS in production, generate a certificate using:
 # keytool -genkey -alias gate -storetype PKCS12 -keyalg RSA -keysize 2048 -keystore keystore.p12 -validity 3650
