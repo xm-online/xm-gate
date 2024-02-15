@@ -29,7 +29,7 @@ public class RedisConfiguration {
         config.setHostName(host);
         config.setPort(Integer.parseInt(port));
         config.setDatabase(database);
-        log.info("LettuceConnectionFactory: host=" + config.getHostName() + ":" + redisConnectionFactory().getPort() + " db=" + config.getDatabase());
+        log.info("LettuceConnectionFactory: host=" + config.getHostName() + ":" + config.getPort() + " db=" + config.getDatabase());
         LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
             .clientName("gate")
             .commandTimeout(Duration.ofMillis(5000))
