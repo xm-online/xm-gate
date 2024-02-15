@@ -22,12 +22,6 @@ public class RateLimitingConfiguration {
 
     @Bean
     @Primary
-    public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
-        return new LettuceConnectionFactory();
-    }
-
-    @Bean
-    @Primary
     public KeyResolver tenantKeyResolver() {
         return exchange -> Mono.just(getTenantKey(exchange.getRequest()));
     }
