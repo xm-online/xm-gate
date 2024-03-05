@@ -59,13 +59,8 @@ public class TenantInitFilter implements WebFilter {
 
     private void mdcPutUserAndTenantData(String requestJwtToken) {
         try {
-            String oldRid = MdcUtils.getRid();
 
-            if (StringUtils.isNotEmpty(oldRid)) {
-                log.warn("CHECH THIS THREAD " + oldRid);
-            }
-
-            String rid = oldRid == null ? MdcUtils.generateRid() : oldRid;
+            String rid = MdcUtils.generateRid();
             String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
             String userLogin = ServerRequestUtils.getClientIdFromToken(requestJwtToken);
             MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);

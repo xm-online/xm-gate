@@ -19,6 +19,8 @@ logging:
     tech.jhipster: DEBUG
     org.hibernate.SQL: DEBUG
     com.icthh.xm.gate: DEBUG
+    io.lettuce.core.protocol: INFO
+    org.springframework.web.client.RestTemplate: DEBUG
 
 management:
   zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
@@ -123,14 +125,22 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-application:
+#application:
 #  redis-rate-limiter:
-#    uaa:
-#      - replenishRate: 1
-#        burstCapacity: 1
+#    customer:
+#      - replenishRate: 50
+#        burstCapacity: 50
 #        requestedTokens: 1
 #        keyResolver: "#{@tenantClientKeyResolver}"
 #      - replenishRate: 2
 #        burstCapacity: 2
 #        requestedTokens: 1
 #        keyResolver: "#{@tenantKeyResolver}"
+
+xm-config:
+  enabled: true
+  xm-config-url: http://config:8084
+
+oauth2:
+  signature-verification:
+    public-key-endpoint-uri: 'http://config:8084/api/token_key'

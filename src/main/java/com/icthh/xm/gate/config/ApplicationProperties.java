@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.config;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,6 +23,7 @@ public class ApplicationProperties {
     private final Retry retry = new Retry();
 
     private List<String> hosts = new ArrayList<>();
+
     private boolean kafkaEnabled;
     private String kafkaSystemQueue;
     private String tenantPropertiesPathPattern;
@@ -32,7 +34,9 @@ public class ApplicationProperties {
     private String specificationFolderPathPattern;
     private String specificationPathPattern;
     private String specificationName;
-    private Map<String, List<RedisRateLimiterProperties>> redisRateLimiter;
+
+    private List<RedisRateLimiterProperties> redisRateLimiter;
+
     @Getter
     @Setter
     private static class Retry {
@@ -40,15 +44,20 @@ public class ApplicationProperties {
         private int maxAttempts;
         private long delay;
         private int multiplier;
+
     }
 
     @Getter
     @Setter
     public static class RedisRateLimiterProperties {
-        private String replenishRate;
-        private String burstCapacity;
-        private String requestedTokens;
+        @NotEmpty
+        private String routeId;
+        private int replenishRate = 10;
+        private int burstCapacity = 10;
+        private int requestedTokens = 1;
+        @NotEmpty
         private String keyResolver;
         private String denyEmpty = "true";
     }
+
 }
