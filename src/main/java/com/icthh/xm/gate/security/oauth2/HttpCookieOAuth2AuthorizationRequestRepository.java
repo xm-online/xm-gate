@@ -44,9 +44,8 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
     }
 
     private String serialize(OAuth2AuthorizationRequest authorizationRequest) {
-        Map<String, Object> additionalParameters = authorizationRequest.getAdditionalParameters();
-        Map<String, String> additionalParametersString = new HashMap<>();
-        additionalParameters.forEach((key, value) -> additionalParametersString.put(key, String.valueOf(value)));
+        Map<String, String> additionalParameters = convertMapTo(authorizationRequest.getAdditionalParameters());
+        Map<String, String> attributes = convertMapTo(authorizationRequest.getAttributes());
 
         byte[] serialized = OAuth2AuthorizationRequestDto.newBuilder()
             .setAuthorizationUri(authorizationRequest.getAuthorizationUri())
@@ -54,11 +53,19 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
             .setRedirectUri(authorizationRequest.getRedirectUri())
             .addAllScopes(authorizationRequest.getScopes())
             .setState(authorizationRequest.getState())
-            .putAllAdditionalParameters(additionalParametersString)
+            .putAllAttributes(attributes)
+            .putAllAdditionalParameters(additionalParameters)
             .setAuthorizationRequestUri(authorizationRequest.getAuthorizationRequestUri())
             .build()
             .toByteArray();
         return Base64.getEncoder().encodeToString(serialized);
+    }
+
+    private static Map<String, String> convertMapTo(Map<String, Object> input) {
+        Map<String, String> result = new HashMap<>();
+        input = firstNonNull(input, emptyMap());
+        input.forEach((key, value) -> result.put(key, String.valueOf(value)));
+        return result;
     }
 
     @Override
@@ -77,8 +84,12 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
         try {
             OAuth2AuthorizationRequestDto dto = OAuth2AuthorizationRequestDto.parseFrom(Base64.getDecoder().decode(cookie.getValue()));
             List<String> scopesList = firstNonNull(dto.getScopesList(), emptyList());
-            Map<String, String> additionalParametersString = firstNonNull(dto.getAdditionalParametersMap(), emptyMap());
-            Map<String, Object> additionalParameters = new HashMap<>(additionalParametersString);
+            Map<String, Object> additionalParameters = new HashMap<>(
+                firstNonNull(dto.getAdditionalParametersMap(), emptyMap())
+            );
+            Map<String, Object> attributes = new HashMap<>(
+                firstNonNull(dto.getAttributesMap(), emptyMap())
+            );
 
             return OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri(dto.getAuthorizationUri())
@@ -87,6 +98,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
                 .scopes(new HashSet<>(scopesList))
                 .state(dto.getState())
                 .additionalParameters(additionalParameters)
+                .attributes(attributes)
                 .authorizationRequestUri(dto.getAuthorizationRequestUri())
                 .build();
         } catch (InvalidProtocolBufferException e) {
