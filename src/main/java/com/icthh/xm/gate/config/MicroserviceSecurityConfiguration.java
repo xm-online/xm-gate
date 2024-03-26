@@ -38,6 +38,7 @@ import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationC
 import org.springframework.security.oauth2.client.oidc.authentication.OidcAuthorizationCodeAuthenticationProvider;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -50,6 +51,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
 
 import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
+import static java.lang.Boolean.TRUE;
 
 @Slf4j
 @Configuration
@@ -65,6 +67,8 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
 
     private final RestTemplateErrorHandler restTemplateErrorHandler;
+
+    private final ApplicationProperties applicationProperties;
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
@@ -184,7 +188,9 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     @Bean
     public AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository() {
-        return new HttpCookieOAuth2AuthorizationRequestRepository();
+        return TRUE.equals(applicationProperties.getDisableIdpCookieUsage()) ?
+            new HttpSessionOAuth2AuthorizationRequestRepository() :
+            new HttpCookieOAuth2AuthorizationRequestRepository();
     }
 
     public LogoutHandler logoutHandler(){

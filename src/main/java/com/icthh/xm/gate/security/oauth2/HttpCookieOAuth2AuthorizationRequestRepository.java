@@ -101,7 +101,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
                 .attributes(attributes)
                 .authorizationRequestUri(dto.getAuthorizationRequestUri())
                 .build();
-        } catch (InvalidProtocolBufferException e) {
+        } catch (InvalidProtocolBufferException | IllegalArgumentException e) {
             log.error("Failed to deserialize OAuth2AuthorizationRequestDto from cookie", e);
             return null;
         }

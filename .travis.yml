@@ -51,4 +51,3 @@ branches:
     only:
       - master
       - main
-      - stateless_idp_on_gate
