@@ -1,11 +1,9 @@
 package com.icthh.xm.gate.security.oauth2;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.ProtocolStringList;
 import com.icthh.xm.gate.security.oauth2.dto.OAuth2AuthorizationRequest.OAuth2AuthorizationRequestDto;
 import com.icthh.xm.gate.utils.oauth2.CookieUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
@@ -20,7 +18,6 @@ import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Slf4j
