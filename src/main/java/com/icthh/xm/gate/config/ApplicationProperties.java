@@ -25,6 +25,7 @@ public class ApplicationProperties {
     private String kafkaSystemQueue;
     private String tenantPropertiesPathPattern;
     private String tenantPropertiesName;
+    private Boolean disableIdpCookieUsage;
 
     @Getter
     @Setter
