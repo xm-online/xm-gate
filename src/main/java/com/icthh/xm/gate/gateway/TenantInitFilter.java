@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.gateway;
 
+import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
 import static com.icthh.xm.gate.config.Constants.FILTER_ORDER_TENANT_INIT;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
@@ -45,13 +46,13 @@ public class TenantInitFilter implements Filter {
         String domain = servletRequest.getServerName();
         String tenantKeyValue = tenantMappingService.getTenantKey(domain);
 
-        if (!tenantMappingService.isTenantPresent(tenantKeyValue)) {
+        if (!tenantMappingService.isTenantPresent(tenantKeyValue) && !DEFAULT_TENANT.equalsIgnoreCase(tenantKeyValue)) {
             log.error("Tenant {} is not present", tenantKeyValue);
             redirect(servletResponse, applicationProperties.getServiceNotFoundPagePath());
             return;
         }
 
-        if (!tenantMappingService.isTenantActive(tenantKeyValue)) {
+        if (!tenantMappingService.isTenantActive(tenantKeyValue) && !DEFAULT_TENANT.equalsIgnoreCase(tenantKeyValue)) {
             log.error("Tenant {} is not active", tenantKeyValue);
             redirect(servletResponse, applicationProperties.getServiceSuspendedPagePath());
             return;

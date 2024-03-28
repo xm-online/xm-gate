@@ -69,7 +69,7 @@ public class TenantMappingServiceImpl implements TenantMappingService {
         String tenantKey = Optional.ofNullable(tenantDomainRepository.getTenantKey(domain))
                                    .orElse(getTenantByDomain().get(domain));
 
-        if (StringUtils.isBlank(tenantKey) && redirectToDefaultTenantEnabled) {
+        if ((StringUtils.isBlank(tenantKey) && redirectToDefaultTenantEnabled) || domain.matches(IP_REGEX)) {
             printWarnIfNotIpAddress(domain);
             tenantKey = DEFAULT_TENANT;
         }
@@ -91,6 +91,9 @@ public class TenantMappingServiceImpl implements TenantMappingService {
         Map<String, Set<TenantState>> tenantsByServiceMap = objectMapper.readValue(config, type);
 
         final Map<String, String> tenants = new HashMap<>();
+        for (String host : hosts) {
+            tenants.put(DEFAULT_TENANT.toLowerCase() + "." + host, DEFAULT_TENANT.toUpperCase());
+        }
         for (TenantState tenant: tenantsByServiceMap.getOrDefault(applicationName, emptySet())) {
             for (String host : hosts) {
                 tenants.put(tenant.getName().toLowerCase() + "." + host, tenant.getName().toUpperCase());
