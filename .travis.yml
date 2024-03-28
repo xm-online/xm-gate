@@ -51,3 +51,4 @@ branches:
     only:
       - master
       - main
+      - feature/service_not_found_and_not_active
