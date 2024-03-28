@@ -27,6 +27,10 @@ public class ApplicationProperties {
     private String tenantPropertiesName;
     private Boolean disableIdpCookieUsage;
 
+    private Boolean redirectToDefaultTenantEnabled;
+    private String serviceNotFoundPagePath;
+    private String serviceSuspendedPagePath;
+
     @Getter
     @Setter
     private static class Retry {

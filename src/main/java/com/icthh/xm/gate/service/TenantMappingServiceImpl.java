@@ -2,6 +2,7 @@ package com.icthh.xm.gate.service;
 
 import static com.fasterxml.jackson.databind.type.TypeFactory.defaultInstance;
 import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 
@@ -31,18 +32,22 @@ public class TenantMappingServiceImpl implements TenantMappingService {
 
     private static final String IP_REGEX = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
     public static final String TENANTS_LIST_CONFIG_KEY = "/config/tenants/tenants-list.json";
+    public static final String ACTIVE = "ACTIVE";
 
     private final List<String> hosts;
+    private final boolean redirectToDefaultTenantEnabled;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String applicationName;
 
     private volatile Map<String, String> tenantByDomain = new HashMap<>();
+    private volatile Map<String, Set<TenantState>> tenantsByServiceMap = new HashMap<>();
 
     private final TenantDomainRepository tenantDomainRepository;
 
     public TenantMappingServiceImpl(ApplicationProperties applicationProperties,
                                     TenantDomainRepository tenantDomainRepository,
                                     @Value("${spring.application.name}") String applicationName) {
+        this.redirectToDefaultTenantEnabled = TRUE.equals(applicationProperties.getRedirectToDefaultTenantEnabled());
         this.hosts = unmodifiableList(applicationProperties.getHosts());
         this.tenantDomainRepository = tenantDomainRepository;
         this.applicationName = applicationName;
@@ -64,7 +69,7 @@ public class TenantMappingServiceImpl implements TenantMappingService {
         String tenantKey = Optional.ofNullable(tenantDomainRepository.getTenantKey(domain))
                                    .orElse(getTenantByDomain().get(domain));
 
-        if (StringUtils.isBlank(tenantKey)) {
+        if (StringUtils.isBlank(tenantKey) && redirectToDefaultTenantEnabled) {
             printWarnIfNotIpAddress(domain);
             tenantKey = DEFAULT_TENANT;
         }
@@ -94,7 +99,23 @@ public class TenantMappingServiceImpl implements TenantMappingService {
 
         log.info("Tenants sub-domain mapping configured by $application.hosts: {}", hosts);
 
+        this.tenantsByServiceMap = tenantsByServiceMap;
         this.tenantByDomain = tenants;
+    }
+
+    @Override
+    public boolean isTenantPresent(String tenantName) {
+        return tenantsByServiceMap.getOrDefault(applicationName, emptySet())
+            .stream()
+            .anyMatch(tenant -> tenant.getName().equalsIgnoreCase(tenantName));
+    }
+
+    @Override
+    public boolean isTenantActive(String tenantName) {
+        return tenantsByServiceMap.getOrDefault(applicationName, emptySet())
+            .stream()
+            .filter(tenant -> tenant.getName().equalsIgnoreCase(tenantName))
+            .anyMatch(tenantState -> tenantState.getState().equals(ACTIVE));
     }
 
     @Override
