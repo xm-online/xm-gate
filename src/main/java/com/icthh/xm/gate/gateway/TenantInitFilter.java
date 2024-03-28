@@ -45,13 +45,13 @@ public class TenantInitFilter implements Filter {
         String domain = servletRequest.getServerName();
         String tenantKeyValue = tenantMappingService.getTenantKey(domain);
 
-        if (tenantMappingService.isTenantPresent(tenantKeyValue)) {
+        if (!tenantMappingService.isTenantPresent(tenantKeyValue)) {
             log.error("Tenant {} is not present", tenantKeyValue);
             redirect(servletResponse, applicationProperties.getServiceNotFoundPagePath());
             return;
         }
 
-        if (tenantMappingService.isTenantActive(tenantKeyValue)) {
+        if (!tenantMappingService.isTenantActive(tenantKeyValue)) {
             log.error("Tenant {} is not active", tenantKeyValue);
             redirect(servletResponse, applicationProperties.getServiceSuspendedPagePath());
             return;
