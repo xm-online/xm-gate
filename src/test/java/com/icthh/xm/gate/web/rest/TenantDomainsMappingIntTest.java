@@ -10,19 +10,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {GateApp.class, SecurityBeanOverrideConfiguration.class})
-@TestPropertySource(properties = "application.redirect-to-default-tenant-enabled=true")
-public class TenantDomainsMappingUnitTest {
+public class TenantDomainsMappingIntTest {
 
     @Autowired
     private TenantMappingService service;
@@ -44,22 +44,25 @@ public class TenantDomainsMappingUnitTest {
 
         tenantDomainRepository.onInit(TenantDomainRepository.TENANTS_DOMAINS_CONFIG_KEY, domainConfig);
         service.onInit(TenantListRepository.TENANTS_LIST_CONFIG_KEY,
-                       "{\"gate\":[{\"name\":\"tenant2\", \"state\":\"ACTIVE\"}]}");
+                       "{\"gate\":[{\"name\":\"tenant2\", \"state\":\"ACTIVE\"}, {\"name\":\"tenant3\", \"state\":\"SUSPENDED\"}]}");
     }
 
     @Test
     public void test() {
 
-        // custom mapping based on tenant-domains.yml
-        assertEquals("XM", service.getTenantKey("bla.bla.com"));
-        assertEquals("TENANT1", service.getTenantKey("tenant1.com"));
-        assertEquals("TENANT1", service.getTenantKey("dev.tenant1.com"));
+        assertNull(service.getTenantKey("unknown"));
+        assertTrue(service.isTenantPresent("tenant2"));
+        assertTrue(service.isTenantPresent("tenant3"));
+        assertTrue(service.isTenantPresent("TENANT3"));
+        assertFalse(service.isTenantPresent("tenant4"));
+        assertFalse(service.isTenantPresent(null));
 
-        // general matting based on prefixed application.hosts config
-        assertEquals("TENANT2", service.getTenantKey("tenant2.local"));
-
-        // fallback to defaul mapping
-        assertEquals("XM", service.getTenantKey("unknown"));
+        assertTrue(service.isTenantActive("tenant2"));
+        assertTrue(service.isTenantActive("TENANT2"));
+        assertFalse(service.isTenantActive("tenant3"));
+        assertFalse(service.isTenantActive("TENANT3"));
+        assertFalse(service.isTenantActive("tenant4"));
+        assertFalse(service.isTenantActive(null));
 
     }
 
