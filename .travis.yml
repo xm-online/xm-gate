@@ -8,7 +8,6 @@ addons:
     token:
       secure: h3cnCin1WHOMCYIhKKFZ1buVoHt7RJSWhrHGoixKMBh+4bKohto7kh1v9X5lDdcQq9ZmFbb3QBjGlg/im0LJLSXsdq6kbHWsCzDN98K7AT6P4lNNeLzBsS3dK2VW1/rGWJDk2JFLuUZCrkfI0YdhJGQBxrV6tSFjDhv0LsCT2WWomfMVlsxrqHEuahbDsdDpYHgvgpJSXnsNV44qtrm8adtUNykfMjHCSEr4EMbEI8Gq+nXBafMF2JbdKmZmGx+CIXWkiJO7F9wMD56yQt7IGcGL6wkIeYqqG1sIygqx8eM4xl/LvfQMYlKgFbzUJr6dit3d8Ys9fODcz5shM0RaErpCVOAhR7UFmcDUJPLiqCwGFETojST3TXDW7StAi/Yr8GEvN5109k6c+s9+6g/Y4HAb7Cr0MiD3f42ofWdUJRjtAwt4vnkG8OLTUH5+UbhyAuduZubjlEzjb/xuSoHKbvJc/aAbhKky3d4QF9/8zJMhxnBr36cfdU+uur8rYpvgFi1O0oNJPNXTX+XVxo+uwXuRp9S156yxjFspElISynEEpJl3qhCvRthdf4cUWOVq4tbiBH/PAVDnTy4qgE3EdQdqP4Nj8UME0aKMSZiHzH9JcEWzHdVsCZB4b6p4H004GbTiejFwDoEOb1pDdHQ3l/BmDbVzsyP6YcCM+vrxtcc=
     branches:
-    - master
     - main
 script:
   - set -e
@@ -21,9 +20,6 @@ script:
   - if [ "$TRAVIS_PULL_REQUEST" == "false" ];
     then
         PROJECT_VERSION=$(./gradlew -q  getProjectVersion);
-        export SONAR_PK=$(echo  -n $TRAVIS_REPO_SLUG | sed -e 's/\//:/g');
-        ./gradlew -x test --no-daemon sonarqube -Dsonar.projectKey="$SONAR_PK"
-        -Dsonar.projectName="$SONAR_PK" -Dsonar.java.binaries="." -Dsonar.projectVersion="$IMAGE_BRANCH";
         TAGS="$PROJECT_VERSION $PROJECT_VERSION-$TRAVIS_BUILD_NUMBER $(echo $PROJECT_VERSION | awk -F '.' '{printf $1"."$2" "$1}') latest";
     fi
   - docker build -t app-docker-img --label commit_id="$TRAVIS_COMMIT" --label version="$PROJECT_VERSION" --label build_number="$TRAVIS_BUILD_NUMBER" --label build_url="$TRAVIS_BUILD_WEB_URL" --label git_url="$TRAVIS_REPO_SLUG" --label commit_message="$TRAVIS_COMMIT_MESSAGE" -f src/main/docker/Dockerfile .
