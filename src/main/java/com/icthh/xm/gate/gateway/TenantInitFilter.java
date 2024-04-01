@@ -1,10 +1,5 @@
 package com.icthh.xm.gate.gateway;
 
-import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
-import static com.icthh.xm.gate.config.Constants.FILTER_ORDER_TENANT_INIT;
-import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
-import static org.springframework.http.HttpHeaders.LOCATION;
-
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
 import com.icthh.xm.gate.config.ApplicationProperties;
@@ -13,10 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -24,6 +17,12 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
+import static com.icthh.xm.gate.config.Constants.FILTER_ORDER_TENANT_INIT;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static org.springframework.http.HttpHeaders.LOCATION;
 
 /**
  * Filter for setting {@link TenantContextHolder}.
@@ -51,13 +50,13 @@ public class TenantInitFilter implements Filter {
 
         if (!tenantMappingService.isTenantPresent(tenantKeyValue) && !DEFAULT_TENANT.equalsIgnoreCase(tenantKeyValue)) {
             log.error("Tenant {} is not present", tenantKeyValue);
-            redirect(servletResponse, applicationProperties.getServiceNotFoundPagePath());
+            response(servletResponse, "SERVICE-NOT-FOUND");
             return;
         }
 
         if (!tenantMappingService.isTenantActive(tenantKeyValue) && !DEFAULT_TENANT.equalsIgnoreCase(tenantKeyValue)) {
             log.error("Tenant {} is not active", tenantKeyValue);
-            redirect(servletResponse, applicationProperties.getServiceSuspendedPagePath());
+            response(servletResponse, "SERVICE-SUSPENDED");
             return;
         }
 
@@ -70,11 +69,9 @@ public class TenantInitFilter implements Filter {
     }
 
     @SneakyThrows
-    private static void redirect(ServletResponse servletResponse, String path) {
+    private static void response(ServletResponse servletResponse, String code) {
         var httpResponse = (HttpServletResponse) servletResponse;
-        httpResponse.setStatus(SC_MOVED_TEMPORARILY);
-        // to relative redirect, sendRedirect method will add wrong domain prefix
-        httpResponse.setHeader(LOCATION, path);
+        httpResponse.sendError(SC_BAD_REQUEST, "{\"error\": \"" + code + "\"}");
     }
 
     @Override

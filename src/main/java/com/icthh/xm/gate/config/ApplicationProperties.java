@@ -28,8 +28,6 @@ public class ApplicationProperties {
     private Boolean disableIdpCookieUsage;
 
     private Boolean redirectToDefaultTenantEnabled;
-    private String serviceNotFoundPagePath;
-    private String serviceSuspendedPagePath;
 
     @Getter
     @Setter

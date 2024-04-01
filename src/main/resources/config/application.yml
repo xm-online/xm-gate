@@ -195,8 +195,6 @@ aspects:
 application:
   tenant-properties-path-pattern: /config/tenants/{tenantName}/gate/${application.tenant-properties-name}
   tenant-properties-name: gate.yml
-  serviceNotFoundPagePath: /service-not-found
-  serviceSuspendedPagePath: /service-suspended
   hosts:
     - localhost
     - local
