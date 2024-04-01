@@ -2,6 +2,8 @@ package com.icthh.xm.gate.gateway;
 
 import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
 import static com.icthh.xm.gate.config.Constants.FILTER_ORDER_TENANT_INIT;
+import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static org.springframework.http.HttpHeaders.LOCATION;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
@@ -11,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -69,7 +72,9 @@ public class TenantInitFilter implements Filter {
     @SneakyThrows
     private static void redirect(ServletResponse servletResponse, String path) {
         var httpResponse = (HttpServletResponse) servletResponse;
-        httpResponse.sendRedirect(path);
+        httpResponse.setStatus(SC_MOVED_TEMPORARILY);
+        // to relative redirect, sendRedirect method will add wrong domain prefix
+        httpResponse.setHeader(LOCATION, path);
     }
 
     @Override
