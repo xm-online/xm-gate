@@ -69,7 +69,7 @@ public class TenantMappingServiceImpl implements TenantMappingService {
         String tenantKey = Optional.ofNullable(tenantDomainRepository.getTenantKey(domain))
                                    .orElse(getTenantByDomain().get(domain));
 
-        if ((StringUtils.isBlank(tenantKey) && redirectToDefaultTenantEnabled) || domain.matches(IP_REGEX)) {
+        if ((StringUtils.isBlank(tenantKey) && redirectToDefaultTenantEnabled) || (domain.matches(IP_REGEX) || domain.equals("localhost"))) {
             printWarnIfNotIpAddress(domain);
             tenantKey = DEFAULT_TENANT;
         }
