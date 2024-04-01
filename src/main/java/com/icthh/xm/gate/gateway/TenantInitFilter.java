@@ -18,6 +18,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
 import static com.icthh.xm.gate.config.Constants.FILTER_ORDER_TENANT_INIT;
@@ -70,8 +71,16 @@ public class TenantInitFilter implements Filter {
 
     @SneakyThrows
     private static void response(ServletResponse servletResponse, String code) {
-        var httpResponse = (HttpServletResponse) servletResponse;
-        httpResponse.sendError(SC_BAD_REQUEST, "{\"error\": \"" + code + "\"}");
+        HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+        httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        httpResponse.setContentType("application/json");
+        httpResponse.setCharacterEncoding("UTF-8");
+
+        String jsonContent = "{\"error\": \"" + code + "\"}";
+
+        PrintWriter out = httpResponse.getWriter();
+        out.print(jsonContent);
+        out.flush();
     }
 
     @Override
