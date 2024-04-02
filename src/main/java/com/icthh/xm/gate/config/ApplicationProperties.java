@@ -27,6 +27,8 @@ public class ApplicationProperties {
     private String tenantPropertiesName;
     private Boolean disableIdpCookieUsage;
 
+    private Boolean redirectToDefaultTenantEnabled;
+
     @Getter
     @Setter
     private static class Retry {
