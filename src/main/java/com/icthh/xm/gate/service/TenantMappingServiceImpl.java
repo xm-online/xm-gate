@@ -1,11 +1,5 @@
 package com.icthh.xm.gate.service;
 
-import static com.fasterxml.jackson.databind.type.TypeFactory.defaultInstance;
-import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
-import static java.lang.Boolean.TRUE;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.unmodifiableList;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
@@ -26,6 +20,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.fasterxml.jackson.databind.type.TypeFactory.defaultInstance;
+import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
+import static java.lang.Boolean.TRUE;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableList;
+
 @Slf4j
 @Component
 public class TenantMappingServiceImpl implements TenantMappingService {
@@ -40,7 +40,7 @@ public class TenantMappingServiceImpl implements TenantMappingService {
     private final String applicationName;
 
     private volatile Map<String, String> tenantByDomain = new HashMap<>();
-    private volatile Map<String, Set<TenantState>> tenantsByServiceMap = new HashMap<>();
+    private volatile Map<String, TenantState> gateTenantsMap = new HashMap<>();
 
     private final TenantDomainRepository tenantDomainRepository;
 
@@ -91,34 +91,43 @@ public class TenantMappingServiceImpl implements TenantMappingService {
         Map<String, Set<TenantState>> tenantsByServiceMap = objectMapper.readValue(config, type);
 
         final Map<String, String> tenants = new HashMap<>();
-        for (String host : hosts) {
-            tenants.put(DEFAULT_TENANT.toLowerCase() + "." + host, DEFAULT_TENANT.toUpperCase());
-        }
+        fillHosts(tenants, DEFAULT_TENANT);
         for (TenantState tenant: tenantsByServiceMap.getOrDefault(applicationName, emptySet())) {
-            for (String host : hosts) {
-                tenants.put(tenant.getName().toLowerCase() + "." + host, tenant.getName().toUpperCase());
-            }
+            fillHosts(tenants, tenant.getName());
         }
 
         log.info("Tenants sub-domain mapping configured by $application.hosts: {}", hosts);
 
-        this.tenantsByServiceMap = tenantsByServiceMap;
+        this.gateTenantsMap = gateTenantStateMap(tenantsByServiceMap);
         this.tenantByDomain = tenants;
+    }
+
+    private Map<String, TenantState> gateTenantStateMap(Map<String, Set<TenantState>> tenantsByServiceMap) {
+        Map<String, TenantState> gateTenantsMap = new HashMap<>();
+        tenantsByServiceMap.getOrDefault(applicationName, emptySet()).forEach(tenant -> {
+            gateTenantsMap.put(tenant.getName().toLowerCase(), tenant);
+            gateTenantsMap.put(tenant.getName().toUpperCase(), tenant);
+        });
+        return gateTenantsMap;
+    }
+
+    private void fillHosts(Map<String, String> tenants, String tenantName) {
+        for (String host : hosts) {
+            tenants.put(tenantName.toLowerCase() + "." + host, tenantName.toUpperCase());
+        }
     }
 
     @Override
     public boolean isTenantPresent(String tenantName) {
-        return tenantsByServiceMap.getOrDefault(applicationName, emptySet())
-            .stream()
-            .anyMatch(tenant -> tenant.getName().equalsIgnoreCase(tenantName));
+        return gateTenantsMap.containsKey(tenantName);
     }
 
     @Override
     public boolean isTenantActive(String tenantName) {
-        return tenantsByServiceMap.getOrDefault(applicationName, emptySet())
-            .stream()
-            .filter(tenant -> tenant.getName().equalsIgnoreCase(tenantName))
-            .anyMatch(tenantState -> tenantState.getState().equals(ACTIVE));
+        return Optional.ofNullable(gateTenantsMap.get(tenantName))
+            .map(TenantState::getState)
+            .map(ACTIVE::equals)
+            .orElse(false);
     }
 
     @Override
