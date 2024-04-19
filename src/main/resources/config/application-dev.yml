@@ -19,8 +19,6 @@ logging:
     tech.jhipster: DEBUG
     org.hibernate.SQL: DEBUG
     com.icthh.xm.gate: DEBUG
-    io.lettuce.core.protocol: INFO
-    org.springframework.web.client.RestTemplate: DEBUG
 
 management:
   zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
