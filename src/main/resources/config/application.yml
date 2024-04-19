@@ -126,6 +126,10 @@ spring:
     gateway:
       default-filters:
         - TokenRelay
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@xmRateLimiter}"
+            key-resolver: "#{@tenantClientKeyResolver}"
       discovery:
         locator:
           enabled: true
