@@ -6,7 +6,6 @@ import com.icthh.xm.gate.IntegrationTest;
 import org.hamcrest.core.AnyOf;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -21,7 +20,6 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 @WithMockUser
 @AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
 @IntegrationTest
-@Disabled
 class ExceptionTranslatorIT {
 
     @Autowired
