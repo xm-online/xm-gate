@@ -1,14 +1,19 @@
 package com.icthh.xm.gate.gateway.ratelimiting;
 
+import com.icthh.xm.gate.config.ApplicationProperties;
 import com.icthh.xm.gate.utils.ServerRequestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+import org.springframework.cloud.gateway.support.ConfigurationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.icthh.xm.gate.config.Constants.DEFAULT_TENANT;
@@ -32,6 +37,19 @@ public class RateLimitingConfiguration {
     @Bean
     public KeyResolver serviceSessionIdKeyResolver() {
         return exchange -> getSessionIdKey(exchange.getRequest());
+    }
+
+    @Primary
+    @Bean
+    public XmRateLimiter tenantKeyRateLimiter(ReactiveStringRedisTemplate redisTemplate, RedisScript<List<Long>> script,
+                                              ConfigurationService configurationService, ApplicationProperties applicationProperties) {
+        return new XmRateLimiter(redisTemplate, script, configurationService, applicationProperties, "tenantKeyResolver");
+    }
+
+    @Bean
+    public XmRateLimiter tenantClientKeyRateLimiter(ReactiveStringRedisTemplate redisTemplate, RedisScript<List<Long>> script,
+                                              ConfigurationService configurationService, ApplicationProperties applicationProperties) {
+        return new XmRateLimiter(redisTemplate, script, configurationService, applicationProperties, "tenantClientKeyResolver");
     }
 
     private Mono<String> getSessionIdKey(ServerHttpRequest request) {
