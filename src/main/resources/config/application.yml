@@ -128,12 +128,17 @@ spring:
         - TokenRelay
         - name: RequestRateLimiter
           args:
-            rate-limiter: "#{@xmRateLimiter}"
+            rate-limiter: "#{@tenantKeyRateLimiter}"
+            key-resolver: "#{@tenantKeyResolver}"
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantClientKeyRateLimiter}"
             key-resolver: "#{@tenantClientKeyResolver}"
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+          route-id-prefix: "dc_"
           predicates:
             - name: Path
               args:
