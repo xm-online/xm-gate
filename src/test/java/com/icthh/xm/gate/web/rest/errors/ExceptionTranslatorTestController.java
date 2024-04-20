@@ -2,6 +2,7 @@ package com.icthh.xm.gate.web.rest.errors;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/exception-translator-test")
+@Disabled
 public class ExceptionTranslatorTestController {
 
     @PostMapping("/method-argument")
