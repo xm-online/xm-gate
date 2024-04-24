@@ -143,7 +143,7 @@ public class SecurityConfiguration {
                         .pathMatchers("/management/health").permitAll()
                         .pathMatchers("/management/prometheus/**").permitAll()
                         .pathMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
-                        .pathMatchers("/swagger-resources/configuration/ui").hasAuthority(AuthoritiesConstants.ADMIN)
+                        .pathMatchers("/swagger-resources/**").hasAuthority(RoleConstant.SUPER_ADMIN)
                         .anyExchange().access(reactiveAuthorizationManager)
             )
             .addFilterAfter(new ReactiveJwtFilter(tokenProvider), SecurityWebFiltersOrder.REACTOR_CONTEXT);

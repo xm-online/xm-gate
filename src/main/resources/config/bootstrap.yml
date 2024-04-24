@@ -18,6 +18,8 @@ spring:
         format: yaml
         profile-separator: '-'
       discovery:
+        metadata:
+          swagger: v3
         tags:
           - profile=${spring.profiles.active}
           - version=${build.version}
