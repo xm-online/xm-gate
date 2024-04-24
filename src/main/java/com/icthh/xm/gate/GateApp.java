@@ -6,6 +6,7 @@ import com.icthh.xm.commons.tenant.TenantContextUtils;
 import com.icthh.xm.commons.tenant.TenantKey;
 import com.icthh.xm.gate.config.ApplicationProperties;
 import com.icthh.xm.gate.config.CRLFLogConverter;
+import io.micrometer.context.ContextRegistry;
 import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -15,11 +16,13 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.core.env.Environment;
+import reactor.core.publisher.Hooks;
 import tech.jhipster.config.DefaultProfileUtil;
 import tech.jhipster.config.JHipsterConstants;
 
@@ -47,6 +50,15 @@ public class GateApp {
      */
     @PostConstruct
     public void initApplication() {
+
+        //enable MDC context propagation
+        Hooks.enableAutomaticContextPropagation();
+
+        //Register transferred parameters
+        ContextRegistry.getInstance().registerThreadLocalAccessor(
+            "rid", () -> MDC.get("rid"), rid -> MDC.put("rid", rid), () -> MDC.remove("rid")
+        );
+
         Collection<String> activeProfiles = Arrays.asList(env.getActiveProfiles());
         if (
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&
@@ -82,6 +94,7 @@ public class GateApp {
      */
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(GateApp.class);
+
         DefaultProfileUtil.addDefaultProfile(app);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);

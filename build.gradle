@@ -20,7 +20,7 @@ plugins {
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 group = "com.icthh.xm.gate"
-version = "0.0.4-SNAPSHOT"
+version = "0.0.5-SNAPSHOT"
 
 description = ""
 
@@ -263,7 +263,7 @@ task cleanResources(type: Delete) {
 }
 
 wrapper {
-    gradleVersion = "8.5"
+    gradleVersion = "8.7"
 }
 
 

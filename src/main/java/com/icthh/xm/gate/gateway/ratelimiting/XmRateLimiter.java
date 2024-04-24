@@ -9,10 +9,8 @@ import org.springframework.cloud.gateway.support.ConfigurationService;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,9 +43,10 @@ public class XmRateLimiter extends RedisRateLimiter {
     }
 
     private Set<ApplicationProperties.RedisRateLimiterProperties> getActualValidProperties() {
-        return Optional.ofNullable(applicationProperties.getRedisRateLimiter())
+        List<ApplicationProperties.RedisRateLimiterProperties> redisRateLimiterCfg =
+            applicationProperties.getRedisRateLimiter() == null ? List.of() : applicationProperties.getRedisRateLimiter();
+        return redisRateLimiterCfg
             .stream()
-            .flatMap(Collection::stream)
             .filter(prop -> StringUtils.isNotEmpty(prop.getRouteId()))
             .filter(prop -> StringUtils.isNotEmpty(prop.getKeyResolver()))
             .filter(prop -> keyResolverName.equals(prop.getKeyResolver()))
