@@ -1,38 +1,44 @@
 package com.icthh.xm.gate;
 
 import com.icthh.xm.commons.logging.util.MdcUtils;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantContextUtils;
+import com.icthh.xm.commons.tenant.TenantKey;
 import com.icthh.xm.gate.config.ApplicationProperties;
-import com.icthh.xm.gate.config.DefaultProfileUtil;
-
-import io.github.jhipster.config.JHipsterConstants;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
-import org.springframework.core.env.Environment;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import com.icthh.xm.gate.config.CRLFLogConverter;
+import io.micrometer.context.ContextRegistry;
+import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.core.env.Environment;
+import reactor.core.publisher.Hooks;
+import tech.jhipster.config.DefaultProfileUtil;
+import tech.jhipster.config.JHipsterConstants;
 
 @SpringBootApplication(scanBasePackages = "com.icthh.xm")
-@EnableConfigurationProperties({ApplicationProperties.class})
+@EnableConfigurationProperties({ ApplicationProperties.class })
 @EnableDiscoveryClient
-@EnableZuulProxy
-@Slf4j
 public class GateApp {
 
-    private final Environment env;
+    private static final Logger log = LoggerFactory.getLogger(GateApp.class);
 
-    public GateApp(Environment env) {
+    private final Environment env;
+    private final TenantContextHolder tenantContextHolder;
+
+    public GateApp(Environment env, TenantContextHolder tenantContextHolder) {
         this.env = env;
+        this.tenantContextHolder = tenantContextHolder;
     }
 
     /**
@@ -44,62 +50,80 @@ public class GateApp {
      */
     @PostConstruct
     public void initApplication() {
+
+        //enable MDC context propagation
+        Hooks.enableAutomaticContextPropagation();
+
+        //Register transferred parameters
+        ContextRegistry.getInstance().registerThreadLocalAccessor(
+            "rid", () -> MDC.get("rid"), rid -> MDC.put("rid", rid), () -> MDC.remove("rid")
+        );
+
         Collection<String> activeProfiles = Arrays.asList(env.getActiveProfiles());
-        if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) && activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
-            log.error("You have misconfigured your application! It should not run " +
-                "with both the 'dev' and 'prod' profiles at the same time.");
+        if (
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
+        ) {
+            log.error(
+                "You have misconfigured your application! It should not run " + "with both the 'dev' and 'prod' profiles at the same time."
+            );
         }
-        if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) && activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_CLOUD)) {
-            log.error("You have misconfigured your application! It should not " +
-                "run with both the 'dev' and 'cloud' profiles at the same time.");
+        if (
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_CLOUD)
+        ) {
+            log.error(
+                "You have misconfigured your application! It should not " + "run with both the 'dev' and 'cloud' profiles at the same time."
+            );
         }
+        initContexts();
     }
 
-    @PreDestroy
-    public void destroyApplication() {
-        log.info("\n----------------------------------------------------------\n\t"
-                + "Application {} is closing"
-                + "\n----------------------------------------------------------",
-            env.getProperty("spring.application.name"));
+    private void initContexts() {
+        // init tenant context, by default this is XM super tenant
+        TenantContextUtils.setTenant(tenantContextHolder, TenantKey.SUPER);
+
+        // init logger MDC context
+        MdcUtils.putRid(MdcUtils.generateRid() + "::" + TenantKey.SUPER.getValue());
     }
 
     /**
      * Main method, used to run the application.
      *
-     * @param args the command line arguments
+     * @param args the command line arguments.
      */
     public static void main(String[] args) {
-
-        MdcUtils.putRid();
-
         SpringApplication app = new SpringApplication(GateApp.class);
+
         DefaultProfileUtil.addDefaultProfile(app);
         Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);
     }
 
     private static void logApplicationStartup(Environment env) {
-        String protocol = "http";
-        if (env.getProperty("server.ssl.key-store") != null) {
-            protocol = "https";
-        }
+        String protocol = Optional.ofNullable(env.getProperty("server.ssl.key-store")).map(key -> "https").orElse("http");
+        String applicationName = env.getProperty("spring.application.name");
         String serverPort = env.getProperty("server.port");
-        String contextPath = env.getProperty("server.servlet.context-path");
-        if (StringUtils.isBlank(contextPath)) {
-            contextPath = "/";
-        }
+        String contextPath = Optional.ofNullable(env.getProperty("server.servlet.context-path"))
+            .filter(StringUtils::isNotBlank)
+            .orElse("/");
         String hostAddress = "localhost";
         try {
             hostAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
             log.warn("The host name could not be determined, using `localhost` as fallback");
         }
-        log.info("\n----------------------------------------------------------\n\t" +
-                "Application '{}' is running! Access URLs:\n\t" +
-                "Local: \t\t{}://localhost:{}{}\n\t" +
-                "External: \t{}://{}:{}{}\n\t" +
-                "Profile(s): \t{}\n----------------------------------------------------------",
-            env.getProperty("spring.application.name"),
+        log.info(
+            CRLFLogConverter.CRLF_SAFE_MARKER,
+            """
+
+            ----------------------------------------------------------
+            \tApplication '{}' is running! Access URLs:
+            \tLocal: \t\t{}://localhost:{}{}
+            \tExternal: \t{}://{}:{}{}
+            \tProfile(s): \t{}
+            ----------------------------------------------------------""",
+            applicationName,
             protocol,
             serverPort,
             contextPath,
@@ -107,13 +131,18 @@ public class GateApp {
             hostAddress,
             serverPort,
             contextPath,
-            env.getActiveProfiles());
+            env.getActiveProfiles().length == 0 ? env.getDefaultProfiles() : env.getActiveProfiles()
+        );
 
         String configServerStatus = env.getProperty("configserver.status");
         if (configServerStatus == null) {
             configServerStatus = "Not found or not setup for this application";
         }
-        log.info("\n----------------------------------------------------------\n\t" +
-            "Config Server: \t{}\n----------------------------------------------------------", configServerStatus);
+        log.info(
+            CRLFLogConverter.CRLF_SAFE_MARKER,
+            "\n----------------------------------------------------------\n\t" +
+            "Config Server: \t{}\n----------------------------------------------------------",
+            configServerStatus
+        );
     }
 }

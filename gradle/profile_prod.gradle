@@ -1,20 +1,10 @@
-apply plugin: 'org.springframework.boot'
-apply plugin: 'com.gorylenko.gradle-git-properties'
 
 ext {
-    logbackLoglevel = "INFO"
-}
+    springProfiles = "prod" + springProfiles
 
-dependencies {
-}
-
-def profiles = "prod"
-if (project.hasProperty("no-liquibase")) {
-    profiles += ",no-liquibase"
-}
-
-if (project.hasProperty("swagger")) {
-    profiles += ",swagger"
+    if (project.hasProperty("api-docs")) {
+        springProfiles += ",api-docs"
+    }
 }
 
 springBoot {
@@ -22,18 +12,13 @@ springBoot {
 }
 
 bootRun {
-    args = []
+    args = ["--spring.profiles.active=${springProfiles}"]
 }
 
 
 processResources {
     inputs.property('version', version)
-    inputs.property('springProfiles', profiles)
-    filesMatching('**/logback-spring.xml') {
-        filter {
-            it.replace('#logback.loglevel#', logbackLoglevel)
-        }
-    }
+    inputs.property('springProfiles', springProfiles)
     filesMatching("**/application.yml") {
         filter {
             it.replace("#project.version#", version)
@@ -41,18 +26,32 @@ processResources {
     }
     filesMatching("**/bootstrap.yml") {
         filter {
-            it.replace("#spring.profiles.active#", profiles)
+            it.replace("#spring.profiles.active#", springProfiles)
         }
     }
 }
 
-generateGitProperties {
-    onlyIf {
-        !source.isEmpty()
+task integrationTest(type: Test) {
+    maxHeapSize = "1G"
+    useJUnitPlatform()
+    description = "Execute integration tests."
+    group = "verification"
+    include "**/*IT*", "**/*IntTest*"
+    testLogging {
+        events 'FAILED', 'SKIPPED'
+    }
+    systemProperty('spring.profiles.active', 'testprod')
+    systemProperty('java.security.egd', 'file:/dev/./urandom')
+    // uncomment if the tests reports are not generated
+    // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
+    // ignoreFailures true
+    reports.html.required = false
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_13)) {
+        jvmArgs += [
+            "-XX:+AllowRedefinitionToAddDeleteMethods"
+        ]
     }
 }
+integrationTest.dependsOn test
 
-gitProperties {
-    keys = ["git.branch", "git.commit.id.abbrev", "git.commit.id.describe"]
-}
 

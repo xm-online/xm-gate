@@ -9,8 +9,4 @@ public interface TenantMappingService extends RefreshableConfiguration {
     Map<String, String> getTenantByDomain();
 
     String getTenantKey(String domain);
-
-    boolean isTenantPresent(String tenantName);
-
-    boolean isTenantActive(String tenantName);
 }

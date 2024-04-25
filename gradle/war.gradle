@@ -1,7 +1,7 @@
 apply plugin: "war"
 
 bootWar {
-    mainClassName = "com.icthh.xm.gate.GateApp"
+    mainClass = "com.icthh.xm.gate.GateApp"
     includes = ["WEB-INF/**", "META-INF/**"]
 }
 

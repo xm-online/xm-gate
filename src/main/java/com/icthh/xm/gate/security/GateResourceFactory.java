@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class GateResourceFactory implements ResourceFactory {
+
     @Override
     public Object getResource(Object resourceId, String objectType) {
         return null;
