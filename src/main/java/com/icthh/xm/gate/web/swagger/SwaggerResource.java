@@ -16,4 +16,5 @@ public class SwaggerResource {
     private String name;
     private String url;
     private String swaggerVersion;
+    private String location;
 }
