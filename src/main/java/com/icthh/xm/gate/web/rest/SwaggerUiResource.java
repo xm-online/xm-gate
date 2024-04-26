@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.web;
+package com.icthh.xm.gate.web.rest;
 
 import com.icthh.xm.gate.utils.RouteUtils;
 import com.icthh.xm.gate.web.swagger.SwaggerResource;
@@ -39,7 +39,7 @@ public class SwaggerUiResource {
         List<SwaggerResource> resources = new ArrayList<>();
 
         //Add the default swagger resource that correspond to the gateway's own swagger doc
-        resources.add(new SwaggerResource("default", apiDocsPath3, swaggerVersion3));
+        resources.add(new SwaggerResource("default", apiDocsPath3, swaggerVersion3, apiDocsPath3));
 
         //Add the registered microservices swagger docs as additional swagger resources
         routeLocator.getRoutes().subscribe(route -> {
@@ -62,9 +62,11 @@ public class SwaggerUiResource {
     }
 
     private SwaggerResource swaggerResource(String routeId, String apiDocsPath, String swaggerVersion) {
+        String location = "/" + routeId + "/" + apiDocsPath;
         SwaggerResource swaggerResource = new SwaggerResource();
         swaggerResource.setName(routeId);
-        swaggerResource.setUrl("/" + routeId + "/" + apiDocsPath);
+        swaggerResource.setUrl(location);
+        swaggerResource.setLocation(location);
         swaggerResource.setSwaggerVersion(swaggerVersion);
         return swaggerResource;
     }

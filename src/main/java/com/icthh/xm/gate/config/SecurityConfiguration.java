@@ -139,7 +139,7 @@ public class SecurityConfiguration {
                         .pathMatchers("/oauth2/authorization/**").permitAll()
                         .pathMatchers("/login/oauth2/code/**").permitAll()
                         .pathMatchers("/api/**").authenticated()
-                        .pathMatchers("/v3/api-docs/**").hasAuthority(AuthoritiesConstants.ADMIN)
+                        .pathMatchers("/v3/api-docs/**").hasAuthority(RoleConstant.SUPER_ADMIN)
                         .pathMatchers("/management/health").permitAll()
                         .pathMatchers("/management/prometheus/**").permitAll()
                         .pathMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
