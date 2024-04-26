@@ -49,3 +49,4 @@ branches:
     only:
       - master
       - main
+      - feature/spring-3.2
