@@ -58,7 +58,6 @@ if (project.hasProperty("prod") || project.hasProperty("gae")) {
 
 if (project.hasProperty("war")) {
     apply from: "gradle/war.gradle"
-    apply from: "gradle/version.gradle"
 }
 
 if (project.hasProperty("gae")) {
@@ -140,6 +139,12 @@ task integrationTestReport(type: TestReport) {
 gitProperties {
     failOnNoGitDirectory = false
     keys = ["git.branch", "git.commit.id.abbrev", "git.commit.id.describe"]
+}
+
+task getProjectVersion {
+    doLast {
+        println project.version
+    }
 }
 
 //tasks.withType(GenerateGitPropertiesTask).configureEach {

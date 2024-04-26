@@ -15,4 +15,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "gate"
+rootProject.name = "xm-gate"
