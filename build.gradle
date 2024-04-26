@@ -58,6 +58,7 @@ if (project.hasProperty("prod") || project.hasProperty("gae")) {
 
 if (project.hasProperty("war")) {
     apply from: "gradle/war.gradle"
+    apply from: "gradle/version.gradle"
 }
 
 if (project.hasProperty("gae")) {
