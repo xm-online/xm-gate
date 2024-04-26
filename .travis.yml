@@ -1,6 +1,6 @@
 language: java
 jdk:
-- openjdk:17-oracle
+- openjdk17
 install: true
 addons:
 script:
