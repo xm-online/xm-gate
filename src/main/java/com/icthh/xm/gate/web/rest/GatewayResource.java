@@ -1,15 +1,19 @@
 package com.icthh.xm.gate.web.rest;
 
+import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
 import com.icthh.xm.gate.security.AuthoritiesConstants;
 import com.icthh.xm.gate.web.rest.vm.RouteVM;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.micrometer.core.annotation.Timed;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.http.*;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
@@ -38,7 +42,9 @@ public class GatewayResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the list of routes.
      */
     @GetMapping("/routes")
-    @Secured(AuthoritiesConstants.ADMIN)
+    @Timed
+    @PostFilter("hasPermission({'returnObject': filterObject, 'log': false}, 'ROUTE.GET_LIST')")
+    @PrivilegeDescription("Privilege to get the active routes")
     public ResponseEntity<List<RouteVM>> activeRoutes() {
         Flux<Route> routes = routeLocator.getRoutes();
         List<RouteVM> routeVMs = new ArrayList<>();
