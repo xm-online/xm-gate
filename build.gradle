@@ -20,7 +20,7 @@ plugins {
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 group = "com.icthh.xm.gate"
-version = "3.0.10-M1"
+version = "3.0.9-M1"
 
 description = ""
 
