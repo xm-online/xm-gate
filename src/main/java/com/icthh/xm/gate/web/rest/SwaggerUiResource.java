@@ -42,21 +42,23 @@ public class SwaggerUiResource {
         resources.add(new SwaggerResource("default", apiDocsPath3, swaggerVersion3, apiDocsPath3));
 
         //Add the registered microservices swagger docs as additional swagger resources
-        routeLocator.getRoutes().subscribe(route -> {
-            String routeId = RouteUtils.clearRouteId(route.getId());
-            List<ServiceInstance> instances = discoveryClient.getInstances(routeId);
-            log.debug("route {} instances.size={}", routeId, instances.size());
+        routeLocator.getRoutes()
+            .filter(route -> !"gate".equals(RouteUtils.clearRouteId(route.getId())))
+            .subscribe(route -> {
+                String routeId = RouteUtils.clearRouteId(route.getId());
+                List<ServiceInstance> instances = discoveryClient.getInstances(routeId);
+                log.debug("route {} instances.size={}", routeId, instances.size());
 
-            String swaggerVersion = swaggerVersion2;
-            String apiDocsPath = apiDocsPath2;
-            if (CollectionUtils.isNotEmpty(instances)) {
-                if (SWAGGER_V3.equalsIgnoreCase(instances.get(0).getMetadata().get("swagger"))) {
-                    swaggerVersion = swaggerVersion3;
-                    apiDocsPath = apiDocsPath3;
+                String swaggerVersion = swaggerVersion2;
+                String apiDocsPath = apiDocsPath2;
+                if (CollectionUtils.isNotEmpty(instances)) {
+                    if (SWAGGER_V3.equalsIgnoreCase(instances.get(0).getMetadata().get("swagger"))) {
+                        swaggerVersion = swaggerVersion3;
+                        apiDocsPath = apiDocsPath3;
+                    }
                 }
-            }
-            resources.add(swaggerResource(routeId, apiDocsPath, swaggerVersion));
-        });
+                resources.add(swaggerResource(routeId, apiDocsPath, swaggerVersion));
+            });
 
         return resources;
     }

@@ -1,8 +1,8 @@
 package com.icthh.xm.gate.web.rest;
 
 import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
-import com.icthh.xm.commons.security.XmAuthenticationContext;
 import com.icthh.xm.commons.security.XmAuthenticationContextHolder;
+import com.icthh.xm.gate.security.SecurityUtils;
 import com.icthh.xm.gate.utils.RouteUtils;
 import com.icthh.xm.gate.web.rest.vm.RouteVM;
 import io.micrometer.core.annotation.Timed;
@@ -14,11 +14,9 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.route.RouteLocator;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * REST controller for managing Gateway configuration.
@@ -67,9 +64,18 @@ public class GatewayResource {
     @PreAuthorize("hasPermission({'returnObject': filterObject, 'log': false}, 'ROUTE.GET_LIST')")
     @PrivilegeDescription("Privilege to get the active routes")
     public Mono<List<RouteVM>> activeRoutes() {
+        Mono<String> tokenTypeMono = SecurityUtils.getTokenTypeOrError();
+        Mono<String> tokenValueMono = SecurityUtils.getTokenValueOrError();
+
         return routeLocator.getRoutes()
             .filter(r -> routeFilter(RouteUtils.clearRouteId(r.getId())))
-            .map(route -> {
+            .flatMap(r -> Mono.zip(Mono.just(r), tokenTypeMono, tokenValueMono))
+            .map(data -> {
+
+                Route route = data.getT1();
+                String tokenType = data.getT2();
+                String tokenValue = data.getT3();
+
                 String routeId = RouteUtils.clearRouteId(route.getId());
                 RouteVM routeVm = new RouteVM();
                 routeVm.setPath(route.getUri().toString());
@@ -77,13 +83,13 @@ public class GatewayResource {
                 List<ServiceInstance> serviceInstances = discoveryClient.getInstances(routeId);
                 routeVm.setServiceInstances(serviceInstances);
                 routeVm.setServiceInstancesStatus(receiveServiceStatus(serviceInstances));
-                routeVm.setServiceMetadata(extractServiceMetaData(routeVm));
+                routeVm.setServiceMetadata(extractServiceMetaData(routeVm, tokenType, tokenValue));
                 return routeVm;
             })
             .collectList();
     }
 
-    private Map<String, Object> extractServiceMetaData(RouteVM routeVM) {
+    private Map<String, Object> extractServiceMetaData(RouteVM routeVM, String tokenType, String tokenValue) {
         Objects.requireNonNull(routeVM, "Can't extract service metadata because routeVM is not pass");
 
         Map<String, String> serviceInstancesStatus = routeVM.getServiceInstancesStatus();
@@ -101,27 +107,18 @@ public class GatewayResource {
                 if (result == null) {
                     result = new HashMap<>();
                 }
-                result.put(uri, getInstanceInfo(uri));
+                result.put(uri, getInstanceInfo(uri, tokenType, tokenValue));
             }
         }
         return result;
     }
 
-    private Map getInstanceInfo(String uri) {
-        XmAuthenticationContext authContext = authContextHolder.getContext();
-        Optional<String> tokenValue = authContext.getTokenValue();
-        Optional<String> tokenType = authContext.getTokenType();
-        if (!tokenValue.isPresent() || !tokenType.isPresent()) {
-            throw new IllegalStateException("Authentication not initialized yet, can't create request");
-        }
-        headers.clear();
-        headers.set("Authorization", tokenType.get() + " " + tokenValue.get());
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
+    private Map getInstanceInfo(String uri, String tokenType, String tokenValue) {
         try {
-            Map body = restTemplate.exchange(String.format("%s/management/info", uri),
-                HttpMethod.GET, entity, Map.class).getBody();
-            return (Map) body.get("build");
+//            Map body = restTemplate.exchange(String.format("%s/management/info", uri), todo: use webClient
+//                HttpMethod.GET, entity, Map.class).getBody();
+//            return (Map) body.get("build");
+            return Map.of();
         } catch (RestClientException e) {
             log.error("Error occurred while getting metadata of the microservice by URI {}", uri, e);
             return null;
@@ -140,10 +137,11 @@ public class GatewayResource {
                 String uri = instance.getUri().toString();
                 String status;
                 try {
-                    Map body = restTemplate.exchange(
-                        String.format("%s/management/health", uri),
-                        HttpMethod.GET, null, Map.class).getBody();
-                    status = (String) body.get(STATUS);
+//                    Map body = restTemplate.exchange( todo: use webClient
+//                        String.format("%s/management/health", uri),
+//                        HttpMethod.GET, null, Map.class).getBody();
+//                    status = (String) body.get(STATUS);
+                    status = "UP";
                 } catch (RestClientException e) {
                     log.error("Error occurred while getting status of the microservice by URI {}", uri, e);
                     status = "DOWN";
