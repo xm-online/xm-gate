@@ -1,42 +1,22 @@
 package com.icthh.xm.gate.config;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-import static org.springframework.security.oauth2.core.oidc.StandardClaimNames.PREFERRED_USERNAME;
-import static org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers;
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.icthh.xm.commons.permission.constants.RoleConstant;
 import com.icthh.xm.commons.security.jwt.TokenProvider;
-import com.icthh.xm.gate.security.AuthoritiesConstants;
 import com.icthh.xm.gate.security.SecurityUtils;
 import com.icthh.xm.gate.security.oauth2.AudienceValidator;
 import com.icthh.xm.gate.security.oauth2.JwtGrantedAuthorityConverter;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import com.icthh.xm.gate.web.filter.ReactiveJwtFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -70,6 +50,18 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import tech.jhipster.config.JHipsterProperties;
 import tech.jhipster.web.filter.reactive.CookieCsrfFilter;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.oauth2.core.oidc.StandardClaimNames.PREFERRED_USERNAME;
+import static org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers;
 
 @Configuration
 @EnableReactiveMethodSecurity
