@@ -25,6 +25,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,7 +68,7 @@ public class GatewayResource {
         return routeLocator.getRoutes()
             .filter(r -> routeFilter(RouteUtils.clearRouteId(r.getId())))
             .map(this::buildRouteVm)
-            .flatMap(r -> Mono.zip(Mono.just(r), receiveServiceStatus(Flux.fromIterable(r.getServiceInstances()))))
+            .flatMap(r -> Mono.zip(Mono.just(r), receiveServiceStatus(r.getServiceInstances())))
             .map(data -> {
                 data.getT1().setServiceInstancesStatus(data.getT2());
                 return data.getT1();
@@ -124,8 +125,8 @@ public class GatewayResource {
             });
     }
 
-    private Mono<Map<String, String>> receiveServiceStatus(Flux<ServiceInstance> instances) {
-        return instances
+    private Mono<Map<String, String>> receiveServiceStatus(List<ServiceInstance> instances) {
+        return Flux.fromIterable(instances)
             .filter(serviceInstance -> serviceInstance.getUri() != null)
             .flatMap(i -> Mono.zip(Mono.just(i), receiveServiceStatus(i)))
             .map(data -> new AbstractMap.SimpleEntry<>(data.getT1().getUri().toString(), data.getT2()))
