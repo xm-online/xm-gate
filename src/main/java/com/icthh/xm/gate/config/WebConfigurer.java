@@ -12,6 +12,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.WebExceptionHandler;
 import tech.jhipster.config.JHipsterProperties;
 import tech.jhipster.web.rest.errors.ReactiveWebExceptionHandler;
@@ -51,5 +52,10 @@ public class WebConfigurer implements WebFluxConfigurer {
     @Order(-2) // The handler must have precedence over WebFluxResponseStatusExceptionHandler and Spring Boot's ErrorWebExceptionHandler
     public WebExceptionHandler problemExceptionHandler(ObjectMapper mapper, ExceptionTranslator problemHandling) {
         return new ReactiveWebExceptionHandler(problemHandling, mapper);
+    }
+
+    @Bean
+    public WebClient webClient() {
+        return WebClient.create();
     }
 }
