@@ -1,9 +1,9 @@
 package com.icthh.xm.gate.gateway.accesscontrol;
 
-import com.icthh.xm.gate.service.GatewayService;
 import com.icthh.xm.gate.utils.ServerRequestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
@@ -15,24 +15,24 @@ import tech.jhipster.config.JHipsterProperties;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import static com.icthh.xm.gate.utils.RouteUtils.clearRouteId;
 
 @Slf4j
 @Component
 public final class OpenPolicyAgentAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
-    private final GatewayService gatewayService;
     private final JHipsterProperties jHipsterProperties;
+    private final RouteLocator routeLocator;
 
-    public OpenPolicyAgentAuthorizationManager(GatewayService gatewayService, JHipsterProperties jHipsterProperties) {
-        this.gatewayService = gatewayService;
+    public OpenPolicyAgentAuthorizationManager(JHipsterProperties jHipsterProperties, RouteLocator routeLocator) {
         this.jHipsterProperties = jHipsterProperties;
+        this.routeLocator = routeLocator;
     }
 
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext context) {
         ServerHttpRequest request = context.getExchange().getRequest();
-        Set<String> registeredServiceIds = gatewayService.getRegisteredServiceIds();
 
         String requestUri = request.getPath().pathWithinApplication().value();
         String serviceName = ServerRequestUtils.getServiceNameFromRequestPath(request);
@@ -41,9 +41,9 @@ public final class OpenPolicyAgentAuthorizationManager implements ReactiveAuthor
             return Mono.just(new AuthorizationDecision(false));
         }
 
-        boolean isGranted = registeredServiceIds.contains(serviceName) && isAuthorizedRequest(serviceName, requestUri);
-
-        return Mono.just(new AuthorizationDecision(isGranted));
+        return routeLocator.getRoutes()
+            .any(route -> clearRouteId(route.getId()).equals(serviceName) && isAuthorizedRequest(serviceName, requestUri))
+            .map(AuthorizationDecision::new);
     }
 
     private boolean isAuthorizedRequest(String serviceName, String requestUri) {
