@@ -126,14 +126,6 @@ spring:
     gateway:
       default-filters:
         - TokenRelay
-        - name: RequestRateLimiter
-          args:
-            rate-limiter: "#{@tenantKeyRateLimiter}"
-            key-resolver: "#{@tenantKeyResolver}"
-        - name: RequestRateLimiter
-          args:
-            rate-limiter: "#{@tenantClientKeyRateLimiter}"
-            key-resolver: "#{@tenantClientKeyResolver}"
       discovery:
         locator:
           enabled: true

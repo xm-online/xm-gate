@@ -1,0 +1,14 @@
+# RateLimiter and KeyResolver names equals to corresponding bean names
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - TokenRelay
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantClientKeyRateLimiter}"
+            key-resolver: "#{@tenantClientKeyResolver}"
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantKeyRateLimiter}"
+            key-resolver: "#{@tenantKeyResolver}"
