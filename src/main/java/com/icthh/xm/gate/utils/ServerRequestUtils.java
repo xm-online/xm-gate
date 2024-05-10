@@ -43,8 +43,9 @@ public class ServerRequestUtils {
 
         // ServerHttpRequest can mutate and lost the first path element containing service name. It's necessary
         // to get originalRequest to obtain a full path from it
-        if (request.getClass().getName().endsWith(MUTATED_REQUEST_CLASS_NAME)) {
-            ServerHttpRequest originalRequest = getOriginalRequest(getOriginalRequest(request));
+        ServerHttpRequest originalRequest = request;
+        while (isMutatedRequest(originalRequest)) {
+            originalRequest = getOriginalRequest(originalRequest);
             uriElements = originalRequest.getPath().elements();
         }
         return uriElements.size() < 2 ? StringUtils.EMPTY : uriElements.get(1).value();
@@ -73,5 +74,9 @@ public class ServerRequestUtils {
             log.error("Exception occurred while receiving original request path with message: {}", e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+    private static boolean isMutatedRequest(ServerHttpRequest request) {
+        return request.getClass().getName().endsWith(MUTATED_REQUEST_CLASS_NAME);
     }
 }

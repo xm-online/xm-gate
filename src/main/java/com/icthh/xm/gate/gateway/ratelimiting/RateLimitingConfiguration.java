@@ -26,12 +26,12 @@ public class RateLimitingConfiguration {
     @Bean
     @Primary
     public KeyResolver tenantKeyResolver() {
-        return exchange -> Mono.just(getTenantKey(exchange.getRequest()));
+        return exchange -> Mono.just(exchange.getRequest()).map(r -> getRouteIdPrefix(r) + getTenantKey(r));
     }
 
     @Bean
     public KeyResolver tenantClientKeyResolver() {
-        return exchange -> Mono.just(getClientIdKey(exchange.getRequest()));
+        return exchange -> Mono.just(exchange.getRequest()).map(r -> getRouteIdPrefix(r) + getClientIdKey(r));
     }
 
     @Bean
@@ -48,15 +48,21 @@ public class RateLimitingConfiguration {
 
     @Bean
     public XmRateLimiter tenantClientKeyRateLimiter(ReactiveStringRedisTemplate redisTemplate, RedisScript<List<Long>> script,
-                                              ConfigurationService configurationService, ApplicationProperties applicationProperties) {
+                                                    ConfigurationService configurationService, ApplicationProperties applicationProperties) {
         return new XmRateLimiter(redisTemplate, script, configurationService, applicationProperties, "tenantClientKeyResolver");
+    }
+
+    @Bean
+    public XmRateLimiter serviceSessionIdRateLimiter(ReactiveStringRedisTemplate redisTemplate, RedisScript<List<Long>> script,
+                                                     ConfigurationService configurationService, ApplicationProperties applicationProperties) {
+        return new XmRateLimiter(redisTemplate, script, configurationService, applicationProperties, "serviceSessionIdRateLimiter");
     }
 
     private Mono<String> getSessionIdKey(ServerHttpRequest request) {
         String sessionId = request.getHeaders().getFirst(ServerRequestUtils.SESSION_ID_HEADER);
-        String serviceName = ServerRequestUtils.getServiceNameFromRequestPath(request);
+        String serviceName = getRouteIdPrefix(request);
         // if sessionId is blank, return Mono.empty() to disable rate limiting by this key
-        return StringUtils.isNotBlank(sessionId) ? Mono.just(serviceName + ":" + sessionId) : Mono.empty();
+        return StringUtils.isNotBlank(sessionId) ? Mono.just(serviceName + sessionId) : Mono.empty();
     }
 
     private String getClientIdKey(ServerHttpRequest request) {
@@ -68,6 +74,10 @@ public class RateLimitingConfiguration {
 
     public String getTenantKey(ServerHttpRequest request) {
         return Optional.ofNullable(request.getHeaders().getFirst(HEADER_TENANT)).orElse(DEFAULT_TENANT);
+    }
+
+    public String getRouteIdPrefix(ServerHttpRequest request) {
+        return ServerRequestUtils.getServiceNameFromRequestPath(request) + ":";
     }
 }
 
