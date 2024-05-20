@@ -272,6 +272,7 @@ application:
   tenant-properties-name: gate.yml
   tenant-properties-domains-config-key: /config/tenants/tenant-domains.yml
   tenant-properties-list-config-key: /config/tenants/tenants-list.json
+  tenant-ignored-path-list: /v2/api-docs, /api/profile-info, /swagger-resources/configuration/ui, /management/health, /management/prometheus
 
   hosts:
     - localhost

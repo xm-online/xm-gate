@@ -1,14 +1,15 @@
 package com.icthh.xm.gate.config;
 
-import io.micrometer.tracing.Tracer;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.aop.ObservedAspect;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class Config {
 
     @Bean
-    public Tracer tracer() {
-        return Tracer.NOOP;
+    ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
+        return new ObservedAspect(observationRegistry);
     }
 }
