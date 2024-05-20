@@ -27,6 +27,8 @@ import static org.apache.http.HttpHeaders.AUTHORIZATION;
 @RequiredArgsConstructor
 public class TenantInitFilter implements WebFilter {
 
+    private static final String X_REQUEST_ID_HEADER = "rid";
+
     private final TenantMappingService tenantMappingService;
 
     private final TenantContextHolder tenantContextHolder;
@@ -39,11 +41,10 @@ public class TenantInitFilter implements WebFilter {
         String method = request.getMethod().name();
         String path = request.getURI().getPath();
 
-
         String tenantKeyValue = tenantMappingService.getTenantKey(domain);
 
         TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue);
-        mdcPutUserAndTenantData(request.getHeaders().getFirst(AUTHORIZATION));
+        mdcPutUserAndTenantData(request);
         log.info("Init tenant key: {} to context for {} {}", tenantKeyValue, method, path);
 
         return chain.filter(exchange)
@@ -56,18 +57,24 @@ public class TenantInitFilter implements WebFilter {
     }
 
 
-    private void mdcPutUserAndTenantData(String requestJwtToken) {
+    private void mdcPutUserAndTenantData(ServerHttpRequest request) {
         try {
+            String ridValue = buildRidValue(request.getHeaders().getFirst(AUTHORIZATION));
 
-            String rid = MdcUtils.generateRid();
-            String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
-            String userLogin = ServerRequestUtils.getClientIdFromToken(requestJwtToken);
-            MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);
+            MdcUtils.putRid(ridValue);
+            request.mutate().header(X_REQUEST_ID_HEADER, ridValue);
 
         } catch (IllegalStateException e) {
             log.error(e.getMessage());
             throw e;
         }
+    }
+
+    private String buildRidValue(String requestJwtToken) {
+        String rid = MdcUtils.generateRid();
+        String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
+        String userLogin = ServerRequestUtils.getClientIdFromToken(requestJwtToken);
+        return rid + ":" + userLogin + ":" + tenant;
     }
 
 }
