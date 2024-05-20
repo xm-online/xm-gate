@@ -1,7 +1,7 @@
 package com.icthh.xm.gate.gateway;
 
 import com.icthh.xm.commons.logging.util.LogObjectPrinter;
-import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.gate.utils.MdcMonitoringUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
@@ -24,7 +24,6 @@ import java.util.Objects;
 public class LoggingFilter implements WebFilter {
 
     private static final String MANAGEMENT_HEALTH_URI = "/management/health";
-    private final TenantContextHolder tenantContextHolder;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -47,18 +46,28 @@ public class LoggingFilter implements WebFilter {
 
         return chain.filter(exchange)
             .doOnSuccess(signal -> {
-                ServerHttpResponse response = exchange.getResponse();
-                Integer status = Objects.requireNonNull(response.getStatusCode()).value();
+                Integer status = getHttpStatusCode(exchange);
+                long requestDuration = stopWatch.getTime();
+
+                MdcMonitoringUtils.setMonitoringKeys(method, status, requestDuration);
 
                 log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain, method, requestUri,
-                    status, stopWatch.getTime());
+                    status, requestDuration);
             })
             .doOnError(signal -> {
+                MdcMonitoringUtils.setMonitoringKeys(method, getHttpStatusCode(exchange), stopWatch.getTime());
+
                 log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
                     LogObjectPrinter.printException(signal.getCause()), stopWatch.getTime());
                 throw new RuntimeException(signal);
             })
+            .doFinally(s -> MdcMonitoringUtils.clearMonitoringKeys())
             .contextCapture();
+    }
+
+    private Integer getHttpStatusCode(ServerWebExchange exchange) {
+        ServerHttpResponse response = exchange.getResponse();
+        return Objects.requireNonNull(response.getStatusCode()).value();
     }
 
 }
