@@ -124,17 +124,6 @@ jhipster:
 # ===================================================================
 
 #application:
-#  redis-rate-limiter:
-#    - routeId: customer
-#      replenishRate: 30
-#      burstCapacity: 30
-#      requestedTokens: 1
-#      keyResolver: "tenantClientKeyResolver"
-#    - routeId: customer
-#      replenishRate: 60
-#      burstCapacity: 60
-#      requestedTokens: 1
-#      keyResolver: "tenantKeyResolver"
 
 xm-config:
   enabled: true

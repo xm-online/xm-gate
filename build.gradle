@@ -246,6 +246,7 @@ dependencies {
 
     implementation 'io.micrometer:micrometer-tracing'
     implementation 'io.micrometer:micrometer-core'
+    implementation "io.micrometer:micrometer-tracing-bridge-brave"
 
     implementation "com.icthh.xm.commons:xm-commons-lep-groovy:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-tenant:${xm_commons_version}"

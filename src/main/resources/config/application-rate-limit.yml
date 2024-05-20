@@ -1,0 +1,31 @@
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - TokenRelay
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantKeyRateLimiter}"
+            key-resolver: "#{@tenantKeyResolver}"
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantClientKeyRateLimiter}"
+            key-resolver: "#{@tenantClientKeyResolver}"
+
+#application:
+#  redis-rate-limiter:
+#    - routeId: cart #customer
+#      replenishRate: 4
+#      burstCapacity: 4
+#      requestedTokens: 1
+#      keyResolver: "tenantKeyResolver"
+#    - routeId: cart
+#      replenishRate: 4
+#      burstCapacity: 4
+#      requestedTokens: 4
+#      keyResolver: "tenantClientKeyResolver"
+#    - routeId: cart
+#      replenishRate: 4
+#      burstCapacity: 4
+#      requestedTokens: 1
+#      keyResolver: "serviceSessionIdKeyResolver"
