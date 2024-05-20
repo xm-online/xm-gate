@@ -53,15 +53,16 @@ public class LoggingFilter implements WebFilter {
 
                 log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain, method, requestUri,
                     status, requestDuration);
+                MdcMonitoringUtils.clearMonitoringKeys();
             })
             .doOnError(signal -> {
                 MdcMonitoringUtils.setMonitoringKeys(method, getHttpStatusCode(exchange), stopWatch.getTime());
 
                 log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
                     LogObjectPrinter.printException(signal.getCause()), stopWatch.getTime());
+                MdcMonitoringUtils.clearMonitoringKeys();
                 throw new RuntimeException(signal);
             })
-            .doFinally(s -> MdcMonitoringUtils.clearMonitoringKeys())
             .contextCapture();
     }
 
