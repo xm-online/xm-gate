@@ -24,6 +24,11 @@ public class ServerRequestUtils {
     private static final String MUTATED_REQUEST_CLASS_NAME = "MutatedServerHttpRequest";
     private static final String ORIGINAL_REQUEST_FIELD_NAME = "originalRequest";
 
+    public static String getClientIdFromRequest(ServerHttpRequest request) {
+        String jwtToken = request.getHeaders().getFirst(AUTHORIZATION);
+        return getClientIdFromToken(jwtToken);
+    }
+
     public static String getClientIdFromToken(String jwtToken) {
         if (jwtToken == null || !jwtToken.startsWith(BEARER_PREFIX)) {
             return StringUtils.EMPTY;

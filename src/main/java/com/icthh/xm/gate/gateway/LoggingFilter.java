@@ -2,6 +2,7 @@ package com.icthh.xm.gate.gateway;
 
 import com.icthh.xm.commons.logging.util.LogObjectPrinter;
 import com.icthh.xm.gate.utils.MdcMonitoringUtils;
+import com.icthh.xm.gate.utils.ServerRequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
@@ -41,6 +42,7 @@ public class LoggingFilter implements WebFilter {
         String remoteAddr = Objects.requireNonNull(request.getRemoteAddress()).getAddress().getHostAddress();
         String method = request.getMethod().name();
         Long contentLength = request.getHeaders().getContentLength();
+        String clientId = ServerRequestUtils.getClientIdFromRequest(request);
 
         log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri, contentLength);
 
@@ -49,14 +51,14 @@ public class LoggingFilter implements WebFilter {
                 Integer status = getHttpStatusCode(exchange);
                 long requestDuration = stopWatch.getTime();
 
-                MdcMonitoringUtils.setMonitoringKeys(method, status, requestDuration);
+                MdcMonitoringUtils.setMonitoringKeys(method, status, requestDuration, clientId, requestUri);
 
                 log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain, method, requestUri,
                     status, requestDuration);
                 MdcMonitoringUtils.clearMonitoringKeys();
             })
             .doOnError(signal -> {
-                MdcMonitoringUtils.setMonitoringKeys(method, getHttpStatusCode(exchange), stopWatch.getTime());
+                MdcMonitoringUtils.setMonitoringKeys(method, getHttpStatusCode(exchange), stopWatch.getTime(), clientId, requestUri);
 
                 log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
                     LogObjectPrinter.printException(signal.getCause()), stopWatch.getTime());
