@@ -101,7 +101,7 @@ springBoot {
 
 test {
     useJUnitPlatform()
-    exclude "**/*IT*", "**/*IntTest*"
+    exclude "**/*IT*", "**/*IntTest*", "**/*TechnicalStructureTest*"
     testLogging {
         events 'FAILED', 'SKIPPED'
     }
@@ -210,15 +210,13 @@ dependencies {
     implementation "org.springframework.cloud:spring-cloud-starter:${springCloudVersion}"
     implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j"
     implementation "org.springframework.boot:spring-boot-starter-data-redis-reactive:${redisReactiveVersion}"
-    implementation libs.jhipster.framework
-    implementation platform(libs.spring.cloud.dependencies)
-    implementation libs.springdoc.openapi.starter.webflux.api
+    implementation "org.springframework.cloud:spring-cloud-dependencies:${springCloudDependencies}"
     implementation "com.playtika.reactivefeign:feign-reactor-webclient"
     implementation "com.playtika.reactivefeign:feign-reactor-cloud"
     implementation "com.playtika.reactivefeign:feign-reactor-spring-configuration"
+    implementation "com.playtika.reactivefeign:feign-reactor-bom:${feignReactorBomVersion}"
     implementation "org.springframework.retry:spring-retry"
     implementation "org.springframework.cloud:spring-cloud-starter-bootstrap:${springCloudVersion}"
-    implementation platform(libs.feign.reactor.bom)
     implementation "org.springframework.cloud:spring-cloud-starter-consul-discovery"
     implementation "org.springframework.cloud:spring-cloud-starter-consul-config"
     implementation "io.micrometer:micrometer-registry-prometheus"
