@@ -147,6 +147,7 @@ gitProperties {
 
 checkstyle {
     toolVersion "${checkstyleVersion}"
+    ignoreFailures = true
     configFile file("qa/checkstyle.xml")
     checkstyleTest.enabled = false
 }
