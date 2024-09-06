@@ -147,7 +147,7 @@ gitProperties {
 
 checkstyle {
     toolVersion "${checkstyleVersion}"
-    configFile file("checkstyle.xml")
+    configFile file("qa/checkstyle.xml")
     checkstyleTest.enabled = false
 }
 nohttp {
