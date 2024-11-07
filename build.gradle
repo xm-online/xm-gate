@@ -18,7 +18,6 @@ plugins {
     id "jacoco"
     id "org.springframework.boot"
     id "com.google.cloud.tools.jib"
-    id "com.gorylenko.gradle-git-properties"
     id "net.ltgt.apt-eclipse"
     id "net.ltgt.apt-idea"
     id "net.ltgt.apt"
@@ -162,7 +161,7 @@ configurations {
 }
 
 repositories {
-    mavenLocal()
+//    mavenLocal()
     mavenCentral()
     //jhipster-needle-gradle-repositories - JHipster will add additional repositories
 }
@@ -292,7 +291,7 @@ pmd {
     rulePriority = 3
     toolVersion = '6.31.0'
     ignoreFailures = true
-    ruleSetFiles = files("./qa/pmd.xml")
+    ruleSetFiles = files("qa/pmd.xml")
 }
 
 clean {
