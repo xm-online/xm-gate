@@ -161,7 +161,7 @@ configurations {
 }
 
 repositories {
-    mavenLocal()
+//    mavenLocal()
     mavenCentral()
     //jhipster-needle-gradle-repositories - JHipster will add additional repositories
 }
@@ -291,7 +291,7 @@ pmd {
     rulePriority = 3
     toolVersion = '6.31.0'
     ignoreFailures = true
-    ruleSetFiles = files("./qa/pmd.xml")
+    ruleSetFiles = files("qa/pmd.xml")
 }
 
 clean {
