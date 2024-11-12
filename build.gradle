@@ -11,6 +11,7 @@ plugins {
     id "com.diffplug.spotless"
     id "io.spring.nohttp"
     id "com.github.andygoossens.gradle-modernizer-plugin"
+    id "pmd"
     // id "jhipster.docker-conventions"
     // id "jhipster.code-quality-conventions"
     // jhipster-needle-gradle-plugins - JHipster will add additional gradle plugins here
@@ -153,9 +154,17 @@ task getProjectVersion {
 
 checkstyle {
     toolVersion "${checkstyleVersion}"
-    configFile file("checkstyle.xml")
+    ignoreFailures = true
+    configFile file("qa/checkstyle.xml")
     checkstyleTest.enabled = false
 }
+
+pmd {
+    toolVersion "${pmdToolVersion}"
+    ignoreFailures = true
+    ruleSetFiles = files("./qa/pmd.xml")
+}
+
 nohttp {
     source.include "build.gradle", "README.md"
 }

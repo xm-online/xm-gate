@@ -17,8 +17,8 @@ logging:
   level:
     ROOT: DEBUG
     tech.jhipster: DEBUG
-    org.hibernate.SQL: DEBUG
     com.icthh.xm.gate: DEBUG
+    io.lettuce: INFO
 
 management:
   zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
@@ -48,10 +48,11 @@ spring:
         prefer-ip-address: true
         tags:
           - profile=${spring.profiles.active}
-          - version=#project.version#
+          - version=${build.version}
           - git-version=${git.commit.id.describe:}
           - git-commit=${git.commit.id.abbrev:}
           - git-branch=${git.branch:}
+          - swagger=v3
       host: localhost
       port: 8500
   messages:
