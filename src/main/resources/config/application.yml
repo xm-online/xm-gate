@@ -144,7 +144,6 @@ spring:
               args:
                 pattern: "'/'+serviceId.toLowerCase()+'/**'"
           filters:
-            - StripPrefix=1
             - name: RewritePath
               args:
                 regexp: "'/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
