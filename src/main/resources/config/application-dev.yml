@@ -15,10 +15,18 @@
 
 logging:
   level:
-    ROOT: DEBUG
-    tech.jhipster: DEBUG
-    com.icthh.xm.gate: DEBUG
+    ROOT: INFO
+    tech.jhipster: INFO
+    io.github.jhipster: INFO
     io.lettuce: INFO
+    com.icthh.xm.gate: INFO
+    org.springframework.cloud.gateway: INFO
+    org.springframework.http.server.reactive: INFO
+    org.springframework.web.reactive: INFO
+    org.springframework.boot.autoconfigure.web: INFO
+    reactor.netty: INFO
+    redisratelimiter: INFO
+
 
 management:
   zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies

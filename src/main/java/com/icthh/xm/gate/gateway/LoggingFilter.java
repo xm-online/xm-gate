@@ -59,9 +59,8 @@ public class LoggingFilter implements WebFilter {
             })
             .doOnError(signal -> {
                 MdcMonitoringUtils.setMonitoringKeys(method, getHttpStatusCode(exchange), stopWatch.getTime(), clientId, requestUri);
-
-                log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
-                    LogObjectPrinter.printException(signal.getCause()), stopWatch.getTime());
+                String exception = (signal == null || signal.getCause() == null) ? "unknown" : LogObjectPrinter.printException(signal.getCause());
+                log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri, exception, stopWatch.getTime());
                 MdcMonitoringUtils.clearMonitoringKeys();
                 throw new RuntimeException(signal);
             })

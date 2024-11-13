@@ -21,7 +21,7 @@ plugins {
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 group = "com.icthh.xm.gate"
-version = "3.0.5-M1"
+version = "3.0.5.1-M1"
 
 description = ""
 
@@ -255,7 +255,6 @@ dependencies {
 
     implementation 'io.micrometer:micrometer-tracing'
     implementation 'io.micrometer:micrometer-core'
-    implementation "io.micrometer:micrometer-tracing-bridge-brave"
 
     implementation "com.icthh.xm.commons:xm-commons-lep-groovy:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-tenant:${xm_commons_version}"
