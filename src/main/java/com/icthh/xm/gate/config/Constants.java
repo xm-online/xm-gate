@@ -7,25 +7,20 @@ import org.springframework.core.Ordered;
  */
 public final class Constants {
 
-    public static final String HEADER_SCHEME = "x-scheme";
-    public static final String HEADER_DOMAIN = "x-domain";
-    public static final String HEADER_PORT = "x-port";
     public static final String HEADER_TENANT = "x-tenant";
     public static final String HEADER_WEBAPP_URL = "x-webapp-url";
 
-    public static final String AUTH_RESPONSE_FIELD_IDP_TOKEN = "idp_id_token";
-    public static final String AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION = "idpAccessTokenInclusion";
-
-    public static final String CERTIFICATE = "X.509";
-    public static final String PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----";
-
+    public static final int FILTER_ORDER_TENANT_INIT = Ordered.HIGHEST_PRECEDENCE;
+    public static final int FILTER_DOMAIN_RELAY_ORDER = Ordered.HIGHEST_PRECEDENCE + 1;
     public static final String DEFAULT_TENANT = "XM";
 
-    public static final int FILTER_ORDER_TENANT_INIT = Ordered.HIGHEST_PRECEDENCE;
-    public static final int FILTER_ORDER_TFA_TOKEN_DETECTION = FILTER_ORDER_TENANT_INIT + 1;
+    // rate limiting configuration constants
+    public static final String FILTER_NAME = "RequestRateLimiter";
+    public static final String REPLENISH_RATE = "redis-rate-limiter.replenishRate";
+    public static final String BURST_CAPACITY = "redis-rate-limiter.burstCapacity";
+    public static final String REQUESTED_TOKENS = "redis-rate-limiter.requestedTokens";
+    public static final String KEY_RESOLVER = "key-resolver";
+    public static final String DENY_EMPTY = "deny-empty-key";
 
-    public static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
-
-    private Constants() {
-    }
+    private Constants() {}
 }

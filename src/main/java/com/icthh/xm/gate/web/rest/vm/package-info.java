@@ -1,4 +1,4 @@
 /**
- * View Models used by Spring MVC REST controllers.
+ * Rest layer visual models.
  */
 package com.icthh.xm.gate.web.rest.vm;

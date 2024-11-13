@@ -1,23 +1,20 @@
 package com.icthh.xm.gate.gateway;
 
 import com.icthh.xm.commons.logging.util.LogObjectPrinter;
-import com.icthh.xm.commons.logging.util.MdcUtils;
-import com.icthh.xm.commons.tenant.TenantContextHolder;
-import com.icthh.xm.commons.tenant.TenantContextUtils;
-
-import java.io.IOException;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.icthh.xm.gate.utils.MdcMonitoringUtils;
+import com.icthh.xm.gate.utils.ServerRequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 /**
  * Filter for logging all HTTP requests and set MDC context RID variable.
@@ -25,67 +22,54 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @AllArgsConstructor
 @Component
-public class LoggingFilter implements Filter {
+public class LoggingFilter implements WebFilter {
 
     private static final String MANAGEMENT_HEALTH_URI = "/management/health";
-    private final TenantContextHolder tenantContextHolder;
 
     @Override
-    public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
-        throws IOException, ServletException {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+
+        String requestUri = request.getURI().getPath();
+
+        if (MANAGEMENT_HEALTH_URI.equals(requestUri)) {
+            return chain.filter(exchange);
+        }
 
         StopWatch stopWatch = StopWatch.createStarted();
 
-        String domain = request.getServerName();
-        String remoteAddr = request.getRemoteAddr();
-        Long contentLength = request.getContentLengthLong();
+        String domain = request.getURI().getHost();
+        String remoteAddr = Objects.requireNonNull(request.getRemoteAddress()).getAddress().getHostAddress();
+        String method = request.getMethod().name();
+        Long contentLength = request.getHeaders().getContentLength();
+        String clientId = ServerRequestUtils.getClientIdFromRequest(request);
 
-        String tenant = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
+        log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri, contentLength);
 
-        String method = null;
-        String userLogin = null;
-        String requestUri = null;
+        return chain.filter(exchange)
+            .doOnSuccess(signal -> {
+                Integer status = getHttpStatusCode(exchange);
+                long requestDuration = stopWatch.getTime();
 
-        try {
+                MdcMonitoringUtils.setMonitoringKeys(method, status, requestDuration, clientId, requestUri);
 
-            if (request instanceof HttpServletRequest) {
-                HttpServletRequest req = (HttpServletRequest) request;
-                method = req.getMethod();
-                userLogin = req.getRemoteUser();
-                requestUri = req.getRequestURI();
-
-                if (MANAGEMENT_HEALTH_URI.equals(requestUri)) {
-                    chain.doFilter(request, response);
-                    return;
-                }
-            }
-            String oldRid = MdcUtils.getRid();
-            String rid = oldRid == null ? MdcUtils.generateRid() : oldRid;
-
-            MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);
-
-            log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri,
-                contentLength);
-
-            chain.doFilter(request, response);
-
-            Integer status = null;
-
-            if (response instanceof HttpServletResponse) {
-                HttpServletResponse res = (HttpServletResponse) response;
-                status = res.getStatus();
-            }
-
-            log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain, method, requestUri,
-                status, stopWatch.getTime());
-
-        } catch (Exception e) {
-            log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri,
-                LogObjectPrinter.printException(e), stopWatch.getTime());
-            throw e;
-        } finally {
-            MdcUtils.clear();
-        }
-
+                log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms", remoteAddr, domain, method, requestUri,
+                    status, requestDuration);
+                MdcMonitoringUtils.clearMonitoringKeys();
+            })
+            .doOnError(signal -> {
+                MdcMonitoringUtils.setMonitoringKeys(method, getHttpStatusCode(exchange), stopWatch.getTime(), clientId, requestUri);
+                String exception = (signal == null || signal.getCause() == null) ? "unknown" : LogObjectPrinter.printException(signal.getCause());
+                log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms", remoteAddr, domain, method, requestUri, exception, stopWatch.getTime());
+                MdcMonitoringUtils.clearMonitoringKeys();
+                throw new RuntimeException(signal);
+            })
+            .contextCapture();
     }
+
+    private Integer getHttpStatusCode(ServerWebExchange exchange) {
+        ServerHttpResponse response = exchange.getResponse();
+        return Objects.requireNonNull(response.getStatusCode()).value();
+    }
+
 }

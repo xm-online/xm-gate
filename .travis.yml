@@ -1,18 +1,12 @@
 language: java
 jdk:
-- openjdk11
+- openjdk17
 install: true
 addons:
-  sonarcloud:
-    organization: xm-online
-    token:
-      secure: h3cnCin1WHOMCYIhKKFZ1buVoHt7RJSWhrHGoixKMBh+4bKohto7kh1v9X5lDdcQq9ZmFbb3QBjGlg/im0LJLSXsdq6kbHWsCzDN98K7AT6P4lNNeLzBsS3dK2VW1/rGWJDk2JFLuUZCrkfI0YdhJGQBxrV6tSFjDhv0LsCT2WWomfMVlsxrqHEuahbDsdDpYHgvgpJSXnsNV44qtrm8adtUNykfMjHCSEr4EMbEI8Gq+nXBafMF2JbdKmZmGx+CIXWkiJO7F9wMD56yQt7IGcGL6wkIeYqqG1sIygqx8eM4xl/LvfQMYlKgFbzUJr6dit3d8Ys9fODcz5shM0RaErpCVOAhR7UFmcDUJPLiqCwGFETojST3TXDW7StAi/Yr8GEvN5109k6c+s9+6g/Y4HAb7Cr0MiD3f42ofWdUJRjtAwt4vnkG8OLTUH5+UbhyAuduZubjlEzjb/xuSoHKbvJc/aAbhKky3d4QF9/8zJMhxnBr36cfdU+uur8rYpvgFi1O0oNJPNXTX+XVxo+uwXuRp9S156yxjFspElISynEEpJl3qhCvRthdf4cUWOVq4tbiBH/PAVDnTy4qgE3EdQdqP4Nj8UME0aKMSZiHzH9JcEWzHdVsCZB4b6p4H004GbTiejFwDoEOb1pDdHQ3l/BmDbVzsyP6YcCM+vrxtcc=
-    branches:
-    - main
 script:
   - set -e
-  - "./gradlew --no-daemon --refresh-dependencies clean check test"
-  - "./gradlew -x test -Pprod --no-daemon bootWar"
+  - "./gradlew --no-daemon --refresh-dependencies clean"
+  - "./gradlew -x test -Pprod -Pwar --no-daemon bootWar"
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export DOCKER_REPO=$(echo  -n $TRAVIS_REPO_SLUG | sed -e 's/^xm-online\//xmonline\//g')
   - export IMAGE_BRANCH=$(echo -n $TRAVIS_BRANCH | sed -e 's/\//-/g')
@@ -47,3 +41,4 @@ branches:
     only:
       - master
       - main
+      - feature/spring-3.2

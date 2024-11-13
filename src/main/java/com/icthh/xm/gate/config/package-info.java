@@ -1,4 +1,4 @@
 /**
- * Spring Framework configuration files.
+ * Application configuration.
  */
 package com.icthh.xm.gate.config;

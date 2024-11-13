@@ -1,59 +1,57 @@
 package com.icthh.xm.gate.gateway.domain;
 
-import static com.icthh.xm.gate.config.Constants.HEADER_DOMAIN;
-import static com.icthh.xm.gate.config.Constants.HEADER_PORT;
-import static com.icthh.xm.gate.config.Constants.HEADER_SCHEME;
-import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
-import static com.icthh.xm.gate.config.Constants.HEADER_WEBAPP_URL;
-
 import com.icthh.xm.gate.service.TenantMappingService;
-import com.netflix.zuul.ZuulFilter;
-import com.netflix.zuul.context.RequestContext;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URL;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.icthh.xm.gate.config.Constants.FILTER_DOMAIN_RELAY_ORDER;
+import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
+import static com.icthh.xm.gate.config.Constants.HEADER_WEBAPP_URL;
 
 /**
- * Zuul filter to proxy subdomain to UAA.
+ * Gateway filter to proxy subdomain to UAA.
  */
 @Slf4j
-@AllArgsConstructor
 @Component
-public class DomainRelayFilter extends ZuulFilter {
+public class DomainRelayFilter implements GlobalFilter, Ordered {
 
     private final TenantMappingService tenantMappingService;
 
-    @Override
-    public Object run() {
-        try {
-
-            RequestContext ctx = RequestContext.getCurrentContext();
-            String protocol = ctx.getRequest().getScheme();
-            ctx.addZuulRequestHeader(HEADER_SCHEME, protocol);
-            String domain = ctx.getRequest().getServerName();
-            ctx.addZuulRequestHeader(HEADER_DOMAIN, domain);
-            String port = String.valueOf(ctx.getRequest().getServerPort());
-            ctx.addZuulRequestHeader(HEADER_PORT, port);
-
-            ctx.addZuulRequestHeader(HEADER_TENANT, tenantMappingService.getTenantKey(domain));
-            ctx.addZuulRequestHeader(HEADER_WEBAPP_URL, getRefererUri(ctx.getRequest()));
-
-            return null;
-        } catch (Exception e) {
-            log.error("Exception during filtering", e);
-            return null;
-        }
+    public DomainRelayFilter(@Lazy TenantMappingService tenantMappingService) {
+        this.tenantMappingService = tenantMappingService;
     }
 
-    private static String getRefererUri(HttpServletRequest request) {
-        String referer = request.getHeader(HttpHeaders.REFERER);
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getRequest().getHeaders());
+
+        String domain = exchange.getRequest().getURI().getHost();
+
+        headers.add(HEADER_TENANT, tenantMappingService.getTenantKey(domain));
+        headers.add(HEADER_WEBAPP_URL, getRefererUri(exchange.getRequest()));
+
+        return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return FILTER_DOMAIN_RELAY_ORDER;
+    }
+
+    private static String getRefererUri(ServerHttpRequest request) {
+        String referer = request.getHeaders().getFirst(HttpHeaders.REFERER);
         if (StringUtils.isNotBlank(referer)) {
             try {
                 URL url = new URL(referer);
@@ -65,20 +63,4 @@ public class DomainRelayFilter extends ZuulFilter {
         }
         return null;
     }
-
-    @Override
-    public boolean shouldFilter() {
-        return true;
-    }
-
-    @Override
-    public String filterType() {
-        return FilterConstants.PRE_TYPE;
-    }
-
-    @Override
-    public int filterOrder() {
-        return 0;
-    }
-
 }

@@ -1,59 +1,50 @@
 package com.icthh.xm.gate.web.rest.errors;
 
-import com.icthh.xm.commons.exceptions.BusinessException;
-import org.springframework.dao.ConcurrencyFailureException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
+@RequestMapping("/api/exception-translator-test")
+@Disabled
 public class ExceptionTranslatorTestController {
 
-    @GetMapping("/test/concurrency-failure")
-    public void concurrencyFailure() {
-        throw new ConcurrencyFailureException("test concurrency failure");
-    }
+    @PostMapping("/method-argument")
+    public void methodArgument(@Valid @RequestBody TestDTO testDTO) {}
 
-    @PostMapping("/test/method-argument")
-    public void methodArgument(@Valid @RequestBody TestDTO testDTO) {
-    }
+    @GetMapping("/missing-servlet-request-part")
+    public void missingServletRequestPartException(@RequestPart("part") String part) {}
 
-    @GetMapping("/test/parameterized-error")
-    public void parameterizedError() {
-        throw new BusinessException("test parameterized error").withParams("param0_value", "param1_value");
-    }
+    @GetMapping("/missing-servlet-request-parameter")
+    public void missingServletRequestParameterException(@RequestParam("param") String param) {}
 
-    @GetMapping("/test/parameterized-error2")
-    public void parameterizedError2() {
-        Map<String, String> params = new HashMap<>();
-        params.put("foo", "foo_value");
-        params.put("bar", "bar_value");
-        throw new BusinessException("test parameterized error", params);
-    }
-
-    @GetMapping("/test/access-denied")
+    @GetMapping("/access-denied")
     public void accessdenied() {
         throw new AccessDeniedException("test access denied!");
     }
 
-    @GetMapping("/test/response-status")
-    public void exceptionWithReponseStatus() {
+    @GetMapping("/unauthorized")
+    public void unauthorized() {
+        throw new BadCredentialsException("test authentication failed!");
+    }
+
+    @GetMapping("/response-status")
+    public void exceptionWithResponseStatus() {
         throw new TestResponseStatusException();
     }
 
-    @GetMapping("/test/internal-server-error")
+    @GetMapping("/internal-server-error")
     public void internalServerError() {
         throw new RuntimeException();
     }
 
     public static class TestDTO {
 
-        @NotNull
+        @NotNull(message = "must not be null")
         private String test;
 
         public String getTest() {
@@ -67,7 +58,5 @@ public class ExceptionTranslatorTestController {
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "test response status")
     @SuppressWarnings("serial")
-    public static class TestResponseStatusException extends RuntimeException {
-    }
-
+    public static class TestResponseStatusException extends RuntimeException {}
 }

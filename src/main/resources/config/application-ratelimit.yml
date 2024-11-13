@@ -1,0 +1,37 @@
+# RateLimiter and KeyResolver names equals to corresponding bean names
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - TokenRelay
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantClientKeyRateLimiter}"
+            key-resolver: "#{@tenantClientKeyResolver}"
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@tenantKeyRateLimiter}"
+            key-resolver: "#{@tenantKeyResolver}"
+  data:
+    redis:
+      host: redis
+      port: 6379
+      database: 0
+
+#application:
+#  redis-rate-limiter:
+#    - routeId: cart #customer
+#      replenishRate: 4
+#      burstCapacity: 4
+#      requestedTokens: 1
+#      keyResolver: "tenantKeyResolver"
+#    - routeId: cart
+#      replenishRate: 4
+#      burstCapacity: 4
+#      requestedTokens: 4
+#      keyResolver: "tenantClientKeyResolver"
+#    - routeId: cart
+#      replenishRate: 4
+#      burstCapacity: 4
+#      requestedTokens: 1
+#      keyResolver: "serviceSessionIdKeyResolver"
