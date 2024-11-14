@@ -27,6 +27,7 @@ script:
     do
         TAG_ARGS="$TAG_ARGS -t $DOCKER_REPO:$TAG";
     done
+  - echo $TAG_ARGS
   - if [ "$TAG_ARGS" ];
     then
         docker buildx create --name multi-arch --platform "linux/arm64,linux/amd64,linux/arm/v8" --driver "docker-container" --use;
