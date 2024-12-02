@@ -16,6 +16,8 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 
+import com.icthh.xm.gate.security.oauth2.IdpClientRepository;
+import com.icthh.xm.gate.security.oauth2.XmAuthorizationRequestResolver;
 import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
 import com.icthh.xm.gate.security.session.CustomSessionFlashMapManager;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +41,7 @@ import org.springframework.security.oauth2.client.oidc.authentication.OidcAuthor
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -67,6 +70,8 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
 
     private final RestTemplateErrorHandler restTemplateErrorHandler;
+
+    private final IdpClientRepository idpClientRepository;
 
     private final ApplicationProperties applicationProperties;
 
@@ -100,6 +105,7 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
         .and()
             .oauth2Client()
             .authorizationCodeGrant()
+            .authorizationRequestResolver(requestResolver())
             .authorizationRequestRepository(authorizationRequestRepository())
             .and() // second and to go to upper level from grant configurer back to oauthClient
         .and().authenticationProvider(provider())
@@ -195,6 +201,10 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
 
     public LogoutHandler logoutHandler(){
         return new CookieClearingLogoutHandler(JSESSIONID_COOKIE_NAME);
+    }
+
+    public OAuth2AuthorizationRequestResolver requestResolver() {
+        return new XmAuthorizationRequestResolver(idpClientRepository, "/oauth2/authorization");
     }
 
 }
