@@ -3,6 +3,7 @@ package com.icthh.xm.gate.gateway.responserewriting;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.zuul.context.RequestContext;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.netflix.zuul.filters.ZuulProperties;
@@ -14,6 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import static com.icthh.xm.gate.config.apidoc.GatewaySwaggerResourcesProvider.apiDocsPath2;
+import static com.icthh.xm.gate.config.apidoc.GatewaySwaggerResourcesProvider.apiDocsPath3;
 
 /**
  * Zuul filter to rewrite micro-services Swagger URL Base Path.
@@ -43,7 +47,8 @@ public class SwaggerBasePathRewritingFilter extends SendResponseFilter {
      */
     @Override
     public boolean shouldFilter() {
-        return RequestContext.getCurrentContext().getRequest().getRequestURI().endsWith(Swagger2Controller.DEFAULT_URL);
+        String requestURI = RequestContext.getCurrentContext().getRequest().getRequestURI();
+        return requestURI.endsWith("/" + apiDocsPath2) || requestURI.endsWith("/" + apiDocsPath3);
     }
 
     @Override
@@ -74,7 +79,7 @@ public class SwaggerBasePathRewritingFilter extends SendResponseFilter {
                 responseDataStream = new GZIPInputStream(context.getResponseDataStream());
             }
             String response = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8);
-            if (response != null) {
+            if (StringUtils.isNotEmpty(response)) {
                 LinkedHashMap<String, Object> map = this.mapper.readValue(response, LinkedHashMap.class);
 
                 String basePath = requestUri.replace(Swagger2Controller.DEFAULT_URL, "");

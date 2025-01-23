@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.cloud.netflix.zuul.filters.Route;
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
@@ -29,9 +28,11 @@ import springfox.documentation.swagger.web.SwaggerResourcesProvider;
 @Slf4j
 public class GatewaySwaggerResourcesProvider implements SwaggerResourcesProvider {
 
-    private final String defaultSwaggerVersion = "2.0";
-    private final String defaultApiDocsPath = "v2/api-docs";
-    private final String SWAGGER_V3 = "v3";
+    private static final String swaggerVersion2 = "2.0";
+    private static final String swaggerVersion3 = "3.0";
+    public static final String apiDocsPath2 = "v2/api-docs";
+    public static final String apiDocsPath3 = "v3/api-docs";
+    private static final String SWAGGER_V3 = "v3";
 
     private final RouteLocator routeLocator;
 
@@ -43,19 +44,18 @@ public class GatewaySwaggerResourcesProvider implements SwaggerResourcesProvider
         List<SwaggerResource> resources = new ArrayList<>();
 
         //Add the default swagger resource that correspond to the gateway's own swagger doc
-        resources.add(swaggerResource("default", defaultApiDocsPath, defaultSwaggerVersion));
+        resources.add(swaggerResource("default", apiDocsPath2, swaggerVersion2));
 
         //Add the registered microservices swagger docs as additional swagger resources
-        List<Route> routes = routeLocator.getRoutes();
-        routes.forEach(route -> {
+        routeLocator.getRoutes().forEach(route -> {
             List<ServiceInstance> instances = discoveryClient.getInstances(route.getId());
             log.debug("route {} instances.size={}", route.getId(), instances.size());
-            String swaggerVersion = defaultSwaggerVersion;
-            String apiDocsPath = defaultApiDocsPath;
+            String swaggerVersion = swaggerVersion2;
+            String apiDocsPath = apiDocsPath2;
             if (CollectionUtils.isNotEmpty(instances)) {
                 if (SWAGGER_V3.equalsIgnoreCase(instances.get(0).getMetadata().get("swagger"))) {
-                    swaggerVersion = "3.0";
-                    apiDocsPath = "v3/api-docs";
+                    swaggerVersion = swaggerVersion3;
+                    apiDocsPath = apiDocsPath3;
                 }
             }
             resources.add(swaggerResource(route.getId(), route.getFullPath().replace("**", apiDocsPath), swaggerVersion));
