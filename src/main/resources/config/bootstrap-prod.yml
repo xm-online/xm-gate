@@ -5,6 +5,7 @@
 spring:
   cloud:
     consul:
+      enabled: false
       config:
         fail-fast: true
         format: yaml # set this to "files" if using git2consul
@@ -13,3 +14,4 @@ spring:
         initial-interval: 1000
         max-interval: 2000
         max-attempts: 100
+

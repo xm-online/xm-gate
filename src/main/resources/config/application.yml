@@ -84,17 +84,8 @@ spring:
     name: gate
   cloud:
     consul:
-      inetutils:
-        preferredNetworks:
-          - 192.168
-          - 10.0.0
-      discovery:
-        healthCheckPath: /management/health
-        instanceId: ${spring.application.name}:${spring.application.instance-id:${random.value}}
-        service-name: gate
-      config:
-        watch:
-          enabled: false
+      enabled: false
+
   jackson:
     serialization.write_dates_as_timestamps: false
   jmx:
