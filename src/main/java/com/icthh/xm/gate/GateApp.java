@@ -24,6 +24,7 @@ import java.util.Collection;
 
 @SpringBootApplication(scanBasePackages = "com.icthh.xm")
 @EnableConfigurationProperties({ApplicationProperties.class})
+@EnableDiscoveryClient
 @EnableZuulProxy
 @Slf4j
 public class GateApp {

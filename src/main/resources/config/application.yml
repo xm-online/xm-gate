@@ -25,8 +25,15 @@ zuul: # those values must be configured depending on the application specific ne
   semaphore:
     max-semaphores: 500
   ignoredServices: 'consul,gate' # Prevent Consul and the "gate" app itself from having a Zuul route automatically created for them
+  routes:
+    uaa:
+      path: /config/**
+      serviceId: config
+
 
 ribbon:
+  httpclient:
+    enabled: true
   ServerListRefreshInterval: 30000
   ConnectTimeout: 5000
   ReadTimeout: 60000
@@ -79,12 +86,18 @@ management:
       server:
         auto-time-requests: true
 
+
+
 spring:
   application:
     name: gate
   cloud:
     consul:
+      discovery:
+        instanceId: ${spring.application.name}:${spring.application.instance-id:${random.value}}
       enabled: false
+      config:
+        enabled: false
 
   jackson:
     serialization.write_dates_as_timestamps: false
@@ -110,6 +123,8 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+
 
   servlet:
     multipart:
@@ -137,7 +152,12 @@ info:
 # Full reference is available at: https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
+
+
 jhipster:
+  gateway:
+    rate-limiting:
+      enabled: false
   clientApp:
     name: 'gateApp'
   async:
