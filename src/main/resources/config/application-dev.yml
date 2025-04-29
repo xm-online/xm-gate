@@ -39,9 +39,10 @@ spring:
     bootstrap-servers: localhost:9092
   cloud:
     consul:
-      config:
-        enabled: false
-      enabled: false
+      discovery:
+        prefer-ip-address: true
+      host: localhost
+      port: 8500
   mail:
     host: localhost
     port: 25
@@ -75,7 +76,7 @@ server:
 jhipster:
   gateway:
     rate-limiting:
-      enabled: false
+      enabled: true
       limit: 100000
       duration-in-seconds: 3600
     authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible

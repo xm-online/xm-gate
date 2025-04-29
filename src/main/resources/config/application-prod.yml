@@ -30,7 +30,10 @@ spring:
       enabled: false
   cloud:
     consul:
-      enabled: false
+      discovery:
+        prefer-ip-address: true
+      host: localhost
+      port: 8500
   mail:
     host: localhost
     port: 25
