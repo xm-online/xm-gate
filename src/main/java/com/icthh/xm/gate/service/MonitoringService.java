@@ -32,11 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @Slf4j
+@ConditionalOnProperty(prefix = "application.monitoring.api", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class MonitoringService {
 
     private static final String ACTUATOR_HEALTH_STATUS = "status";

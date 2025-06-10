@@ -26,8 +26,20 @@ public class ApplicationProperties {
     private String tenantPropertiesPathPattern;
     private String tenantPropertiesName;
     private Boolean disableIdpCookieUsage;
-
     private Boolean redirectToDefaultTenantEnabled;
+    private MonitoringApi monitoring = new MonitoringApi();
+
+    @Getter
+    @Setter
+    public static class MonitoringApi {
+        private Enabled api;
+    }
+
+    @Getter
+    @Setter
+    public static class Enabled {
+        private Boolean enabled;
+    }
 
     @Getter
     @Setter

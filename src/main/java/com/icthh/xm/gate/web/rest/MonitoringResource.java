@@ -9,6 +9,7 @@ import com.icthh.xm.gate.web.rest.dto.ServiceMetrics;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/monitoring")
+@ConditionalOnProperty(prefix = "application.monitoring.api", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class MonitoringResource {
 
     private final MonitoringService monitoringService;

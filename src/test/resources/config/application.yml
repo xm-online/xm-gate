@@ -99,6 +99,9 @@ xm-config:
     enabled: false
 
 application:
+    monitoring:
+      api:
+        enabled: true
     hosts:
         - local
         - xm-online.com
