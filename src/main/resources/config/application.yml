@@ -79,6 +79,10 @@ management:
       server:
         auto-time-requests: true
 
+oauth2:
+  signature-verification:
+    public-key-endpoint-uri: http://config/api/token_key
+
 spring:
   application:
     name: gate

@@ -1,6 +1,7 @@
 package com.icthh.xm.gate.config;
 
 import com.icthh.xm.commons.permission.constants.RoleConstant;
+import com.icthh.xm.commons.security.oauth2.OAuth2Properties;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.icthh.xm.gate.security.oauth2.IdpAuthenticationSuccessHandler;
@@ -74,6 +75,8 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
     private final IdpClientRepository idpClientRepository;
 
     private final ApplicationProperties applicationProperties;
+
+    private final OAuth2Properties oauth2Properties;
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
@@ -171,8 +174,9 @@ public class MicroserviceSecurityConfiguration extends ResourceServerConfigurerA
         // Load available UAA servers
         discoveryClient.getServices();
         HttpEntity<Void> request = new HttpEntity<Void>(new HttpHeaders());
+        String tokenEndpointUrl = oauth2Properties.getSignatureVerification().getPublicKeyEndpointUri();
         String content = keyUriRestTemplate
-            .exchange("http://config/api/token_key", HttpMethod.GET, request, String.class).getBody();
+            .exchange(tokenEndpointUrl, HttpMethod.GET, request, String.class).getBody();
 
         if (StringUtils.isBlank(content)) {
             throw new CertificateException("Received empty certificate from config.");
