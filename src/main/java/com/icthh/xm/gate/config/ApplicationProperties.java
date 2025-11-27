@@ -28,6 +28,7 @@ public class ApplicationProperties {
     private Boolean disableIdpCookieUsage;
     private Boolean redirectToDefaultTenantEnabled;
     private MonitoringApi monitoring = new MonitoringApi();
+    private String objectStorageFileRoot = "/";
 
     @Getter
     @Setter
