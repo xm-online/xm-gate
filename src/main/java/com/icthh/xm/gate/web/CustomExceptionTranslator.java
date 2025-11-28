@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.nio.file.NoSuchFileException;
+
 /*
     Move these handlers to commons after migrating to new commons version
  */
@@ -26,11 +28,11 @@ public class CustomExceptionTranslator extends ExceptionTranslator {
         this.localizationMessageService = localizationErrorMessageService;
     }
 
-    @ExceptionHandler(EntityNotFoundException.class)
+    @ExceptionHandler(NoSuchFileException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public ErrorVM processNotFoundError(EntityNotFoundException ex) {
-        log.debug("Entity not found", ex);
+    public ErrorVM processNotFoundError(NoSuchFileException ex) {
+        log.debug("File not found", ex);
         return new ErrorVM(ErrorConstants.ERR_NOTFOUND,
             localizationMessageService.getMessage(ErrorConstants.ERR_NOTFOUND));
     }
