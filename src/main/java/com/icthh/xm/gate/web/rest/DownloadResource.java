@@ -1,8 +1,10 @@
 package com.icthh.xm.gate.web.rest;
 
+import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.ApplicationProperties;
 import com.icthh.xm.gate.service.file.download.DownloadFileService;
+import com.icthh.xm.gate.web.rest.util.FileNameValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.PathResource;
@@ -34,8 +36,10 @@ public class DownloadResource {
 
     @GetMapping("/{recordType}/{fileName}")
     @PreAuthorize("hasPermission({'fileName': #fileName}, 'RESOURCE.FILE.DOWNLOAD')")
+    @PrivilegeDescription("Privilege to download file from gate service")
     public ResponseEntity<Resource> streamDownload(@PathVariable String recordType,
                                                    @PathVariable String fileName) throws IOException {
+        fileName = FileNameValidationUtils.validateFileName(fileName);
         String fullFilePath = downloadFileService.getFullFilePath(recordType, fileName);
         Path downloadPath = getFilePath(fullFilePath);
         Resource resource = new PathResource(downloadPath);
