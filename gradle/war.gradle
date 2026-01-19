@@ -1,0 +1,12 @@
+apply plugin: "war"
+
+bootWar {
+    mainClass = "com.icthh.xm.gate.XmGateJava25App"
+    includes = ["WEB-INF/**", "META-INF/**"]
+}
+
+war {
+    enabled = true
+    archiveExtension = "war.original"
+    includes = ["WEB-INF/**", "META-INF/**"]
+}
