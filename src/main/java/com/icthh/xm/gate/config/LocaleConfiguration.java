@@ -86,7 +86,7 @@ public class LocaleConfiguration {
                 }
                 addCookie(
                     exchange.getResponse(),
-                    QUOTE + (locale != null ? locale.toString() : "-") + (timeZone != null ? ' ' + timeZone.getID() : "") + QUOTE
+                    (locale != null ? locale.toString() : "-") + (timeZone != null ? ' ' + timeZone.getID() : "")
                 );
             } else {
                 removeCookie(exchange.getResponse());
