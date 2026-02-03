@@ -1,34 +1,53 @@
+import org.gradle.internal.os.OperatingSystem
+
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+    maven { url "https://repo.spring.io/plugins-release" }
+  }
+  dependencies {
+  }
+}
+
 plugins {
     id "java"
     id "maven-publish"
     id "idea"
-    id "eclipse"
-    alias(libs.plugins.gradle.git.properties)
-    alias(libs.plugins.spring.boot)
-    id "jhipster.docker-conventions"
-    id "jhipster.code-quality-conventions"
+    id "jacoco"
+    id "org.springframework.boot"
+    id "com.google.cloud.tools.jib"
+    id "com.gorylenko.gradle-git-properties"
+    id "org.sonarqube"
+    id "io.spring.nohttp"
+    id "com.github.spotbugs"
+    id "war"
+    id "pmd"
+    id "io.spring.dependency-management"
     // jhipster-needle-gradle-plugins - JHipster will add additional gradle plugins here
 }
 
-group = "com.icthh.xm.gate"
-version = "0.0.1-SNAPSHOT"
+dependencyManagement {
+  imports {
+    mavenBom "org.springframework.boot:spring-boot-dependencies:${spring_boot_version}"
+    mavenBom "org.springframework.cloud:spring-cloud-dependencies:${spring_cloud_version}"
+  }
+}
 
+group = "com.icthh.xm.gate"
 description = ""
 
 java {
-    sourceCompatibility=17
-    targetCompatibility=17
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
 }
 assert System.properties["java.specification.version"] == "17" || "21" || "25"
 
-repositories {
-    mavenCentral()
-    // Local maven repository is required for libraries built locally with maven like development jhipster-bom.
-    // mavenLocal()
-    // jhipster-needle-gradle-repositories - JHipster will add additional repositories
-}
-
-apply from: "gradle/spring-boot.gradle"
+apply from: "gradle/docker.gradle"
+apply from: "gradle/sonar.gradle"
+apply from: "gradle/version.gradle"
 // jhipster-needle-gradle-apply-from - JHipster will add additional gradle scripts to be applied here
 
 idea {
@@ -37,53 +56,211 @@ idea {
     }
 }
 
-eclipse {
-    sourceSets {
-        main {
-            java {
-                srcDirs += ["build/generated/sources/annotationProcessor/java/main"]
-            }
-        }
+// Add generated sources to main source set for annotation processing
+sourceSets {
+  main {
+    java {
+      srcDirs += ["build/generated/sources/annotationProcessor/java/main"]
     }
+  }
+}
+
+// See https://virgo47.wordpress.com/2018/09/14/classpath-too-long-with-spring-boot-and-gradle/ for details
+// https://github.com/jhipster/generator-jhipster/issues/9713
+if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+  tasks.register('classpathJar', Jar) {
+    inputs.files sourceSets.main.runtimeClasspath
+
+    archiveFileName = "runboot-classpath.jar"
+    doFirst {
+      manifest {
+        def classpath = sourceSets.main.runtimeClasspath.files
+        attributes "Class-Path": classpath.collect { f -> f.toURI().toString() }.join(" ")
+      }
+    }
+  }
+
+  bootRun {
+    classpath = classpathJar.outputs.files
+  }
+}
+
+defaultTasks "bootRun"
+
+bootWar {
+  mainClass = 'com.icthh.xm.gate.GateApp'
+  manifest {
+    attributes(
+      "Implementation-Version": archiveVersion
+    )
+  }
+}
+
+springBoot {
+  mainClass = "com.icthh.xm.gate.GateApp"
+  buildInfo()
+}
+
+test {
+  systemProperty "spring.profiles.active", "test"
+  include '**/*UnitTest*'
+  include '**/*IntTest*'
+
+  // uncomment if the tests reports are not generated
+  // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
+  // ignoreFailures true
+  reports.html.required = false
+  testLogging {
+    exceptionFormat = 'full'
+    events "passed", "skipped", "failed", "standardOut", "standardError"
+  }
+  useJUnitPlatform()
+}
+
+tasks.register('cucumberTest', Test) {
+  description = "Execute cucumber BDD tests."
+  group = "verification"
+  include "**/*CucumberIT*"
+
+  // uncomment if the tests reports are not generated
+  // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
+  // ignoreFailures true
+  reports.html.required = false
+}
+
+check.dependsOn cucumberTest
+
+tasks.register('testReport', TestReport) {
+  destinationDirectory = file(layout.buildDirectory.dir("reports/tests"))
+  testResults.from(test)
+}
+
+tasks.register('cucumberTestReport', TestReport) {
+  destinationDirectory = file(layout.buildDirectory.dir("reports/tests"))
+  testResults.from(cucumberTest)
+}
+
+checkstyle {
+  toolVersion = "${checkstyle_tool_version}"
+  ignoreFailures = true
+  configFile = rootProject.file('./qa/checkstyle.xml')
+  checkstyleMain.enabled = false // fixme: config file needs to be actualized to run checkstyle task
+  checkstyleTest.enabled = false
+}
+nohttp {
+  source.include "build.gradle", "README.md"
+}
+
+configurations {
+  providedRuntime
+//  implementation.exclude module: "spring-boot-starter-tomcat"
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url "https://reposilite.jevera.software/releases"
+  }
 }
 
 dependencies {
-    implementation platform(libs.spring.cloud.dependencies)
-    implementation libs.jhipster.framework
-    implementation libs.mapstruct
-    implementation libs.springdoc.openapi.starter.webmvc.api
-    implementation "org.springframework.boot:spring-boot-loader-tools"
-    implementation "org.springframework.boot:spring-boot-starter"
+    compileOnly "org.projectlombok:lombok:${lombok_version}"
+    annotationProcessor "org.projectlombok:lombok:${lombok_version}"
+
+    implementation "tech.jhipster:jhipster-framework:${jhipster_dependencies_version}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdoc_version}"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation "org.springframework.boot:spring-boot-actuator"
+    implementation "org.springframework.boot:spring-boot-actuator-autoconfigure"
+    implementation "org.springframework.boot:spring-boot-web-server"
+    implementation "org.springframework.boot:spring-boot-micrometer-tracing-brave"
     implementation "org.springframework.boot:spring-boot-starter-mail"
-    implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
-    implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
+    implementation "org.springframework.boot:spring-boot-starter-security-oauth2-client"
+    implementation "org.springframework.boot:spring-boot-starter-security-oauth2-resource-server"
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
     implementation "org.springframework.boot:spring-boot-starter-tomcat"
     implementation "org.springframework.boot:spring-boot-starter-validation"
-    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-webmvc"
     implementation "org.springframework.cloud:spring-cloud-starter"
     implementation "org.springframework.cloud:spring-cloud-starter-bootstrap"
     implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j"
     implementation "org.springframework.cloud:spring-cloud-starter-consul-config"
     implementation "org.springframework.cloud:spring-cloud-starter-consul-discovery"
+    implementation "org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc"
+    implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hppc"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate7"
+    implementation "com.fasterxml.jackson.core:jackson-annotations"
+    implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "com.github.ben-manes.caffeine:caffeine"
+    implementation "io.github.openfeign:feign-jackson"
+    implementation 'io.micrometer:micrometer-core'
+    implementation 'io.micrometer:micrometer-observation'
+    implementation 'io.micrometer:micrometer-java21'
+    implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "io.micrometer:micrometer-registry-prometheus-simpleclient"
     implementation "org.apache.commons:commons-lang3"
-    testImplementation(libs.archunit.junit5.api) {
+    implementation "org.hibernate.orm:hibernate-core:${hibernate_version}"
+    implementation "com.bucket4j:bucket4j_jdk17-core:${bucket4j_version}"
+    implementation "com.bucket4j:bucket4j_jdk17-jcache:${bucket4j_version}"
+    implementation "com.google.protobuf:protobuf-java:${google_protobuf_version}"
+
+    implementation ("com.icthh.xm.commons:xm-commons-ms-web:${xm_commons_version}") {
+      exclude group: "io.github.jhipster", module: "jhipster"
+    }
+    implementation "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-idp:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-i18n:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-metric:${xm_commons_version}"
+    implementation "com.icthh.xm.commons:xm-commons-logging-trace:${xm_commons_version}"
+
+    testImplementation("com.tngtech.archunit:archunit-junit5-api:1.4.0") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
     testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
     testImplementation "org.springframework.boot:spring-boot-test"
+    testImplementation "org.springframework.boot:spring-boot-test-autoconfigure"
     testImplementation "org.springframework.security:spring-security-test"
-    testRuntimeOnly(libs.archunit.junit5.engine) {
+    testRuntimeOnly("com.tngtech.archunit:archunit-junit5-engine:1.4.0") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
-    annotationProcessor libs.mapstruct.processor
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
-    developmentOnly "org.springframework.boot:spring-boot-docker-compose"
-    // jhipster-needle-gradle-dependency - JHipster will add additional dependencies here
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation "org.projectlombok:lombok:${lombok_version}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombok_version}"
 }
+
+spotbugs {
+  ignoreFailures = true
+}
+
+pmd {
+  toolVersion "${pmd_tool_version}"
+  ignoreFailures = true
+  ruleSetFiles = files("./qa/pmd.xml")
+}
+
+clean {
+  delete "target"
+}
+
+tasks.register('cleanResources', Delete) {
+  delete "build/resources"
+}
+
+wrapper {
+  gradleVersion = "9.1.0"
+}
+
+tasks.register('stage') {
+  dependsOn 'bootWar'
+}
+
+compileJava.dependsOn processResources
+processResources.dependsOn cleanResources,bootBuildInfo
+bootBuildInfo.mustRunAfter cleanResources

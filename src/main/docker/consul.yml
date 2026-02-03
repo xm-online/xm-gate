@@ -1,5 +1,5 @@
 # This configuration is intended for development purpose, it's **your** responsibility to harden it for production
-name: xm-gate-java25
+name: gate
 services:
   consul:
     image: hashicorp/consul:1.22.1

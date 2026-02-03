@@ -1,0 +1,17 @@
+---
+patterns:
+  - key: date
+    strategy: XM_TOKEN_MATCHER
+    pathPrefix: /files/{yyyy}/{mm}/{dd}/
+  - key: token
+    strategy: XM_TOKEN_MATCHER
+    pathPrefix: /{tenant}/{userKey}/{additionalDetails.testParam1}/
+  - key: mixed
+    strategy: XM_TOKEN_MATCHER
+    pathPrefix: /root/{yyyy}/{tenant}/{mm}/{userKey}/
+  - key: const
+    strategy: XM_TOKEN_MATCHER
+    pathPrefix: /static/media/
+  - key: ordered
+    strategy: XM_TOKEN_MATCHER
+    pathPrefix: /{yyyy}/{tenant}/

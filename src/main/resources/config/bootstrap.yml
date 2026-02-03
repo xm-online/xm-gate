@@ -5,7 +5,7 @@
 
 spring:
   application:
-    name: xm-gate-java25
+    name: gate
   profiles:
     # The commented value for `active` can be replaced with valid Spring profiles to load.
     # Otherwise, it will be filled in by gradle when building the JAR file
@@ -20,16 +20,8 @@ spring:
       discovery:
         tags:
           - profile=${spring.profiles.active}
-          - version='@project.version@'
-          - git-version=${git.commit.id.describe:}
-          - git-commit=${git.commit.id.abbrev:}
+          - version=${build.version}
           - git-branch=${git.branch:}
-          - context-path=${server.servlet.context-path:}
-
+          - git-commit=${git.commit.id.abbrev:}
       host: localhost
       port: 8500
-  docker:
-    compose:
-      enabled: true
-      lifecycle-management: start-only
-      file: src/main/docker/no.yml

@@ -31,27 +31,19 @@ management:
 spring:
   devtools:
     restart:
-      enabled: true
+      enabled: false
       additional-exclude: static/**
     livereload:
       enabled: false # we use Webpack dev server + BrowserSync for livereload
   jackson:
     serialization:
       indent-output: true
+  kafka:
+    bootstrap-servers: localhost:9092
   cloud:
     consul:
-      config:
-        fail-fast: false # if not in "prod" profile, do not force to use Spring Cloud Config
-        format: yaml
-        profile-separator: '-'
       discovery:
         prefer-ip-address: true
-        tags:
-          - profile=${spring.profiles.active}
-          - version='@project.version@'
-          - git-version=${git.commit.id.describe:}
-          - git-commit=${git.commit.id.abbrev:}
-          - git-branch=${git.branch:}
       host: localhost
       port: 8500
   messages:
@@ -71,15 +63,34 @@ server:
 # ===================================================================
 
 jhipster:
-  # CORS is disabled by default on microservices, as you should access them through a gateway.
-  # If you want to enable it, please uncomment the configuration below.
-  # cors:
-  #   allowed-origins: "http://localhost:9000,https://localhost:9000"
-  #   allowed-methods: "*"
-  #   allowed-headers: "*"
-  #   exposed-headers: "Authorization,Link,X-Total-Count"
-  #   allow-credentials: true
-  #   max-age: 1800
+  gateway:
+    rate-limiting:
+      enabled: true
+      limit: 100000
+      duration-in-seconds: 3600
+    authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible
+      app1: /api,/v2/api-docs # recommended dev configuration
+  cache: # Cache configuration
+    hazelcast: # Hazelcast distributed cache
+      time-to-live-seconds: 3600
+      backup-count: 1
+  # CORS is only enabled by default with the "dev" profile, so BrowserSync can access the API
+  cors:
+    allowed-origins: '*'
+    allowed-methods: '*'
+    allowed-headers: '*'
+    exposed-headers: 'Authorization,Link,X-Total-Count'
+    allow-credentials: true
+    max-age: 1800
+  security:
+    client-authorization:
+      access-token-uri: http://uaa/oauth/token
+      token-service-id: uaa
+      client-id: internal
+      client-secret: internal
+  mail: # specific JHipster mail property, for standard properties see MailProperties
+    base-url: http://127.0.0.1:8080
+    from: gate@localhost
   logging:
     use-json-format: false # By default, logs are not in Json format
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration

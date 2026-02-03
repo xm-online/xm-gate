@@ -15,46 +15,31 @@
 
 spring:
   application:
-    name: xm-gate-java25
+    name: gate
   cloud:
-    consul:
-      discovery:
-        enabled: false
-        instanceId: ${spring.application.name}:${spring.application.instance-id:${random.value}}
-      config:
-        enabled: false
+    bus:
       enabled: false
-  jackson:
-    serialization:
-      write-durations-as-timestamps: false
+    discovery:
+      enabled: false
+    consul:
+      enabled: true
+  cache:
+    type: none
   mail:
     host: localhost
-  main:
-    allow-bean-definition-overriding: true
   messages:
     basename: i18n/messages
-  security:
-    oauth2:
-      client:
-        provider:
-          oidc:
-            issuer-uri: http://DO_NOT_CALL:9080/realms/jhipster
-      resourceserver:
-        jwt:
-          principal-claim-name: preferred_username
-  task:
-    execution:
-      thread-name-prefix: xm-gate-java-25-task-
-      pool:
-        core-size: 1
-        max-size: 50
-        queue-capacity: 10000
-    scheduling:
-      thread-name-prefix: xm-gate-java-25-scheduling-
-      pool:
-        size: 20
   thymeleaf:
-    mode: HTML
+    mode: XHTML
+  main:
+    allow-bean-definition-overriding: true
+
+liquibase:
+  contexts: test
+
+security:
+  basic:
+    enabled: false
 
 server:
   port: 10344
@@ -66,17 +51,18 @@ server:
 # Full reference is available at: https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 jhipster:
-  mail:
-    from: xm-gate-java25@localhost.com
-    base-url: http://127.0.0.1:8080
-  logging:
-    # To test json console appender
-    use-json-format: false
-    logstash:
-      enabled: false
-      host: localhost
-      port: 5000
-      ring-buffer-size: 512
+  async:
+    core-pool-size: 1
+    max-pool-size: 50
+    queue-capacity: 10000
+  security:
+    authentication:
+      jwt:
+        secret:
+        # Token is valid 24 hours
+        token-validity-in-seconds: 86400
+    client-authorization:
+      access-token-uri: http://uaa/oauth/token
 
 # ===================================================================
 # Application specific properties
@@ -87,8 +73,23 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
 management:
-  health:
-    mail:
-      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+xm-config:
+  enabled: false
+
+application:
+  tenant-ignored-path-list: /v2/api-docs, /v3/api-docs, /api/profile-info, /swagger-resources/configuration/ui, /management/health
+  lep-message-handling:
+    disabled: true
+  monitoring:
+    api:
+      enabled: true
+  hosts:
+    - local
+    - xm-online.com
+  kafka-system-queue: system_queue

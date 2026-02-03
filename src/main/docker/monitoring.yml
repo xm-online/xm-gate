@@ -1,5 +1,5 @@
 # This configuration is intended for development purpose, it's **your** responsibility to harden it for production
-name: xm-gate-java25
+name: xm-gate
 services:
   prometheus:
     image: prom/prometheus:v3.8.0

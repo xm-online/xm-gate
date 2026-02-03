@@ -1,0 +1,47 @@
+application:
+  gateway:
+    excluded-services:
+      - consul
+      - gate
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: config
+              uri: lb://config
+              predicates:
+                - Path=/config/**
+              filters:
+                - StripPrefix=1
+                - AddRequestHeader=X-Request-service, [CONFIG]
+                - AddDomainRelayHeaders
+                - AddHighLog
+                - AddLogging
+                - IdpStatefulMode
+                - TenantInit
+                - TfaTokenDetection
+                - AccessControl
+            - id: entity
+              uri: lb://entity
+              predicates:
+                - Path=/entity/**
+              filters:
+                - StripPrefix=1
+                - AddDomainRelayHeaders
+                - AddHighLog
+                - TenantInit
+                - AccessControl
+                - AddRequestHeader=X-Request-service, [ENTITY]
+            - id: uaa
+              uri: lb://uaa
+              predicates:
+                - Path=/uaa/**
+              filters:
+                - StripPrefix=1
+                - AddDomainRelayHeaders
+                - AddHighLog
+                - TenantInit
+                - AccessControl
+                - AddRequestHeader=X-Request-service, [FUNCTION]

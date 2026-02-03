@@ -1,8 +1,8 @@
 # This configuration is intended for development purpose, it's **your** responsibility to harden it for production
-name: xm-gate-java25
+name: gate
 services:
   app:
-    image: xm-gate-java25
+    image: gate
     environment:
       - _JAVA_OPTIONS=-Xmx512m -Xms256m
       - SPRING_PROFILES_ACTIVE=prod,api-docs

@@ -4,12 +4,13 @@ import static com.tngtech.archunit.base.DescribedPredicate.alwaysTrue;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.belongToAnyOf;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
-@AnalyzeClasses(packagesOf = XmGateJava25App.class, importOptions = DoNotIncludeTests.class)
+@AnalyzeClasses(packagesOf = GateApp.class, importOptions = DoNotIncludeTests.class)
 class TechnicalStructureTest {
 
     // prettier-ignore
@@ -26,8 +27,8 @@ class TechnicalStructureTest {
         .whereLayer("Service").mayOnlyBeAccessedByLayers("Web", "Config")
         .whereLayer("Security").mayOnlyBeAccessedByLayers("Config", "Service", "Web")
 
-        .ignoreDependency(belongToAnyOf(XmGateJava25App.class), alwaysTrue())
+        .ignoreDependency(belongToAnyOf(GateApp.class), alwaysTrue())
         .ignoreDependency(alwaysTrue(), belongToAnyOf(
-            com.icthh.xm.gate.config.ApplicationProperties.class
+            ApplicationProperties.class
         ));
 }

@@ -1,19 +1,19 @@
 package com.icthh.xm.gate.config;
 
+import static com.icthh.xm.commons.config.client.config.XmRestTemplateConfiguration.XM_CONFIG_REST_TEMPLATE;
 import static org.mockito.Mockito.mock;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.icthh.xm.commons.config.client.repository.CommonConfigRepository;
+import com.icthh.xm.commons.security.jwt.TokenProvider;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * This class allows you to run unit and integration tests without an IdP.
@@ -22,43 +22,34 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 public class TestSecurityConfiguration {
 
     @Bean
-    ClientRegistration clientRegistration() {
-        return clientRegistrationBuilder().build();
+    @Primary
+    public TokenProvider tokenProvider() {
+        return mock(TokenProvider.class);
     }
 
     @Bean
-    ClientRegistrationRepository clientRegistrationRepository(ClientRegistration clientRegistration) {
-        return new InMemoryClientRegistrationRepository(clientRegistration);
-    }
-
-    private ClientRegistration.Builder clientRegistrationBuilder() {
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("end_session_endpoint", "https://jhipster.org/logout");
-
-        return ClientRegistration.withRegistrationId("oidc")
-            .issuerUri("{baseUrl}")
-            .redirectUri("{baseUrl}/{action}/oauth2/code/{registrationId}")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .scope("read:user")
-            .authorizationUri("https://jhipster.org/login/oauth/authorize")
-            .tokenUri("https://jhipster.org/login/oauth/access_token")
-            .jwkSetUri("https://jhipster.org/oauth/jwk")
-            .userInfoUri("https://api.jhipster.org/user")
-            .providerConfigurationMetadata(metadata)
-            .userNameAttributeName("id")
-            .clientName("Client Name")
-            .clientId("client-id")
-            .clientSecret("client-secret");
+    public CommonConfigRepository commonConfigRepository() {
+        return mock(CommonConfigRepository.class);
     }
 
     @Bean
-    JwtDecoder jwtDecoder() {
+    public JwtDecoder jwtDecoder() {
         return mock(JwtDecoder.class);
     }
 
     @Bean
-    OAuth2AuthorizedClientService authorizedClientService(ClientRegistrationRepository clientRegistrationRepository) {
+    public OAuth2AuthorizedClientService authorizedClientService(ClientRegistrationRepository clientRegistrationRepository) {
         return new InMemoryOAuth2AuthorizedClientService(clientRegistrationRepository);
+    }
+
+    @Bean
+    @Primary
+    public RestClient loadBalancedRestTemplate() {
+        return mock(RestClient.class);
+    }
+
+    @Bean(XM_CONFIG_REST_TEMPLATE)
+    public RestTemplate restTemplate() {
+        return mock(RestTemplate.class);
     }
 }
