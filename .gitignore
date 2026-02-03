@@ -1,4 +1,10 @@
 ######################
+# Project Specific
+######################
+/build/resources/main/static/**
+/src/test/javascript/coverage/
+
+######################
 # Node
 ######################
 /node/
@@ -7,7 +13,6 @@ node_modules/
 npm-debug.log.*
 /.awcache/*
 /.cache-loader/*
-/dist/
 
 ######################
 # SASS
@@ -21,6 +26,7 @@ npm-debug.log.*
 .project
 .metadata
 tmp/
+tmp/**/*
 *.tmp
 *.bak
 *.swp
@@ -30,6 +36,7 @@ local.properties
 .settings/
 .loadpath
 .factorypath
+/src/main/resources/rebel.xml
 
 # External tool builders
 .externalToolBuilders/**
@@ -45,9 +52,8 @@ local.properties
 
 # STS-specific
 /.sts4-cache/*
-
 ######################
-# IntelliJ
+# Intellij
 ######################
 .idea/
 *.iml
@@ -61,12 +67,7 @@ out/
 ######################
 # Visual Studio Code
 ######################
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
+.vscode/
 
 ######################
 # Maven
@@ -116,7 +117,6 @@ Desktop.ini
 # Directories
 ######################
 /bin/
-/deploy/
 
 ######################
 # Logs
@@ -145,9 +145,3 @@ Desktop.ini
 # ESLint
 ######################
 .eslintcache
-
-######################
-# Code coverage
-######################
-coverage/
-.nyc_output/
