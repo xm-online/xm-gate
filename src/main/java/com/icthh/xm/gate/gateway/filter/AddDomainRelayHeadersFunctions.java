@@ -26,7 +26,7 @@ public class AddDomainRelayHeadersFunctions {
 
     public static HandlerFilterFunction<ServerResponse, ServerResponse> addDomainRelayHeaders() {
         return (request, next) -> {
-            log.debug("Domain rel");
+            ServerRequest.Builder builder = ServerRequest.from(request);
             try {
                 HttpServletRequest servletRequest = request.servletRequest();
 
@@ -35,7 +35,7 @@ public class AddDomainRelayHeadersFunctions {
                 String tenantKey = tenantMappingService.getTenantKey(servletRequest.getServerName());
 
                 log.debug("Set domain related filters, tenant={}", tenantKey);
-                ServerRequest.Builder builder = ServerRequest.from(request)
+                builder
                     .header(HEADER_SCHEME, servletRequest.getScheme())
                     .header(HEADER_DOMAIN, servletRequest.getServerName())
                     .header(HEADER_PORT, String.valueOf(servletRequest.getServerPort()))
@@ -43,12 +43,11 @@ public class AddDomainRelayHeadersFunctions {
 
                 getRefererUri(servletRequest).ifPresent(uri -> builder.header(HEADER_WEBAPP_URL, uri));
 
-                return next.handle(builder.build());
-
             } catch (Exception e) {
                 log.error("Exception during domain relay filtering", e);
                 return next.handle(request);
             }
+            return next.handle(builder.build());
         };
     }
 
