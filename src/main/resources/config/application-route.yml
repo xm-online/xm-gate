@@ -15,24 +15,25 @@ spring:
                 - Path=/config/**
               filters:
                 - StripPrefix=1
-                - AddRequestHeader=X-Request-service, [CONFIG]
-                - AddDomainRelayHeaders
+                - TenantInit
                 - AddHighLog
                 - AddLogging
-                - IdpStatefulMode
-                - TenantInit
                 - TfaTokenDetection
                 - AccessControl
+                - AddDomainRelayHeaders
+                - IdpStatefulMode
+                - AddRequestHeader=X-Request-service, [CONFIG]
             - id: entity
               uri: lb://entity
               predicates:
                 - Path=/entity/**
               filters:
                 - StripPrefix=1
-                - AddDomainRelayHeaders
-                - AddHighLog
                 - TenantInit
+                - AddHighLog
+                - AddLogging
                 - AccessControl
+                - AddDomainRelayHeaders
                 - AddRequestHeader=X-Request-service, [ENTITY]
             - id: uaa
               uri: lb://uaa
@@ -40,8 +41,9 @@ spring:
                 - Path=/uaa/**
               filters:
                 - StripPrefix=1
-                - AddDomainRelayHeaders
-                - AddHighLog
                 - TenantInit
+                - AddHighLog
+                - AddLogging
                 - AccessControl
+                - AddDomainRelayHeaders
                 - AddRequestHeader=X-Request-service, [FUNCTION]
