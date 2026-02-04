@@ -43,12 +43,9 @@ public class TenantInitFilterFunctions {
             }
 
             log.debug("Set tenant context tenant '{}' to context holder", tenantKeyValue);
-            TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue);
-            try {
-                return next.handle(request);
-            } finally {
-                tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
-            }
+            TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue); // cleaned in TenantInterceptor.afterCompletion
+
+            return next.handle(request);
         };
     }
 
