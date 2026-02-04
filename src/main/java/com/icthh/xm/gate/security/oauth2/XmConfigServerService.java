@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.security.oauth2;
 
+import com.icthh.xm.commons.logging.aop.IgnoreLogginAspect;
 import com.icthh.xm.commons.security.oauth2.OAuth2Properties;
 import com.icthh.xm.gate.config.Constants;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class XmConfigServerService {
         this.oauth2Properties = oauth2Properties;
     }
 
+    @IgnoreLogginAspect
     public RSAPublicKey getPublicKeyFromConfigServer() throws CertificateException, IOException {
         String tokenEndpointUrl = oauth2Properties.getSignatureVerification().getPublicKeyEndpointUri();
         String content = loadBalancedRestClient
