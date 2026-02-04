@@ -108,7 +108,7 @@ spring:
     basename: i18n/messages
   main:
     allow-bean-definition-overriding: true
-    web-application-type: none
+    web-application-type: servlet
   thymeleaf:
     mode: HTML
   output:
