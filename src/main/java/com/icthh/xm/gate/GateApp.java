@@ -21,6 +21,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import tech.jhipster.config.DefaultProfileUtil;
@@ -28,10 +30,16 @@ import tech.jhipster.config.JHipsterConstants;
 
 @Slf4j
 @SpringBootApplication(
-    scanBasePackages = "com.icthh.xm",
     exclude = {
         tech.jhipster.config.metric.JHipsterMetricsEndpointConfiguration.class
     }
+)
+@ComponentScan(
+    basePackages = "com.icthh.xm",
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE,
+        classes = com.icthh.xm.commons.web.spring.config.WebMvcConfig.class
+    )
 )
 @EnableConfigurationProperties({ ApplicationProperties.class })
 @EnableDiscoveryClient

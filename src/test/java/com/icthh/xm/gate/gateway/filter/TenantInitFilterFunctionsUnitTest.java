@@ -110,6 +110,7 @@ class TenantInitFilterFunctionsUnitTest {
         ServerResponse response = filter.filter(serverRequest, next);
 
         verify(next).handle(serverRequest);
+        verify(privilegedTenantContext).destroyCurrentContext();
         assertEquals(mockResponse, response);
     }
 
@@ -154,5 +155,7 @@ class TenantInitFilterFunctionsUnitTest {
         assertThrows(RuntimeException.class,
             () -> filter.filter(serverRequest, next),
             "Test error");
+
+        verify(privilegedTenantContext).destroyCurrentContext();
     }
 }

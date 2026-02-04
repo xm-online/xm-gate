@@ -42,10 +42,16 @@ public class TenantInitFilterFunctions {
                 return errorResponse("SERVICE-SUSPENDED");
             }
 
-            log.debug("Set tenant context tenant '{}' to context holder", tenantKeyValue);
-            TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue); // cleaned in TenantInterceptor.afterCompletion
+            log.info("Set tenant '{}' to tenant context holder", tenantKeyValue);
+            TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue);
+            try {
+                return next.handle(request);
 
-            return next.handle(request);
+            } finally {
+                String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
+                log.info("Destroy tenant context holder with value '{}' ", tenantKey);
+                tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
+            }
         };
     }
 
