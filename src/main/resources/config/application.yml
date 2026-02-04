@@ -16,7 +16,8 @@
 
 management:
   tracing:
-    enabled: true
+    sampling:
+      probability: 1.0 # report 100% of traces
   endpoints:
     web:
       base-path: /management
