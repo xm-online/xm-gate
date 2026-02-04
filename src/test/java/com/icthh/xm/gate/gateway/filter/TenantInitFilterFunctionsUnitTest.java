@@ -2,6 +2,7 @@ package com.icthh.xm.gate.gateway.filter;
 
 import com.icthh.xm.commons.tenant.PrivilegedTenantContext;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.commons.tenant.TenantKey;
 import com.icthh.xm.gate.service.TenantMappingService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -19,6 +20,8 @@ import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.HandlerFunction;
 import org.springframework.web.servlet.function.ServerRequest;
 import org.springframework.web.servlet.function.ServerResponse;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -105,6 +108,7 @@ class TenantInitFilterFunctionsUnitTest {
         when(tenantMappingService.isTenantPresent("TEST")).thenReturn(true);
         when(tenantMappingService.isTenantActive("TEST")).thenReturn(true);
         when(tenantContextHolder.getPrivilegedContext()).thenReturn(privilegedTenantContext);
+        when(privilegedTenantContext.getTenantKey()).thenReturn(Optional.of(TenantKey.valueOf("TEST")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);
@@ -120,6 +124,7 @@ class TenantInitFilterFunctionsUnitTest {
         when(tenantMappingService.getTenantKey("xm.example.com")).thenReturn("XM");
         when(tenantMappingService.isTenantPresent("XM")).thenReturn(false);
         when(tenantContextHolder.getPrivilegedContext()).thenReturn(privilegedTenantContext);
+        when(privilegedTenantContext.getTenantKey()).thenReturn(Optional.of(TenantKey.valueOf("XM")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);
@@ -135,6 +140,7 @@ class TenantInitFilterFunctionsUnitTest {
         when(tenantMappingService.isTenantPresent("xm")).thenReturn(true);
         when(tenantMappingService.isTenantActive("xm")).thenReturn(false);
         when(tenantContextHolder.getPrivilegedContext()).thenReturn(privilegedTenantContext);
+        when(privilegedTenantContext.getTenantKey()).thenReturn(Optional.of(TenantKey.valueOf("xm")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);
@@ -150,6 +156,7 @@ class TenantInitFilterFunctionsUnitTest {
         when(tenantMappingService.isTenantPresent("TEST")).thenReturn(true);
         when(tenantMappingService.isTenantActive("TEST")).thenReturn(true);
         when(tenantContextHolder.getPrivilegedContext()).thenReturn(privilegedTenantContext);
+        when(privilegedTenantContext.getTenantKey()).thenReturn(Optional.of(TenantKey.valueOf("TEST")));
         when(next.handle(serverRequest)).thenThrow(new RuntimeException("Test error"));
 
         assertThrows(RuntimeException.class,

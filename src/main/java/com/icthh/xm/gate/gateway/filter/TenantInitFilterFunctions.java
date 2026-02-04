@@ -48,9 +48,10 @@ public class TenantInitFilterFunctions {
                 return next.handle(request);
 
             } finally {
-                String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(tenantContextHolder);
+                var privilegedTenantContext = tenantContextHolder.getPrivilegedContext();
+                String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(privilegedTenantContext);
                 log.info("Destroy tenant context holder with value '{}' ", tenantKey);
-                tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
+                privilegedTenantContext.destroyCurrentContext();
             }
         };
     }
