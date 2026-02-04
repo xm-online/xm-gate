@@ -88,10 +88,6 @@ jhipster:
   mail: # specific JHipster mail property, for standard properties see MailProperties
     base-url: http://my-server-url-to-change # Modify according to your server's URL
     from: gate@localhost
-  metrics:
-    logs: # Reports metrics in the logs
-      enabled: false
-      report-frequency: 60 # in seconds
   security:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
