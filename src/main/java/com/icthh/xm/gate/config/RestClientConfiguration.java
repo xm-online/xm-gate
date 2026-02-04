@@ -15,9 +15,14 @@ import org.springframework.web.client.RestClient;
 @RequiredArgsConstructor
 public class RestClientConfiguration {
 
-    @LoadBalanced
     @Bean
-    public RestClient loadBalancedRestClient(RestClient.Builder builder) {
+    @LoadBalanced
+    public RestClient.Builder loadBalancedRestClientBuilder() {
+        return RestClient.builder();
+    }
+
+    @Bean
+    public RestClient loadBalancedRestClient(@LoadBalanced RestClient.Builder builder) {
         return builder.build();
     }
 
