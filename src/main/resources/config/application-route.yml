@@ -43,4 +43,4 @@ spring:
                 - AddLogging
                 - AccessControl
                 - AddDomainRelayHeaders
-                - AddRequestHeader=X-Request-service, [FUNCTION]
+                - AddRequestHeader=X-Request-service, [UAA]
