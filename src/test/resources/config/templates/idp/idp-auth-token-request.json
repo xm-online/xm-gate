@@ -1,0 +1,23 @@
+{
+  "access_token": "access.token.format",
+  "token_type": "bearer",
+  "refresh_token": "refresh.token.format",
+  "expires_in": 43199,
+  "scope": "openid",
+  "role_key": "ROLE_ADMIN",
+  "user_key": "972e08de-5fe3-445c-a81b-507d4e8c8439",
+  "tenant": "XM",
+  "logins": [
+    {
+      "typeKey": "LOGIN.NICKNAME",
+      "stateKey": "",
+      "login": "login.nickname"
+    },
+    {
+      "typeKey": "LOGIN.EMAIL",
+      "stateKey": "",
+      "login": "login.email"
+    }
+  ],
+  "jti": "25c6844d-0207-44e6-92c9-cb70f5e6d2d7"
+}

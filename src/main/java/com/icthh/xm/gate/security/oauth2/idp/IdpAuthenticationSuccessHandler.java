@@ -164,7 +164,8 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
         }
 
         statelessResponse.putAll(xmUaaTokenResponseBody);
-        response.getWriter().write(objectMapper.writeValueAsString(statelessResponse));
+        String statelessResponseString = objectMapper.writeValueAsString(statelessResponse);
+        response.getWriter().write(statelessResponseString);
     }
 
     private void addHeaderToResponse(HttpServletResponse response, String header, List<String> values) {

@@ -1,0 +1,26 @@
+{
+  "idp_id_token" : "idp.token.value",
+  "idpAccessTokenInclusion" : {
+    "enabled" : true,
+    "idpTokenHeader" : "Authorization",
+    "xmTokenHeader" : "X-Authorization"
+  },
+  "refresh_token" : "refresh.token.format",
+  "logins" : [ {
+    "login" : "login.nickname",
+    "typeKey" : "LOGIN.NICKNAME",
+    "stateKey" : ""
+  }, {
+    "login" : "login.email",
+    "typeKey" : "LOGIN.EMAIL",
+    "stateKey" : ""
+  } ],
+  "user_key" : "972e08de-5fe3-445c-a81b-507d4e8c8439",
+  "scope" : "openid",
+  "jti" : "25c6844d-0207-44e6-92c9-cb70f5e6d2d7",
+  "expires_in" : 43199,
+  "role_key" : "ROLE_ADMIN",
+  "tenant" : "XM",
+  "access_token" : "access.token.format",
+  "token_type" : "bearer"
+}
