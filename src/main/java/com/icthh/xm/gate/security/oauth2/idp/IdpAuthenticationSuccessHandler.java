@@ -27,6 +27,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.icthh.xm.commons.tenant.TenantContextUtils.getRequiredTenantKeyValue;
 import static com.icthh.xm.gate.config.Constants.AUTH_RESPONSE_FIELD_IDP_ACCESS_TOKEN_INCLUSION;
@@ -39,6 +40,12 @@ import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
 @Slf4j
 @Component
 public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+
+    private static final Set<String> HOP_BY_HOP_HEADERS = Set.of(
+        "transfer-encoding", "connection", "keep-alive",
+        "proxy-authenticate", "proxy-authorization", "te",
+        "trailer", "upgrade", "content-length"
+    );
 
     public static final String GRANT_TYPE_ATTR = "grant_type";
     public static final String GRANT_TYPE_IDP_TOKEN = "idp_token";
@@ -138,7 +145,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
 
         //copy XM headers to authentication response
         xmUaaTokenResponse.getHeaders()
-                          .forEach((header, values) -> addHeaderToResponse(response, header, values));
+              .forEach((header, values) -> addHeaderToResponse(response, header, values));
 
         Map<String, Object> xmUaaTokenResponseBody = xmUaaTokenResponse.getBody();
         if (xmUaaTokenResponseBody == null) {
@@ -161,6 +168,8 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
     }
 
     private void addHeaderToResponse(HttpServletResponse response, String header, List<String> values) {
-        values.forEach(value -> response.addHeader(header, value));
+        if (!HOP_BY_HOP_HEADERS.contains(header.toLowerCase())) {
+            values.forEach(value -> response.addHeader(header, value));
+        }
     }
 }
