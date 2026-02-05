@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.gateway.filter;
+package com.icthh.xm.gate.gateway.functions;
 
 import com.icthh.xm.gate.service.TenantMappingService;
 import jakarta.servlet.http.HttpServletRequest;

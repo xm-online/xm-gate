@@ -15,7 +15,6 @@ spring:
                 - Path=/config/**
               filters:
                 - StripPrefix=1
-                - TenantInit
                 - AddHighLog
                 - AddLogging
                 - TfaTokenDetection
@@ -29,7 +28,6 @@ spring:
                 - Path=/entity/**
               filters:
                 - StripPrefix=1
-                - TenantInit
                 - AddHighLog
                 - AddLogging
                 - AccessControl
@@ -41,7 +39,6 @@ spring:
                 - Path=/uaa/**
               filters:
                 - StripPrefix=1
-                - TenantInit
                 - AddHighLog
                 - AddLogging
                 - AccessControl

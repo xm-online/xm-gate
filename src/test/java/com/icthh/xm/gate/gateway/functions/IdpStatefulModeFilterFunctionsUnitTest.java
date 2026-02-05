@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.gateway.filter;
+package com.icthh.xm.gate.gateway.functions;
 
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.commons.security.XmAuthenticationContext;

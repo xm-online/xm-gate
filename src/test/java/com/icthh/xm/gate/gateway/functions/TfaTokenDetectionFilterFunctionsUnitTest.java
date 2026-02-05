@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.gateway.filter;
+package com.icthh.xm.gate.gateway.functions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

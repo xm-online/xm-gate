@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.gateway.filter;
+package com.icthh.xm.gate.gateway.functions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
