@@ -50,7 +50,7 @@ public class TenantInitFilter extends OncePerRequestFilter {
             return;
         }
 
-        log.info("Set tenant '{}' to tenant context holder", tenantKeyValue);
+        log.debug("Set tenant '{}' to tenant context holder", tenantKeyValue);
         TenantContextUtils.setTenant(tenantContextHolder, tenantKeyValue);
         try {
             filterChain.doFilter(request, response);
@@ -58,7 +58,7 @@ public class TenantInitFilter extends OncePerRequestFilter {
         } finally {
             var privilegedTenantContext = tenantContextHolder.getPrivilegedContext();
             String tenantKey = TenantContextUtils.getRequiredTenantKeyValue(privilegedTenantContext);
-            log.info("Destroy tenant context holder with value '{}' ", tenantKey);
+            log.debug("Destroy tenant context holder with value '{}' ", tenantKey);
             privilegedTenantContext.destroyCurrentContext();
         }
     }
