@@ -6,6 +6,7 @@ import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.LoggingFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.TfaTokenDetectionFilterFunctions;
+import com.icthh.xm.gate.gateway.ratelimitting.RateLimitingFunctions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -40,5 +41,10 @@ public class GatewayHandlerFilterConfiguration {
     @Bean
     public AccessControlFilterFunctions.FilterSupplier accessControlFilterSupplier() {
         return new AccessControlFilterFunctions.FilterSupplier();
+    }
+
+    @Bean
+    public RateLimitingFunctions.FilterSupplier rateLimittingFilterSupplier() {
+        return new RateLimitingFunctions.FilterSupplier();
     }
 }

@@ -21,6 +21,14 @@ spring:
                 - AccessControl
                 - AddDomainRelayHeaders
                 - IdpStatefulMode
+                - name: RateLimitByTenantKey
+                  args:
+                    capacity: 10
+                    periodInMinutes: 1
+                - name: RateLimitByClientKey
+                  args:
+                    capacity: 5
+                    periodInMinutes: 1
                 - AddRequestHeader=X-Request-service, [CONFIG]
             - id: entity
               uri: lb://entity

@@ -16,6 +16,9 @@ import tech.jhipster.config.JHipsterProperties;
 import java.util.List;
 import java.util.Map;
 
+import static com.icthh.xm.gate.gateway.ratelimitting.ServerRequestUtils.extractPathWithinService;
+import static com.icthh.xm.gate.gateway.ratelimitting.ServerRequestUtils.extractServiceName;
+
 /**
  * Filter for restricting access to backend microservices endpoints.
  * Uses Consul service discovery to validate services and custom gateway properties for access control.
@@ -91,35 +94,6 @@ public class AccessControlFilterFunctions {
         log.debug("Access Control: denying access for {}, no matching authorized endpoint for service: {}",
             requestUri, serviceName);
         return false;
-    }
-
-    /**
-     * Extract service name from request URI.
-     * Example: /serviceName/api/smth -> serviceName
-     */
-    private static String extractServiceName(String requestUri) {
-        String path = requestUri;
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        int slashIndex = path.indexOf('/');
-        if (slashIndex > 0) {
-            return path.substring(0, slashIndex);
-        }
-        return path.isEmpty() ? null : path;
-    }
-
-    /**
-     * Extract path within service from request URI.
-     * Example: /serviceName/api/smth -> /api/smth
-     */
-    private static String extractPathWithinService(String requestUri, String serviceName) {
-        String prefix = "/" + serviceName;
-        if (requestUri.startsWith(prefix)) {
-            String pathWithinService = requestUri.substring(prefix.length());
-            return pathWithinService.isEmpty() ? "/" : pathWithinService;
-        }
-        return requestUri;
     }
 
     public static class FilterSupplier extends SimpleFilterSupplier {

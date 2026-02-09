@@ -205,6 +205,8 @@ dependencies {
     implementation "org.hibernate.orm:hibernate-core:${hibernate_version}"
     implementation "com.bucket4j:bucket4j_jdk17-core:${bucket4j_version}"
     implementation "com.bucket4j:bucket4j_jdk17-jcache:${bucket4j_version}"
+    implementation "org.bitbucket.b_c:jose4j:${bitbucket_version}"
+    implementation "com.bucket4j:bucket4j-caffeine:${bucket4j_caffeine_version}"
     implementation "com.google.protobuf:protobuf-java:${google_protobuf_version}"
 
     implementation ("com.icthh.xm.commons:xm-commons-ms-web:${xm_commons_version}") {
@@ -217,7 +219,7 @@ dependencies {
     implementation "com.icthh.xm.commons:xm-commons-metric:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-logging-trace:${xm_commons_version}"
 
-    testImplementation("com.tngtech.archunit:archunit-junit5-api:1.4.0") {
+    testImplementation("com.tngtech.archunit:archunit-junit5-api:${junit5_version}") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
     testImplementation "org.springframework.boot:spring-boot-starter-test"
@@ -225,7 +227,7 @@ dependencies {
     testImplementation "org.springframework.boot:spring-boot-test"
     testImplementation "org.springframework.boot:spring-boot-test-autoconfigure"
     testImplementation "org.springframework.security:spring-security-test"
-    testRuntimeOnly("com.tngtech.archunit:archunit-junit5-engine:1.4.0") {
+    testRuntimeOnly("com.tngtech.archunit:archunit-junit5-engine:${junit5_version}") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
