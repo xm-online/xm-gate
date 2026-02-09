@@ -24,11 +24,11 @@ spring:
                 - name: RateLimitByTenantKey
                   args:
                     capacity: 10
-                    periodInMinutes: 1
+                    period: 1 # in_minutes
                 - name: RateLimitByClientKey
                   args:
                     capacity: 5
-                    periodInMinutes: 1
+                    period: 1 # in_minutes
             - id: entity
               uri: lb://entity
               predicates:

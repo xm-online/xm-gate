@@ -21,26 +21,26 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public final class RateLimitingFunctions {
 
-    public static HandlerFilterFunction<ServerResponse, ServerResponse> rateLimitByTenantKey(int capacity, int periodInMinutes) {
+    public static HandlerFilterFunction<ServerResponse, ServerResponse> rateLimitByTenantKey(int capacity, int period) {
         return Bucket4jFilterFunctions.rateLimit(c -> c
             .setCapacity(capacity)
-            .setPeriod(Duration.ofMinutes(periodInMinutes))
+            .setPeriod(Duration.ofMinutes(period))
             .setKeyResolver(RateLimitingFunctions::getTenantKey)
         );
     }
 
-    public static HandlerFilterFunction<ServerResponse, ServerResponse> rateLimitByClientKey(int capacity, int periodInMinutes) {
+    public static HandlerFilterFunction<ServerResponse, ServerResponse> rateLimitByClientKey(int capacity, int period) {
         return Bucket4jFilterFunctions.rateLimit(c -> c
             .setCapacity(capacity)
-            .setPeriod(Duration.ofMinutes(periodInMinutes))
+            .setPeriod(Duration.ofMinutes(period))
             .setKeyResolver(RateLimitingFunctions::getClientIdKey)
         );
     }
 
-    public static HandlerFilterFunction<ServerResponse, ServerResponse> rateLimitBySessionKey(int capacity, int periodInMinutes) {
+    public static HandlerFilterFunction<ServerResponse, ServerResponse> rateLimitBySessionKey(int capacity, int period) {
         return Bucket4jFilterFunctions.rateLimit(c -> c
             .setCapacity(capacity)
-            .setPeriod(Duration.ofMinutes(periodInMinutes))
+            .setPeriod(Duration.ofMinutes(period))
             .setKeyResolver(RateLimitingFunctions::getSessionIdKey)
         );
     }
