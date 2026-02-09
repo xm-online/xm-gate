@@ -20,8 +20,6 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import tech.jhipster.async.ExceptionHandlingAsyncTaskExecutor;
 import tech.jhipster.config.JHipsterProperties;
 
-import static org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME;
-
 @Slf4j
 @Configuration
 @EnableAsync
@@ -34,7 +32,7 @@ public class AsyncConfiguration implements AsyncConfigurer, SchedulingConfigurer
     private final TaskExecutionProperties taskExecutionProperties;
 
     @Override
-    @Bean(name = APPLICATION_TASK_EXECUTOR_BEAN_NAME)
+    @Bean(name = "taskExecutor")
     public Executor getAsyncExecutor() {
         log.debug("Creating Async Task Executor");
         var executor = new ThreadPoolTaskExecutor();
