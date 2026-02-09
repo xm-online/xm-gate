@@ -19,6 +19,7 @@ XM Gate is an API Gateway microservice built with Spring Boot 4.0.1 and Spring C
   - [Path Pattern Strategies](#path-pattern-strategies)
 - [Identity Provider (IDP) Configuration](#identity-provider-idp-configuration)
 - [Multi-Tenancy](#multi-tenancy)
+- [Rate Limiting](#rate-limiting)
 - [Application Properties](#application-properties)
 - [Building for Production](#building-for-production)
 - [Testing](#testing)
@@ -159,6 +160,9 @@ spring:
 | `IdpStatefulMode` | Handles IDP stateful authentication mode |
 | `TfaTokenDetection` | Detects two-factor authentication tokens |
 | `AddRequestHeader` | Adds custom headers to requests |
+| `RateLimitByTenantKey` | Rate limits requests per tenant |
+| `RateLimitByClientKey` | Rate limits requests per tenant + client ID |
+| `RateLimitBySessionKey` | Rate limits requests per service + session ID |
 
 **Excluding Services from Routing:**
 
@@ -319,6 +323,52 @@ application:
 | `x-scheme` | Request scheme (http/https) |
 | `x-port` | Request port |
 | `x-webapp-url` | Referer-based webapp URL |
+
+## Rate Limiting
+
+XM Gate provides request rate limiting using [Bucket4j](https://bucket4j.com/) with Caffeine cache as the backend. 
+Rate limiting helps protect backend services from excessive requests by throttling traffic based on configurable keys.
+
+### Rate Limiting Filters
+
+Three rate limiting filters are available for use in route configurations:
+
+| Filter | Key Resolution | Description |
+|--------|----------------|-------------|
+| `RateLimitByTenantKey` | Tenant header (`x-tenant`) | Limits requests per tenant |
+| `RateLimitByClientKey` | Tenant + Client ID from JWT | Limits requests per authenticated client within a tenant |
+| `RateLimitBySessionKey` | Service name + Session ID | Limits requests per session for a specific service |
+
+### Configuration
+
+Rate limiting filters are configured per route in `application-route.yml`:
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: config
+              uri: lb://config
+              predicates:
+                - Path=/config/**
+              filters:
+                - StripPrefix=1
+                - name: RateLimitByTenantKey
+                  args:
+                    capacity: 10
+                    periodInMinutes: 1
+                - name: RateLimitByClientKey
+                  args:
+                    capacity: 5
+                    periodInMinutes: 1
+```
+
+**Filter Parameters:**
+- `capacity` - Maximum number of requests allowed in the time period (token bucket capacity)
+- `periodInMinutes` - Time window in minutes for the rate limit
 
 ## Application Properties
 
