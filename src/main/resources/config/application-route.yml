@@ -29,7 +29,6 @@ spring:
                   args:
                     capacity: 5
                     periodInMinutes: 1
-                - AddRequestHeader=X-Request-service, [CONFIG]
             - id: entity
               uri: lb://entity
               predicates:
@@ -40,7 +39,6 @@ spring:
                 - AddLogging
                 - AccessControl
                 - AddDomainRelayHeaders
-                - AddRequestHeader=X-Request-service, [ENTITY]
             - id: uaa
               uri: lb://uaa
               predicates:
@@ -51,4 +49,3 @@ spring:
                 - AddLogging
                 - AccessControl
                 - AddDomainRelayHeaders
-                - AddRequestHeader=X-Request-service, [UAA]

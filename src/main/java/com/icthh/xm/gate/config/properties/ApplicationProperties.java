@@ -56,6 +56,6 @@ public class ApplicationProperties {
     @Getter
     @Setter
     public static class Gateway {
-        private Set<String> excludedServices = new HashSet<>();
+        private Set<String> excludedServices = Set.of("consul", "gate");
     }
 }
