@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.gateway.functions;
 
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -11,10 +12,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
-import tech.jhipster.config.JHipsterProperties;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.icthh.xm.gate.gateway.ratelimitting.ServerRequestUtils.extractPathWithinService;
 import static com.icthh.xm.gate.gateway.ratelimitting.ServerRequestUtils.extractServiceName;
@@ -34,8 +35,8 @@ public class AccessControlFilterFunctions {
 
             DiscoveryClient discoveryClient = MvcUtils.getApplicationContext(request)
                 .getBean(DiscoveryClient.class);
-            JHipsterProperties jHipsterProperties = MvcUtils.getApplicationContext(request)
-                .getBean(JHipsterProperties.class);
+            ApplicationProperties applicationProperties = MvcUtils.getApplicationContext(request)
+                .getBean(ApplicationProperties.class);
 
             String requestUri = servletRequest.getRequestURI();
             String serviceName = extractServiceName(requestUri);
@@ -50,7 +51,7 @@ public class AccessControlFilterFunctions {
                 return next.handle(request);
             }
 
-            if (isAuthorizedEndpoint(jHipsterProperties, serviceName, requestUri)) {
+            if (isAuthorizedEndpoint(applicationProperties, serviceName, requestUri)) {
                 return next.handle(request);
             }
 
@@ -67,15 +68,15 @@ public class AccessControlFilterFunctions {
             .anyMatch(s -> s.equalsIgnoreCase(serviceName));
     }
 
-    private static boolean isAuthorizedEndpoint(JHipsterProperties jHipsterProperties, String serviceName, String requestUri) {
-        Map<String, List<String>> authEndpoints = jHipsterProperties.getGateway().getAuthorizedMicroservicesEndpoints();
+    private static boolean isAuthorizedEndpoint(ApplicationProperties applicationProperties, String serviceName, String requestUri) {
+        Map<String, Set<String>> authEndpoints = applicationProperties.getGateway().getAuthorizedMicroservicesEndpoints();
 
         if (authEndpoints == null || authEndpoints.isEmpty()) {
             log.debug("Access Control: access control policy has not been configured");
             return true;
         }
 
-        List<String> allowedPatterns = authEndpoints.get(serviceName);
+        Set<String> allowedPatterns = authEndpoints.get(serviceName);
         if (allowedPatterns == null || allowedPatterns.isEmpty()) {
             log.debug("Access Control: allowing access for {}, as no access control policy has been set up for service: {}",
                 requestUri, serviceName);

@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.gateway.functions;
 
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,11 +17,11 @@ import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.HandlerFunction;
 import org.springframework.web.servlet.function.ServerRequest;
 import org.springframework.web.servlet.function.ServerResponse;
-import tech.jhipster.config.JHipsterProperties;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mockStatic;
@@ -46,10 +47,10 @@ class AccessControlFilterFunctionsUnitTest {
     private DiscoveryClient discoveryClient;
 
     @Mock
-    private JHipsterProperties jHipsterProperties;
+    private ApplicationProperties applicationProperties;
 
     @Mock
-    private JHipsterProperties.Gateway gateway;
+    private ApplicationProperties.Gateway gateway;
 
     @Mock
     private ServerResponse mockResponse;
@@ -63,7 +64,7 @@ class AccessControlFilterFunctionsUnitTest {
         when(serverRequest.servletRequest()).thenReturn(servletRequest);
 
         when(applicationContext.getBean(DiscoveryClient.class)).thenReturn(discoveryClient);
-        when(applicationContext.getBean(JHipsterProperties.class)).thenReturn(jHipsterProperties);
+        when(applicationContext.getBean(ApplicationProperties.class)).thenReturn(applicationProperties);
 
         mvcUtilsMock = mockStatic(MvcUtils.class);
         mvcUtilsMock.when(() -> MvcUtils.getApplicationContext(serverRequest)).thenReturn(applicationContext);
@@ -101,7 +102,7 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldProceed_whenNoAccessControlConfigured() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/api/test");
         when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
+        when(applicationProperties.getGateway()).thenReturn(gateway);
         when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(null);
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
@@ -115,7 +116,7 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldProceed_whenEmptyAccessControlConfigured() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/api/test");
         when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
+        when(applicationProperties.getGateway()).thenReturn(gateway);
         when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Collections.emptyMap());
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
@@ -129,8 +130,8 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldProceed_whenNoPatternForService() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/api/test");
         when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
-        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("other-service", List.of("/api/**")));
+        when(applicationProperties.getGateway()).thenReturn(gateway);
+        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("other-service", Set.of("/api/**")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);
@@ -143,8 +144,8 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldProceed_whenPatternMatches() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/api/test");
         when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
-        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("my-service", List.of("/api/**")));
+        when(applicationProperties.getGateway()).thenReturn(gateway);
+        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("my-service", Set.of("/api/**")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);
@@ -157,8 +158,8 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldReturnForbidden_whenPatternDoesNotMatch() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/admin/settings");
         when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
-        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("my-service", List.of("/api/**")));
+        when(applicationProperties.getGateway()).thenReturn(gateway);
+        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("my-service", Set.of("/api/**")));
 
         ServerResponse response = filter.filter(serverRequest, next);
 
@@ -169,8 +170,8 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldMatchCaseInsensitiveServiceName() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/MY-SERVICE/api/test");
         when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
-        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("MY-SERVICE", List.of("/api/**")));
+        when(applicationProperties.getGateway()).thenReturn(gateway);
+        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("MY-SERVICE", Set.of("/api/**")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);
@@ -183,8 +184,8 @@ class AccessControlFilterFunctionsUnitTest {
     void accessControl_shouldExtractServiceName_fromSimplePath() throws Exception {
         when(servletRequest.getRequestURI()).thenReturn("/service");
         when(discoveryClient.getServices()).thenReturn(List.of("service"));
-        when(jHipsterProperties.getGateway()).thenReturn(gateway);
-        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("service", List.of("/")));
+        when(applicationProperties.getGateway()).thenReturn(gateway);
+        when(gateway.getAuthorizedMicroservicesEndpoints()).thenReturn(Map.of("service", Set.of("/")));
         when(next.handle(serverRequest)).thenReturn(mockResponse);
 
         ServerResponse response = filter.filter(serverRequest, next);

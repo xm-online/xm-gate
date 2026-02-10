@@ -405,6 +405,8 @@ application:
 
   # Gateway settings
   gateway:
+    authorized-microservices-endpoints:
+      entity: /api/**
     excluded-services:
       - consul
       - gate
@@ -415,13 +417,6 @@ xm-config:
   xm-config-url: http://config:8084
   kafka-config-topic: config_topic
 
-# JHipster settings
-jhipster:
-  gateway:
-    rate-limiting:
-      enabled: false
-    authorized-microservices-endpoints:
-      entity: /api/**
 ```
 
 ## Building for Production

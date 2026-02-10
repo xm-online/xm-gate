@@ -3,10 +3,11 @@ package com.icthh.xm.gate.utils;
 import lombok.experimental.UtilityClass;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.env.Environment;
-import tech.jhipster.config.JHipsterConstants;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.icthh.xm.gate.config.Constants.SPRING_PROFILE_DEVELOPMENT;
 
 /**
  * Utility class to load a Spring profile to be used as default
@@ -30,7 +31,7 @@ public final class DefaultProfileUtil {
          * This cannot be set in the <code>application.yml</code> file.
          * See https://github.com/spring-projects/spring-boot/issues/1219
          */
-        defProperties.put(SPRING_PROFILE_DEFAULT, JHipsterConstants.SPRING_PROFILE_DEVELOPMENT);
+        defProperties.put(SPRING_PROFILE_DEFAULT, SPRING_PROFILE_DEVELOPMENT);
         app.setDefaultProperties(defProperties);
     }
 

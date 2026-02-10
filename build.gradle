@@ -168,7 +168,6 @@ dependencies {
     compileOnly "org.projectlombok:lombok:${lombok_version}"
     annotationProcessor "org.projectlombok:lombok:${lombok_version}"
 
-    implementation "tech.jhipster:jhipster-framework:${jhipster_dependencies_version}"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdoc_version}"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-actuator"
@@ -196,13 +195,8 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "com.github.ben-manes.caffeine:caffeine"
     implementation "io.github.openfeign:feign-jackson"
-    implementation 'io.micrometer:micrometer-core'
-    implementation 'io.micrometer:micrometer-observation'
     implementation 'io.micrometer:micrometer-java21'
-    implementation "io.micrometer:micrometer-registry-prometheus"
-    implementation "io.micrometer:micrometer-registry-prometheus-simpleclient"
     implementation "org.apache.commons:commons-lang3"
-    implementation "org.hibernate.orm:hibernate-core:${hibernate_version}"
     implementation "com.bucket4j:bucket4j_jdk17-core:${bucket4j_version}"
     implementation "com.bucket4j:bucket4j_jdk17-jcache:${bucket4j_version}"
     implementation "org.bitbucket.b_c:jose4j:${bitbucket_version}"

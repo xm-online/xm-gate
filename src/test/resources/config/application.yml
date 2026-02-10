@@ -45,34 +45,6 @@ server:
   port: 10344
   address: localhost
 
-# ===================================================================
-# JHipster specific properties
-#
-# Full reference is available at: https://www.jhipster.tech/common-application-properties/
-# ===================================================================
-jhipster:
-  async:
-    core-pool-size: 1
-    max-pool-size: 50
-    queue-capacity: 10000
-  security:
-    authentication:
-      jwt:
-        secret:
-        # Token is valid 24 hours
-        token-validity-in-seconds: 86400
-    client-authorization:
-      access-token-uri: http://uaa/oauth/token
-
-# ===================================================================
-# Application specific properties
-# Add your own application properties here, see the ApplicationProperties class
-# to have type-safe configuration, like in the JHipsterProperties above
-#
-# More documentation is available at:
-# https://www.jhipster.tech/common-application-properties/
-# ===================================================================
-
 management:
   prometheus:
     metrics:
@@ -93,3 +65,21 @@ application:
     - local
     - xm-online.com
   kafka-system-queue: system_queue
+  cors:
+    allowed-origins: '*'
+    allowed-methods: '*'
+    allowed-headers: '*'
+    exposed-headers: 'Authorization,Link,X-Total-Count'
+    allow-credentials: true
+    max-age: 1800
+  security:
+    client-authorization:
+      access-token-uri: http://uaa/oauth/token
+      token-service-id: uaa
+      client-id: internal
+      client-secret: internal
+  logging:
+    logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
+      host: localhost
+      port: 5000
+      ring-buffer-size: 512

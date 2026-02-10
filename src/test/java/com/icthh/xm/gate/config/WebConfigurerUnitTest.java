@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.Servlet;
@@ -21,7 +22,6 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import tech.jhipster.config.JHipsterProperties;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +38,7 @@ class WebConfigurerUnitTest {
 
     private MockEnvironment env;
 
-    private JHipsterProperties props;
+    private ApplicationProperties props;
 
     @BeforeEach
     void setup() {
@@ -47,7 +47,7 @@ class WebConfigurerUnitTest {
         doReturn(mock(ServletRegistration.Dynamic.class)).when(servletContext).addServlet(anyString(), any(Servlet.class));
 
         env = new MockEnvironment();
-        props = new JHipsterProperties();
+        props = new ApplicationProperties();
 
         webConfigurer = new WebConfigurer(env, props);
     }

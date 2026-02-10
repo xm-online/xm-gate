@@ -9,6 +9,10 @@ import org.springframework.core.Ordered;
 @NoArgsConstructor
 public final class Constants {
 
+    public static final String SPRING_PROFILE_DEVELOPMENT = "dev";
+    public static final String SPRING_PROFILE_PRODUCTION = "prod";
+    public static final String SPRING_PROFILE_CLOUD = "cloud";
+
     public static final String HEADER_SCHEME = "x-scheme";
     public static final String HEADER_DOMAIN = "x-domain";
     public static final String HEADER_PORT = "x-port";

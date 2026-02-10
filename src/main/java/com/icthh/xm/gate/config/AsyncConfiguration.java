@@ -17,8 +17,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
-import tech.jhipster.async.ExceptionHandlingAsyncTaskExecutor;
-import tech.jhipster.config.JHipsterProperties;
 
 @Slf4j
 @Configuration
@@ -28,7 +26,6 @@ import tech.jhipster.config.JHipsterProperties;
 @RequiredArgsConstructor
 public class AsyncConfiguration implements AsyncConfigurer, SchedulingConfigurer {
 
-    private final JHipsterProperties jHipsterProperties;
     private final TaskExecutionProperties taskExecutionProperties;
 
     @Override
@@ -40,7 +37,8 @@ public class AsyncConfiguration implements AsyncConfigurer, SchedulingConfigurer
         executor.setMaxPoolSize(taskExecutionProperties.getPool().getMaxSize());
         executor.setQueueCapacity(taskExecutionProperties.getPool().getQueueCapacity());
         executor.setThreadNamePrefix(taskExecutionProperties.getThreadNamePrefix());
-        return new ExceptionHandlingAsyncTaskExecutor(executor);
+        executor.setVirtualThreads(true);
+        return executor;
     }
 
     @Override
@@ -55,6 +53,6 @@ public class AsyncConfiguration implements AsyncConfigurer, SchedulingConfigurer
 
     @Bean
     public Executor scheduledTaskExecutor() {
-        return Executors.newScheduledThreadPool(jHipsterProperties.getAsync().getCorePoolSize());
+        return Executors.newScheduledThreadPool(taskExecutionProperties.getPool().getCoreSize());
     }
 }

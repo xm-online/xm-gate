@@ -1,6 +1,8 @@
 package com.icthh.xm.gate.config;
 
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import jakarta.servlet.ServletContext;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.server.MimeMappings;
 import org.springframework.boot.web.server.WebServerFactory;
@@ -15,7 +17,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-import tech.jhipster.config.JHipsterProperties;
 
 import java.nio.charset.StandardCharsets;
 
@@ -23,17 +24,12 @@ import java.nio.charset.StandardCharsets;
  * Configuration of web application with Servlet 3.0 APIs.
  */
 @Slf4j
+@RequiredArgsConstructor
 @Configuration
 public class WebConfigurer implements ServletContextInitializer, WebServerFactoryCustomizer<WebServerFactory> {
 
     private final Environment env;
-
-    private final JHipsterProperties jHipsterProperties;
-
-    public WebConfigurer(Environment env, JHipsterProperties jHipsterProperties) {
-        this.env = env;
-        this.jHipsterProperties = jHipsterProperties;
-    }
+    private final ApplicationProperties applicationProperties;
 
     @Override
     public void onStartup(ServletContext servletContext) {
@@ -62,7 +58,7 @@ public class WebConfigurer implements ServletContextInitializer, WebServerFactor
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = jHipsterProperties.getCors();
+        CorsConfiguration config = applicationProperties.getCors();
         if (!CollectionUtils.isEmpty(config.getAllowedOrigins()) || !CollectionUtils.isEmpty(config.getAllowedOriginPatterns())) {
             log.debug("Registering CORS filter");
             source.registerCorsConfiguration("/api/**", config);

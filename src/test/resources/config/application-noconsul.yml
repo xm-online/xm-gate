@@ -51,30 +51,25 @@ server:
   http2:
     enabled: false
 
-jhipster:
+application:
   gateway:
-    rate-limiting:
-      enabled: false
     authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible
       app1: /api # recommended prod configuration
-  http:
-    cache: # Used by the CachingHttpHeadersFilter
-      timeToLiveInDays: 1461
-  mail: # specific JHipster mail property, for standard properties see MailProperties
-    base-url: http://my-server-url-to-change # Modify according to your server's URL
-    from: gate@localhost
+  logging:
+    logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
+      host: localhost
+      port: 5000
+      ring-buffer-size: 512
+  cors:
+    allowed-origins: '*'
+    allowed-methods: '*'
+    allowed-headers: '*'
+    exposed-headers: 'Authorization,Link,X-Total-Count'
+    allow-credentials: true
+    max-age: 1800
   security:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
       token-service-id: uaa
       client-id: internal
       client-secret: internal
-  logging:
-    use-json-format: false # By default, logs are not in Json format
-    logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
-      enabled: false
-      host: localhost
-      port: 5000
-      ring-buffer-size: 512
-
-# application:

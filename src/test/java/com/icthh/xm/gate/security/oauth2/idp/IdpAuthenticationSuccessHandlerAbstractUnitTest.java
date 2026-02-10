@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.icthh.xm.commons.domain.idp.model.IdpPrivateConfig;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import tech.jhipster.config.JHipsterProperties;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -60,12 +60,12 @@ class IdpAuthenticationSuccessHandlerAbstractUnitTest extends IdpAbstractUnitTes
     @Captor
     private ArgumentCaptor<MultiValueMap<String, String>> bodyCaptor;
 
-    private JHipsterProperties jhipsterProperties;
+    private ApplicationProperties applicationProperties;
     private IdpAuthenticationSuccessHandler idpAuthenticationSuccessHandler;
 
     @BeforeEach
     void setUp() {
-        jhipsterProperties = new JHipsterProperties();
+        applicationProperties = new ApplicationProperties();
         tenantContextHolder.getPrivilegedContext().destroyCurrentContext();
     }
 
@@ -80,10 +80,10 @@ class IdpAuthenticationSuccessHandlerAbstractUnitTest extends IdpAbstractUnitTes
         validateRegistration(tenantKey, clientKeyPrefix, clientsAmount, idpPublicConfig, idpPrivateConfig);
 
         TenantContextUtils.setTenant(tenantContextHolder, tenantKey);
-        jhipsterProperties.getSecurity().getClientAuthorization().setAccessTokenUri(UAA_TOKEN_URL);
+        applicationProperties.getSecurity().getClientAuthorization().setAccessTokenUri(UAA_TOKEN_URL);
 
         idpAuthenticationSuccessHandler = new IdpAuthenticationSuccessHandler(
-            objectMapper, restClient, tenantContextHolder, idpConfigRepository, jhipsterProperties);
+            objectMapper, restClient, tenantContextHolder, idpConfigRepository, applicationProperties);
 
         UnsupportedOperationException exception = assertThrows(
             UnsupportedOperationException.class,
@@ -105,12 +105,12 @@ class IdpAuthenticationSuccessHandlerAbstractUnitTest extends IdpAbstractUnitTes
         validateRegistration(tenantKey, clientKeyPrefix, clientsAmount, idpPublicConfig, idpPrivateConfig);
 
         TenantContextUtils.setTenant(tenantContextHolder, tenantKey);
-        jhipsterProperties.getSecurity().getClientAuthorization().setAccessTokenUri(UAA_TOKEN_URL);
+        applicationProperties.getSecurity().getClientAuthorization().setAccessTokenUri(UAA_TOKEN_URL);
 
         setupRestClientMock();
 
         idpAuthenticationSuccessHandler = new IdpAuthenticationSuccessHandler(
-            objectMapper, restClient, tenantContextHolder, idpConfigRepository, jhipsterProperties);
+            objectMapper, restClient, tenantContextHolder, idpConfigRepository, applicationProperties);
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         idpAuthenticationSuccessHandler.onAuthenticationSuccess(null, response, buildAuthentication("email"));

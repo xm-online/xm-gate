@@ -3,6 +3,7 @@ package com.icthh.xm.gate.security.oauth2.idp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icthh.xm.commons.domain.idp.model.IdpPublicConfig.IdpConfigContainer.Features;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
+import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import tech.jhipster.config.JHipsterProperties;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -56,18 +56,18 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
     private final RestClient restClient;
     private final TenantContextHolder tenantContextHolder;
     private final IdpConfigRepository idpConfigRepository;
-    private final JHipsterProperties jhipsterProperties;
+    private final ApplicationProperties applicationProperties;
 
     public IdpAuthenticationSuccessHandler(ObjectMapper objectMapper,
                                            @Lazy @Qualifier("loadBalancedRestClient") RestClient restClient,
                                            TenantContextHolder tenantContextHolder,
                                            IdpConfigRepository idpConfigRepository,
-                                           JHipsterProperties jhipsterProperties) {
+                                           ApplicationProperties applicationProperties) {
         this.objectMapper = objectMapper;
         this.tenantContextHolder = tenantContextHolder;
         this.restClient = restClient;
         this.idpConfigRepository = idpConfigRepository;
-        this.jhipsterProperties = jhipsterProperties;
+        this.applicationProperties = applicationProperties;
     }
 
     @Override
@@ -93,7 +93,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
 
         return restClient
             .post()
-            .uri(jhipsterProperties.getSecurity().getClientAuthorization().getAccessTokenUri())
+            .uri(applicationProperties.getSecurity().getClientAuthorization().getAccessTokenUri())
             .headers(h -> h.addAll(headers))
             .body(body)
             .retrieve()
@@ -126,7 +126,7 @@ public class IdpAuthenticationSuccessHandler implements AuthenticationSuccessHan
     }
 
     private String buildAuthorizationHeader() {
-        JHipsterProperties.Security security = jhipsterProperties.getSecurity();
+        ApplicationProperties.Security security = applicationProperties.getSecurity();
 
         String clientId = security.getClientAuthorization().getClientId();
         String clientSecret = security.getClientAuthorization().getClientSecret();
