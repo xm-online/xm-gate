@@ -24,7 +24,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
+import java.io.InputStream;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static com.icthh.xm.gate.config.Constants.HEADER_TENANT;
@@ -168,6 +170,7 @@ class IdpAuthenticationSuccessHandlerAbstractUnitTest extends IdpAbstractUnitTes
 
     @SneakyThrows
     private String readConfig(String name) {
-        return IOUtils.toString(this.getClass().getResourceAsStream("/config/templates/" + name), defaultCharset());
+        InputStream resourceAsStream = this.getClass().getResourceAsStream("/config/templates/" + name);
+        return IOUtils.toString(Objects.requireNonNull(resourceAsStream), defaultCharset());
     }
 }

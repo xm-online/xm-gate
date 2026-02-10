@@ -87,7 +87,7 @@ class WebConfigurerUnitTest {
         props.getCors().setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
         props.getCors().setAllowedHeaders(Collections.singletonList("*"));
         props.getCors().setMaxAge(1800L);
-        props.getCors().setAllowCredentials(true);
+        props.getCors().setAllowCredentials(false);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new WebConfigurerTestController()).addFilters(webConfigurer.corsFilter()).build();
 

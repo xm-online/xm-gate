@@ -80,6 +80,7 @@ application:
       client-secret: internal
   logging:
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
+      enabled: true
       host: localhost
       port: 5000
       ring-buffer-size: 512
