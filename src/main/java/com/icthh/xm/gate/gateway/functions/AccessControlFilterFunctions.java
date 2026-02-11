@@ -13,12 +13,11 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.icthh.xm.gate.gateway.ratelimitting.ServerRequestUtils.extractPathWithinService;
-import static com.icthh.xm.gate.gateway.ratelimitting.ServerRequestUtils.extractServiceName;
+import static com.icthh.xm.gate.utils.ServerRequestUtils.extractPathWithinService;
+import static com.icthh.xm.gate.utils.ServerRequestUtils.extractServiceName;
 
 /**
  * Filter for restricting access to backend microservices endpoints.

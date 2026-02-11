@@ -7,7 +7,6 @@ import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.LoggingFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.TfaTokenDetectionFilterFunctions;
-import com.icthh.xm.gate.gateway.ratelimitting.RateLimitingFunctions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions;
@@ -68,7 +67,6 @@ public class GatewayRoutesConfiguration {
             .filter(AccessControlFilterFunctions.accessControl())
             .filter(AddDomainRelayHeadersFunctions.addDomainRelayHeaders())
             .filter(IdpStatefulModeFilterFunctions.idpStatefulMode())
-            .filter(RateLimitingFunctions.rateLimitByClientKey(100, 1))
             .build();
     }
 

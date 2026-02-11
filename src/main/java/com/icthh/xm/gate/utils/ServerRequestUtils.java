@@ -1,4 +1,4 @@
-package com.icthh.xm.gate.gateway.ratelimitting;
+package com.icthh.xm.gate.utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.experimental.UtilityClass;
