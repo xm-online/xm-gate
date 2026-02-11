@@ -50,17 +50,9 @@ management:
   metrics:
     distribution:
       percentiles-histogram:
-        http: true
-        jvm: true
-        logback: true
-        process: true
-        system: true
+        all: true
     enable:
-      http: true
-      jvm: true
-      logback: true
-      process: true
-      system: true
+      all: true
   prometheus:
     metrics:
       export:

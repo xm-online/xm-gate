@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
@@ -34,11 +33,7 @@ import static com.icthh.xm.gate.config.Constants.SPRING_PROFILE_PRODUCTION;
 @Slf4j
 @SpringBootApplication
 @ComponentScan(
-    basePackages = "com.icthh.xm",
-    excludeFilters = @ComponentScan.Filter(
-        type = FilterType.ASSIGNABLE_TYPE,
-        classes = com.icthh.xm.commons.web.spring.config.WebMvcConfig.class
-    )
+    basePackages = "com.icthh.xm"
 )
 @EnableConfigurationProperties({ ApplicationProperties.class })
 @EnableDiscoveryClient

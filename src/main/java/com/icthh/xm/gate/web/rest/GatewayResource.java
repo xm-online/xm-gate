@@ -1,6 +1,5 @@
 package com.icthh.xm.gate.web.rest;
 
-import com.codahale.metrics.annotation.Timed;
 import com.icthh.xm.commons.permission.annotation.PrivilegeDescription;
 import com.icthh.xm.gate.service.GatewayServiceInstanceService;
 import com.icthh.xm.gate.web.rest.vm.RouteVM;
@@ -35,7 +34,6 @@ public class GatewayResource {
      * @return the ResponseEntity with status 200 (OK) and with body the list of routes
      */
     @GetMapping("/routes")
-    @Timed
     @PostFilter("hasPermission({'returnObject': filterObject, 'log': false}, 'ROUTE.GET_LIST')")
     @PrivilegeDescription("Privilege to get the active routes")
     public List<RouteVM> activeRoutes() {

@@ -1,0 +1,21 @@
+1. Rate limiting
+  -> move to ee feature (tenant, client, sessionId)
+  -> add LEP for KeyResolver
+  ->
+
+// cache stack -> to roadmap
+2. Distributed cache
+3. Cтейтфул токени для ІДП (щоб назовні opaq віддавався а не JWT)
+4. Distributed rate limiting
+
+5. Upload file -> use Streaming File Uploads
+
+// 6. OpenTelemitry -> ee-gate: ?, now or later: ?
+
+7. кастомний роутинг
+8. асинхронні роути (тобто пут меседжа в кафку а не в даунстрім сервіс)
+
+
+
+
+

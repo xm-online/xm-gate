@@ -165,26 +165,20 @@ repositories {
 dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdoc_version}"
     implementation "org.springframework.boot:spring-boot-micrometer-tracing-brave"
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation "org.springframework.boot:spring-boot-starter-security-oauth2-client"
     implementation "org.springframework.boot:spring-boot-starter-security-oauth2-resource-server"
-    implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
     implementation "org.springframework.cloud:spring-cloud-starter-consul-discovery"
     implementation "org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc"
-    implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
-    implementation "io.github.openfeign:feign-jackson"
     implementation 'io.micrometer:micrometer-java21'
-    implementation "io.micrometer:micrometer-registry-prometheus-simpleclient"
+    implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation "org.bitbucket.b_c:jose4j:${bitbucket_version}"
     implementation "com.google.protobuf:protobuf-java:${google_protobuf_version}"
 
-    implementation ("com.icthh.xm.commons:xm-commons-ms-web:${xm_commons_version}") {
-      exclude group: "io.github.jhipster", module: "jhipster"
-    }
     implementation "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-idp:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-i18n:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-permission:${xm_commons_version}"
-    implementation "com.icthh.xm.commons:xm-commons-metric:${xm_commons_version}"
 
     compileOnly "org.projectlombok:lombok:${lombok_version}"
 
