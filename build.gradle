@@ -194,10 +194,7 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombok_version}"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-
     testImplementation "org.springframework.boot:spring-boot-starter-test"
-//    testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
-//    testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.projectlombok:lombok:${lombok_version}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombok_version}"
 }
