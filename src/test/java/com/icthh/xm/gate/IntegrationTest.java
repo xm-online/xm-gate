@@ -1,6 +1,5 @@
 package com.icthh.xm.gate;
 
-import com.icthh.xm.commons.web.spring.config.JacksonConfiguration;
 import com.icthh.xm.gate.config.AsyncSyncConfiguration;
 import com.icthh.xm.gate.config.TestSecurityConfiguration;
 import java.lang.annotation.ElementType;
@@ -19,6 +18,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(
-    classes = { GateApp.class, TestSecurityConfiguration.class, JacksonConfiguration.class, AsyncSyncConfiguration.class }
+    classes = { GateApp.class, TestSecurityConfiguration.class, AsyncSyncConfiguration.class }
 )
 public @interface IntegrationTest {}
