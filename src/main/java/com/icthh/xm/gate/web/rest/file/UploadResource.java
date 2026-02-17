@@ -32,6 +32,10 @@ public class UploadResource {
 
     private final UploadFileService uploadFileService;
 
+    /**
+     * See <a href="https://jevera.atlassian.net/wiki/spaces/XMED/pages/1788870657/F+Gate+-+File+Upload">File Upload</a>
+     */
+    @Deprecated(forRemoval = true)
     @RequestMapping(value = UPLOAD_PREFIX + "**", method = {POST, PUT})
     public ResponseEntity<Object> upload(MultipartHttpServletRequest request) {
         return uploadFileService.upload(request);
