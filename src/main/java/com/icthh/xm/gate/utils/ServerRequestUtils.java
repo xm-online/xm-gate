@@ -17,18 +17,20 @@ import static org.springframework.security.oauth2.core.OAuth2TokenIntrospectionC
 @UtilityClass
 public class ServerRequestUtils {
 
-    public static final String SESSION_ID_HEADER = "X-SESSIONID";
-    private static final String BEARER_PREFIX = "Bearer ";
+    public static final String BEARER_PREFIX = "Bearer ";
 
     private static final BearerTokenResolver tokenResolver = new DefaultBearerTokenResolver();
 
     public static JwtClaims getJwtTokenClaims(HttpServletRequest request) {
         String jwtToken = tokenResolver.resolve(request);
-        if (jwtToken == null || !jwtToken.startsWith(BEARER_PREFIX)) {
+        if (jwtToken == null) {
             return new JwtClaims();
         }
         try {
-            JwtConsumer jwtConsumer = new JwtConsumerBuilder().setSkipSignatureVerification().build();
+            JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+                .setSkipSignatureVerification()
+                .setSkipDefaultAudienceValidation()
+                .build();
             return jwtConsumer.processToClaims(jwtToken.replace(BEARER_PREFIX, StringUtils.EMPTY));
 
         } catch (InvalidJwtException e) {
