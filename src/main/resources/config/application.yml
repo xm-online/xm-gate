@@ -175,3 +175,5 @@ application:
       host: localhost
       port: 5000
       ring-buffer-size: 512
+  keycloak:
+    server-url: http://localhost:9080

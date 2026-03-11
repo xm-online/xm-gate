@@ -1,14 +1,15 @@
 package com.icthh.xm.gate.config;
 
+import com.icthh.xm.commons.config.client.repository.TenantListRepository;
 import com.icthh.xm.commons.security.RoleConstant;
+import com.icthh.xm.commons.security.oauth2.TenantTrustedIssuerJwtAuthenticationManagerResolver;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.icthh.xm.gate.security.oauth2.XmAuthorizationRequestResolver;
+import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
 import com.icthh.xm.gate.security.oauth2.idp.IdpAuthenticationSuccessHandler;
 import com.icthh.xm.gate.security.oauth2.idp.IdpClientRepository;
-import com.icthh.xm.gate.security.oauth2.XmAuthorizationRequestResolver;
-import com.icthh.xm.gate.security.oauth2.XmConfigServerService;
-import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -26,13 +27,10 @@ import org.springframework.security.oauth2.client.web.AuthorizationRequestReposi
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
-
-import java.security.interfaces.RSAPublicKey;
 
 import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
 import static java.lang.Boolean.TRUE;
@@ -44,11 +42,11 @@ import static java.lang.Boolean.TRUE;
 @RequiredArgsConstructor
 public class MicroserviceSecurityConfiguration {
 
-    private final XmConfigServerService xmConfigServerService;
     private final TenantContextHolder tenantContextHolder;
     private final IdpClientRepository idpClientRepository;
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
     private final ApplicationProperties applicationProperties;
+    private final TenantListRepository tenantListRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -83,7 +81,7 @@ public class MicroserviceSecurityConfiguration {
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.decoder(jwtDecoder())))
+                .authenticationManagerResolver(authenticationManagerResolver()))
             .oauth2Client(oauth2Client -> oauth2Client
                 .authorizationCodeGrant(grant -> grant
                     .authorizationRequestResolver(requestResolver())
@@ -94,17 +92,6 @@ public class MicroserviceSecurityConfiguration {
                 .authorizationEndpoint(endpoint -> endpoint
                     .authorizationRequestRepository(authorizationRequestRepository())));
         return http.build();
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        try {
-            RSAPublicKey publicKey = xmConfigServerService.getPublicKeyFromConfigServer();
-            return NimbusJwtDecoder.withPublicKey(publicKey).build();
-        } catch (Exception e) {
-            log.error("Failed to create JWT decoder", e);
-            throw new RuntimeException("Failed to create JWT decoder", e);
-        }
     }
 
     @Bean
@@ -129,5 +116,12 @@ public class MicroserviceSecurityConfiguration {
 
     private OAuth2AuthorizationRequestResolver requestResolver() {
         return new XmAuthorizationRequestResolver(idpClientRepository, "/oauth2/authorization");
+    }
+
+    public JwtIssuerAuthenticationManagerResolver authenticationManagerResolver() {
+        String issuerUri = applicationProperties.getKeycloak().getIssuerUri();
+        return new JwtIssuerAuthenticationManagerResolver(
+            new TenantTrustedIssuerJwtAuthenticationManagerResolver(tenantListRepository::getTenants, issuerUri)
+        );
     }
 }

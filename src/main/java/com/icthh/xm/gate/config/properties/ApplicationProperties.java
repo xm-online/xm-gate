@@ -35,6 +35,7 @@ public class ApplicationProperties {
     private Boolean redirectToDefaultTenantEnabled;
     private MonitoringApi monitoring = new MonitoringApi();
     private String objectStorageFileRoot = "/";
+    private Keycloak keycloak = new Keycloak();
 
     @Getter
     @Setter
@@ -77,6 +78,18 @@ public class ApplicationProperties {
             private String tokenServiceId;
             private String clientId;
             private String clientSecret;
+        }
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class Keycloak {
+        private String serverUrl;
+        private String issuerUri = "realms/{realmName}";
+
+        public String getIssuerUri() {
+            return serverUrl + "/" + issuerUri;
         }
     }
 }
