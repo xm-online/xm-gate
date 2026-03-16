@@ -175,3 +175,7 @@ application:
       host: localhost
       port: 5000
       ring-buffer-size: 512
+  http-client:
+    max-connections: 1000
+    max-connections-per-route: 500
+    connection-timeout-seconds: 60
