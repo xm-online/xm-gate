@@ -71,6 +71,7 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers("/login/oauth2/code/**").permitAll()
                     .requestMatchers("/api/**").authenticated()
                     .requestMatchers("/*/api/**").permitAll()
+                    .requestMatchers("/*/public/**").permitAll()
                     .requestMatchers("/*/oauth/**").permitAll()
                     .requestMatchers("/management/health").permitAll()
                     .requestMatchers("/management/prometheus/**").permitAll()
