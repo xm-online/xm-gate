@@ -46,6 +46,7 @@ java {
 assert System.properties["java.specification.version"] == "17" || "21" || "25"
 
 apply from: "gradle/docker.gradle"
+apply from: "gradle/sonar.gradle"
 apply from: "gradle/version.gradle"
 // jhipster-needle-gradle-apply-from - JHipster will add additional gradle scripts to be applied here
 
