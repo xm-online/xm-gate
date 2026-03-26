@@ -155,13 +155,6 @@ application:
     max-attempts: 3
     delay: 1000 #in milliseconds
     multiplier: 2
-  cors:
-    allowed-origins: '*'
-    allowed-methods: '*'
-    allowed-headers: '*'
-    exposed-headers: 'Authorization,Link,X-Total-Count'
-    allow-credentials: true
-    max-age: 1800
   security:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
