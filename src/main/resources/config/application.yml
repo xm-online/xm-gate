@@ -171,3 +171,5 @@ application:
     max-connections: 1000
     max-connections-per-route: 500
     connection-timeout-seconds: 60
+  keycloak:
+    server-url: http://localhost:9080

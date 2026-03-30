@@ -36,6 +36,7 @@ public class ApplicationProperties {
     private MonitoringApi monitoring = new MonitoringApi();
     private String objectStorageFileRoot = "/";
     private HttpClient httpClient = new HttpClient();
+    private Keycloak keycloak = new Keycloak();
 
     @Getter
     @Setter
@@ -87,5 +88,17 @@ public class ApplicationProperties {
         private Integer maxConnections;
         private Integer maxConnectionsPerRoute;
         private Integer connectionTimeoutSeconds;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class Keycloak {
+        private String serverUrl;
+        private String issuerUri = "realms/{realmName}";
+
+        public String getIssuerUri() {
+            return serverUrl + "/" + issuerUri;
+        }
     }
 }
