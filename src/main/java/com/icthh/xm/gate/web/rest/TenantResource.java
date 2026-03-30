@@ -26,7 +26,7 @@ public class TenantResource implements TenantsApiDelegate {
     @PrivilegeDescription("Privilege to add a new gate tenant")
     public ResponseEntity<Void> addTenant(Tenant tenant) {
         tenantManager.createTenant(tenant);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 
     @Override
@@ -34,7 +34,7 @@ public class TenantResource implements TenantsApiDelegate {
     @PrivilegeDescription("Privilege to delete gate tenant")
     public ResponseEntity<Void> deleteTenant(String tenantKey) {
         tenantManager.deleteTenant(tenantKey.toLowerCase());
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 
     @Override
@@ -56,6 +56,6 @@ public class TenantResource implements TenantsApiDelegate {
     @PrivilegeDescription("Privilege to update gate tenant")
     public ResponseEntity<Void> manageTenant(String tenantKey, String state) {
         tenantManager.manageTenant(tenantKey, state);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 }

@@ -54,6 +54,13 @@ server:
   forward-headers-strategy: native
 
 application:
+  cors:
+    allowed-origins: '*'
+    allowed-methods: '*'
+    allowed-headers: '*'
+    exposed-headers: 'Authorization,Link,X-Total-Count'
+    allow-credentials: true
+    max-age: 1800
   gateway:
     excluded-services: consul, gate
     authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible

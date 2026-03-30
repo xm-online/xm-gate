@@ -46,6 +46,7 @@ java {
 assert System.properties["java.specification.version"] == "17" || "21" || "25"
 
 apply from: "gradle/docker.gradle"
+apply from: "gradle/sonar.gradle"
 apply from: "gradle/version.gradle"
 // jhipster-needle-gradle-apply-from - JHipster will add additional gradle scripts to be applied here
 
@@ -174,6 +175,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation "org.bitbucket.b_c:jose4j:${bitbucket_version}"
     implementation "com.google.protobuf:protobuf-java:${google_protobuf_version}"
+    implementation 'org.apache.httpcomponents.client5:httpclient5'
 
     implementation "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-idp:${xm_commons_version}"
@@ -186,6 +188,7 @@ dependencies {
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
     testImplementation "org.projectlombok:lombok:${lombok_version}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombok_version}"
 }

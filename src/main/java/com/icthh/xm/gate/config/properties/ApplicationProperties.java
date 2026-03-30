@@ -35,6 +35,7 @@ public class ApplicationProperties {
     private Boolean redirectToDefaultTenantEnabled;
     private MonitoringApi monitoring = new MonitoringApi();
     private String objectStorageFileRoot = "/";
+    private HttpClient httpClient = new HttpClient();
     private Keycloak keycloak = new Keycloak();
 
     @Getter
@@ -79,6 +80,14 @@ public class ApplicationProperties {
             private String clientId;
             private String clientSecret;
         }
+    }
+
+    @Getter
+    @Setter
+    public static class HttpClient {
+        private Integer maxConnections;
+        private Integer maxConnectionsPerRoute;
+        private Integer connectionTimeoutSeconds;
     }
 
     @Getter

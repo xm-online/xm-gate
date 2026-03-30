@@ -155,13 +155,6 @@ application:
     max-attempts: 3
     delay: 1000 #in milliseconds
     multiplier: 2
-  cors:
-    allowed-origins: '*'
-    allowed-methods: '*'
-    allowed-headers: '*'
-    exposed-headers: 'Authorization,Link,X-Total-Count'
-    allow-credentials: true
-    max-age: 1800
   security:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
@@ -174,5 +167,9 @@ application:
       host: localhost
       port: 5000
       ring-buffer-size: 512
+  http-client:
+    max-connections: 1000
+    max-connections-per-route: 500
+    connection-timeout-seconds: 60
   keycloak:
     server-url: http://localhost:9080
