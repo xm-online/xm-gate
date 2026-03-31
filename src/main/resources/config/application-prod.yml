@@ -63,6 +63,14 @@ server:
 
 application:
   gateway:
-    excluded-services: consul, gate
-    authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible
-      app1: /api # recommended prod configuration
+    authRequestMatcherRules: # This list could be fully overridden by env variables
+      - path-pattern: /*/api/**
+        permit-all: true
+      - path-pattern: /v3/api-docs
+        permit-all: true
+      - path-pattern: /*/v3/api-docs
+        permit-all: true
+      - path-pattern: /*/v2/api-docs
+        permit-all: true
+      - path-pattern: /swagger-resources
+        permit-all: true

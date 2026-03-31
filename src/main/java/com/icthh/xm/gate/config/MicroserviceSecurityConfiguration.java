@@ -3,6 +3,7 @@ package com.icthh.xm.gate.config;
 import com.icthh.xm.commons.security.RoleConstant;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
+import com.icthh.xm.gate.gateway.accesscontrol.AccessControlAuthorizationManager;
 import com.icthh.xm.gate.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.icthh.xm.gate.security.oauth2.idp.IdpAuthenticationSuccessHandler;
 import com.icthh.xm.gate.security.oauth2.idp.IdpClientRepository;
@@ -49,6 +50,7 @@ public class MicroserviceSecurityConfiguration {
     private final IdpClientRepository idpClientRepository;
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
     private final ApplicationProperties applicationProperties;
+    private final AccessControlAuthorizationManager authorizationManager;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -66,22 +68,15 @@ public class MicroserviceSecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers("/*/api/public/**").permitAll()
-                    .requestMatchers("/api/profile-info").permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
                     .requestMatchers("/login/oauth2/code/**").permitAll()
                     .requestMatchers("/api/**").authenticated()
-                    .requestMatchers("/*/api/**").permitAll()
                     .requestMatchers("/*/public/**").permitAll()
                     .requestMatchers("/*/oauth/**").permitAll()
                     .requestMatchers("/management/health").permitAll()
                     .requestMatchers("/management/prometheus/**").permitAll()
                     .requestMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
-                    .requestMatchers("/swagger-resources").permitAll()
-                    .requestMatchers("/swagger-resources/configuration/ui").permitAll()
-                    .requestMatchers("/v3/api-docs").permitAll()
-                    .requestMatchers("/*/v3/api-docs").permitAll()
-                    .requestMatchers("/*/v2/api-docs").permitAll()
-                    .anyRequest().authenticated()
+                    .anyRequest().access(authorizationManager)
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.decoder(jwtDecoder())))
