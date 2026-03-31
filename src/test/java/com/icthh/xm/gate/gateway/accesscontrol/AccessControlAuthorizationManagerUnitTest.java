@@ -11,13 +11,14 @@ import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 import static com.icthh.xm.gate.gateway.accesscontrol.RuleBuilder.*;
+import static java.util.Arrays.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -125,8 +126,6 @@ class AccessControlAuthorizationManagerUnitTest {
             rule("/**").permitAll()
         ));
 
-        // ROLE_USER matches the first rule but lacks ROLE_ADMIN → denied
-        // the permitAll rule is never reached
         assertFalse(isGranted(manager.authorize(authenticatedWith("ROLE_USER"), ctx)));
     }
 
@@ -251,11 +250,7 @@ class AccessControlAuthorizationManagerUnitTest {
     private static Supplier<Authentication> authenticatedWith(String... authorities) {
         Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
-        when(auth.getAuthorities()).thenAnswer(_ ->
-            java.util.Arrays.stream(authorities)
-                .<GrantedAuthority>map(a -> () -> a)
-                .toList()
-        );
+        when(auth.getAuthorities()).thenAnswer(_ -> stream(authorities).map(SimpleGrantedAuthority::new).toList());
         return () -> auth;
     }
 }
