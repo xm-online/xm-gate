@@ -1,7 +1,6 @@
 package com.icthh.xm.gate.config;
 
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
-import com.icthh.xm.gate.gateway.functions.AccessControlFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.AddDomainRelayHeadersFunctions;
 import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
@@ -64,7 +63,6 @@ public class GatewayRoutesConfiguration {
             .filter(HighLogFilterFunctions.addHighLog())
             .filter(LoggingFilterFunctions.addLogging())
             .filter(TfaTokenDetectionFilterFunctions.tfaTokenDetection())
-            .filter(AccessControlFilterFunctions.accessControl())
             .filter(AddDomainRelayHeadersFunctions.addDomainRelayHeaders())
             .filter(IdpStatefulModeFilterFunctions.idpStatefulMode())
             .build();

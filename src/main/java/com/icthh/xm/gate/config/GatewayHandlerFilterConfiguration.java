@@ -1,6 +1,5 @@
 package com.icthh.xm.gate.config;
 
-import com.icthh.xm.gate.gateway.functions.AccessControlFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.AddDomainRelayHeadersFunctions;
 import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
@@ -35,10 +34,5 @@ public class GatewayHandlerFilterConfiguration {
     @Bean
     public IdpStatefulModeFilterFunctions.FilterSupplier idpStatefulModeFilterSupplier() {
         return new IdpStatefulModeFilterFunctions.FilterSupplier();
-    }
-
-    @Bean
-    public AccessControlFilterFunctions.FilterSupplier accessControlFilterSupplier() {
-        return new AccessControlFilterFunctions.FilterSupplier();
     }
 }

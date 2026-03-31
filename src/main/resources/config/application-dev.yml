@@ -63,5 +63,3 @@ application:
     max-age: 1800
   gateway:
     excluded-services: consul, gate
-    authorized-microservices-endpoints: # Access Control Policy, if left empty for a route, all endpoints will be accessible
-      app1: /api,/v3/api-docs # recommended dev configuration

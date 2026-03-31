@@ -7,8 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,7 +61,19 @@ public class ApplicationProperties {
     @Setter
     public static class Gateway {
         private Set<String> excludedServices = Set.of("consul", "gate");
-        private Map<String, Set<String>> authorizedMicroservicesEndpoints = Map.of();
+        private List<AuthRequestMatcherRule> authRequestMatcherRules = List.of();
+
+        public List<AuthRequestMatcherRule> getAuthRequestMatcherRules() {
+            return Collections.unmodifiableList(this.authRequestMatcherRules);
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class AuthRequestMatcherRule {
+        private String pathPattern;
+        private boolean permitAll;
+        private String[] authorities;
     }
 
     @Getter
