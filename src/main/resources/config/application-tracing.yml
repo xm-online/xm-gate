@@ -14,10 +14,10 @@ management:
     tracing:
       export:
         otlp:
-          endpoint: ${OTEL_EXPORTER_OTLP_GRPC_BASE_URL:}
+          endpoint: ${OTEL_EXPORTER_OTLP_GRPC_BASE_URL:http://localhost:4317}
           transport: grpc
   otlp:
     metrics:
       export:
-        url: ${OTEL_EXPORTER_OTLP_HTTP_BASE_URL:}/v1/metrics
+        url: ${OTEL_EXPORTER_OTLP_HTTP_BASE_URL:http://localhost:4318}/v1/metrics
         step: 30s
