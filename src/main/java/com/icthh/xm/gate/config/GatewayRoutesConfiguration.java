@@ -2,6 +2,7 @@ package com.icthh.xm.gate.config;
 
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.gateway.functions.AddDomainRelayHeadersFunctions;
+import com.icthh.xm.gate.gateway.functions.ApiKeyRestoreFunctions;
 import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.LoggingFilterFunctions;
@@ -65,6 +66,7 @@ public class GatewayRoutesConfiguration {
             .filter(TfaTokenDetectionFilterFunctions.tfaTokenDetection())
             .filter(AddDomainRelayHeadersFunctions.addDomainRelayHeaders())
             .filter(IdpStatefulModeFilterFunctions.idpStatefulMode())
+            .filter(ApiKeyRestoreFunctions.restoreApiKey())
             .build();
     }
 
