@@ -3,8 +3,14 @@ package com.icthh.xm.gate.config;
 import static com.icthh.xm.commons.config.client.config.XmRestTemplateConfiguration.XM_CONFIG_REST_TEMPLATE;
 import static org.mockito.Mockito.mock;
 
+import com.icthh.xm.commons.config.client.config.XmConfigProperties;
 import com.icthh.xm.commons.config.client.repository.CommonConfigRepository;
+import com.icthh.xm.commons.config.client.repository.TenantListRepository;
+import com.icthh.xm.commons.config.client.service.TenantAliasService;
+import com.icthh.xm.commons.config.client.service.TenantAliasServiceImpl;
+import com.icthh.xm.commons.config.client.service.TenantConfigService;
 import com.icthh.xm.commons.security.jwt.TokenProvider;
+import com.icthh.xm.commons.tenant.TenantContextHolder;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -51,5 +57,15 @@ public class TestSecurityConfiguration {
     @Bean(XM_CONFIG_REST_TEMPLATE)
     public RestTemplate restTemplate() {
         return mock(RestTemplate.class);
+    }
+
+    @Bean
+    public TenantAliasService tenantAliasService(CommonConfigRepository commonConfigRepository) {
+        return new TenantAliasServiceImpl(commonConfigRepository, mock(TenantListRepository.class));
+    }
+
+    @Bean
+    public TenantConfigService tenantConfigService() {
+        return new TenantConfigService(mock(XmConfigProperties.class), mock(TenantContextHolder.class));
     }
 }
