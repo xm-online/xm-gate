@@ -60,8 +60,8 @@ public class TestSecurityConfiguration {
     }
 
     @Bean
-    public TenantAliasService tenantAliasService() {
-        return new TenantAliasServiceImpl(mock(CommonConfigRepository.class), mock(TenantListRepository.class));
+    public TenantAliasService tenantAliasService(CommonConfigRepository commonConfigRepository) {
+        return new TenantAliasServiceImpl(commonConfigRepository, mock(TenantListRepository.class));
     }
 
     @Bean
