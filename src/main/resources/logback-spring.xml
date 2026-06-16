@@ -3,7 +3,7 @@
 <configuration scan="true">
   <springProperty scope="context" name="springAppName" source="spring.application.name"/>
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+  <appender name="STDOUT_SYNC" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <charset>utf-8</charset>
       <Pattern>%d %-5level [%thread] [${springAppName:-}] [%X{traceId:-}] [%X{rid}] %logger{0}: %msg%n</Pattern>
@@ -14,10 +14,13 @@
     <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
   </appender>
 
+  <appender name="STDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>512</queueSize>
+    <appender-ref ref="STDOUT_SYNC"/>
+  </appender>
+
   <appender name="STDOUT_JSON" class="ch.qos.logback.classic.AsyncAppender">
     <queueSize>512</queueSize>
-    <discardingThreshold>0</discardingThreshold>
-    <includeCallerData>false</includeCallerData>
     <appender-ref ref="STDOUT_JSON_SYNC"/>
   </appender>
 
