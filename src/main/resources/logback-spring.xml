@@ -14,6 +14,13 @@
     <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
   </appender>
 
+  <appender name="ASYNC_STDOUT_JSON" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>512</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <includeCallerData>false</includeCallerData>
+    <appender-ref ref="STDOUT_JSON"/>
+  </appender>
+
   <logger name="com.icthh.xm.gate" level="#logback.loglevel#"/>
 
   <logger name="io.github.jhipster" level="#logback.loglevel#"/>
