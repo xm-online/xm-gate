@@ -10,15 +10,15 @@
     </encoder>
   </appender>
 
-  <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+  <appender name="STDOUT_JSON_SYNC" class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
   </appender>
 
-  <appender name="ASYNC_STDOUT_JSON" class="ch.qos.logback.classic.AsyncAppender">
+  <appender name="STDOUT_JSON" class="ch.qos.logback.classic.AsyncAppender">
     <queueSize>512</queueSize>
     <discardingThreshold>0</discardingThreshold>
     <includeCallerData>false</includeCallerData>
-    <appender-ref ref="STDOUT_JSON"/>
+    <appender-ref ref="STDOUT_JSON_SYNC"/>
   </appender>
 
   <logger name="com.icthh.xm.gate" level="#logback.loglevel#"/>
