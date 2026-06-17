@@ -3,6 +3,7 @@ package com.icthh.xm.gate.listener;
 import com.icthh.xm.commons.logging.util.MdcUtils;
 import com.icthh.xm.commons.permission.inspector.PrivilegeInspector;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -17,7 +18,6 @@ import org.springframework.kafka.listener.MessageListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -25,10 +25,14 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class ApplicationStartup implements ApplicationListener<ApplicationReadyEvent> {
 
+    private static final String SYSTEM_TOPIC_CONSUMER_GROUP_ID = "gate-system-topic-consumer";
+
     private final ApplicationProperties applicationProperties;
     private final SystemTopicConsumer systemTopicConsumer;
     private final KafkaProperties kafkaProperties;
     private final PrivilegeInspector privilegeInspector;
+
+    private ConcurrentMessageListenerContainer<String, String> systemTopicContainer;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -49,16 +53,22 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
         containerProps.setObservationEnabled(true);
 
         Map<String, Object> props = kafkaProperties.buildConsumerProperties();
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, SYSTEM_TOPIC_CONSUMER_GROUP_ID);
         props.put(ConsumerConfig.METADATA_MAX_AGE_CONFIG, applicationProperties.getKafkaMetadataMaxAge());
         ConsumerFactory<String, String> factory = new DefaultKafkaConsumerFactory<>(props);
 
         MessageListener<String, String> listener = systemTopicConsumer::consumeEvent;
 
-        ConcurrentMessageListenerContainer<String, String> container =
-            new ConcurrentMessageListenerContainer<>(factory, containerProps);
-        container.setupMessageListener(listener);
-        container.start();
+        systemTopicContainer = new ConcurrentMessageListenerContainer<>(factory, containerProps);
+        systemTopicContainer.setupMessageListener(listener);
+        systemTopicContainer.start();
         log.info("Successfully created kafka consumer for topic {}", topic);
+    }
+
+    @PreDestroy
+    public void stopSystemTopicConsumer() {
+        if (systemTopicContainer != null) {
+            systemTopicContainer.stop();
+        }
     }
 }

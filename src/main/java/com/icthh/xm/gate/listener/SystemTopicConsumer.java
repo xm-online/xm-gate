@@ -29,11 +29,20 @@ public class SystemTopicConsumer {
             log.info("Consume event from topic [{}]", message.topic());
             ObjectMapper mapper = JsonMapperUtils.getJsonMapperWithIgnore();
             SystemEvent event = mapper.readValue(message.value(), SystemEvent.class);
-            handlers.forEach(handler -> executeHandler(handler, event));
+            handlers.forEach(handler -> executeHandlerSafely(handler, event));
         } catch (JacksonException e) {
             log.error("System topic message has incorrect format: '{}'", message.value(), e);
         } finally {
             MdcUtils.removeRid();
+        }
+    }
+
+    private void executeHandlerSafely(SystemTopicAbstractHandler handler, SystemEvent event) {
+        try {
+            executeHandler(handler, event);
+        } catch (Exception e) {
+            log.error("Handler [{}] failed to process event [{}] for tenant [{}]: {}",
+                handler.getClass().getSimpleName(), event.getEventType(), event.getTenantKey(), e.getMessage(), e);
         }
     }
 
@@ -46,7 +55,8 @@ public class SystemTopicConsumer {
         if (StringUtils.isBlank(tenantKey)) {
             task.run();
         } else {
-            tenantContextHolder.getPrivilegedContext().execute(TenantContextUtils.buildTenant(tenantKey), task);
+            tenantContextHolder.getPrivilegedContext()
+                .execute(TenantContextUtils.buildTenant(tenantKey), task);
         }
     }
 }
