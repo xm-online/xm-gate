@@ -28,7 +28,8 @@ public class ApplicationProperties {
 
     private List<String> hosts = new ArrayList<>();
     private boolean kafkaEnabled;
-    private String kafkaSystemQueue;
+    private String kafkaSystemTopic = "system_topic";
+    private Integer kafkaMetadataMaxAge = 6000;
     private String tenantPropertiesPathPattern;
     private String tenantPropertiesName;
     private Boolean disableIdpCookieUsage;
