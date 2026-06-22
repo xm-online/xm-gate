@@ -22,6 +22,8 @@ import static java.util.Arrays.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -231,6 +233,38 @@ class AccessControlAuthorizationManagerUnitTest {
         when(discoveryClient.getServices()).thenReturn(List.of());
 
         assertTrue(isGranted(manager.authorize(authenticated(), ctx)));
+    }
+
+    @Test
+    void consul_is_called_only_once_for_repeated_requests_within_cache_ttl() {
+        when(servletRequest.getRequestURI()).thenReturn("/my-service/api/data");
+        when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
+        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+
+        manager.authorize(unauthenticated(), ctx);
+        manager.authorize(unauthenticated(), ctx);
+        manager.authorize(unauthenticated(), ctx);
+
+        verify(discoveryClient, times(1)).getServices();
+    }
+
+    @Test
+    void single_consul_call_covers_multiple_different_service_names() {
+        when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
+        when(discoveryClient.getServices()).thenReturn(List.of("service-a", "service-b"));
+        when(servletRequest.getRequestURI()).thenReturn("/service-a/api/data");
+
+        HttpServletRequest requestB = mock(HttpServletRequest.class);
+        RequestAuthorizationContext ctxB = mock(RequestAuthorizationContext.class);
+        when(ctxB.getRequest()).thenReturn(requestB);
+        when(requestB.getRequestURI()).thenReturn("/service-b/api/data");
+
+        assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
+        assertTrue(isGranted(manager.authorize(unauthenticated(), ctxB)));
+        assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
+        assertTrue(isGranted(manager.authorize(unauthenticated(), ctxB)));
+
+        verify(discoveryClient, times(2)).getServices();
     }
 
     private static boolean isGranted(AuthorizationResult result) {

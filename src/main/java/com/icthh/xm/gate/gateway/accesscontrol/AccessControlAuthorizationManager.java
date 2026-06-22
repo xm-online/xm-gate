@@ -1,5 +1,7 @@
 package com.icthh.xm.gate.gateway.accesscontrol;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.config.properties.ApplicationProperties.AuthRequestMatcherRule;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +22,8 @@ import org.springframework.util.AntPathMatcher;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -34,9 +38,14 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     private static final AuthorizationDecision DENY = new AuthorizationDecision(false);
     private static final AuthorizationDecision ALLOW = new AuthorizationDecision(true);
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+    private static final String SERVICES_CACHE_PREFIX = "REGISTERED_SERVICE@";
 
     private final DiscoveryClient discoveryClient;
     private final ApplicationProperties appProperties;
+
+    private final Cache<String, Set<String>> registeredServicesCache = Caffeine.newBuilder()
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .build();
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication,
@@ -105,9 +114,12 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     }
 
     private boolean isRegisteredService(String serviceName) {
-        return discoveryClient.getServices()
-            .stream()
-            .anyMatch(s -> s.equalsIgnoreCase(serviceName));
+        Set<String> services = registeredServicesCache.get(SERVICES_CACHE_PREFIX + serviceName, _ ->
+            discoveryClient.getServices().stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet())
+        );
+        return services != null && services.contains(serviceName.toLowerCase());
     }
 
     private String getRequestUri(RequestAuthorizationContext ctx) {

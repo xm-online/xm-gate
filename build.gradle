@@ -173,6 +173,7 @@ dependencies {
     implementation "org.bitbucket.b_c:jose4j:${bitbucket_version}"
     implementation "com.google.protobuf:protobuf-java:${google_protobuf_version}"
     implementation 'org.apache.httpcomponents.client5:httpclient5'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     implementation "com.icthh.xm.commons:xm-commons-tenant-endpoint:${xm_commons_version}"
     implementation "com.icthh.xm.commons:xm-commons-idp:${xm_commons_version}"
