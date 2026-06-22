@@ -45,9 +45,13 @@ class AccessControlAuthorizationManagerUnitTest {
 
     @BeforeEach
     void setUp() {
+        var servicesCache = new ApplicationProperties.ServicesCache();
+        servicesCache.setEnabled(true);
+
+        when(appProperties.getGateway()).thenReturn(gateway);
+        when(gateway.getServicesCache()).thenReturn(servicesCache); // disabled by default
         manager = new AccessControlAuthorizationManager(discoveryClient, appProperties);
         when(ctx.getRequest()).thenReturn(servletRequest);
-        when(appProperties.getGateway()).thenReturn(gateway);
     }
 
     @Test

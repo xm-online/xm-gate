@@ -63,10 +63,18 @@ public class ApplicationProperties {
     public static class Gateway {
         private Set<String> excludedServices = Set.of("consul", "gate");
         private List<AuthRequestMatcherRule> authRequestMatcherRules = List.of();
+        private final ServicesCache servicesCache = new ServicesCache();
 
         public List<AuthRequestMatcherRule> getAuthRequestMatcherRules() {
             return Collections.unmodifiableList(this.authRequestMatcherRules);
         }
+    }
+
+    @Getter
+    @Setter
+    public static class ServicesCache {
+        private boolean enabled = false;
+        private long ttlSeconds = 300;
     }
 
     @Getter

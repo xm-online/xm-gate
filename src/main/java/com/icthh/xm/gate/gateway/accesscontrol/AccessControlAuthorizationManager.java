@@ -4,8 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.config.properties.ApplicationProperties.AuthRequestMatcherRule;
+import com.icthh.xm.gate.config.properties.ApplicationProperties.ServicesCache;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
@@ -32,20 +32,24 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class AccessControlAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
     private static final AuthorizationDecision DENY = new AuthorizationDecision(false);
     private static final AuthorizationDecision ALLOW = new AuthorizationDecision(true);
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
-    private static final String SERVICES_CACHE_PREFIX = "REGISTERED_SERVICE@";
 
     private final DiscoveryClient discoveryClient;
     private final ApplicationProperties appProperties;
+    private final Cache<String, Boolean> registeredServicesCache;
 
-    private final Cache<String, Set<String>> registeredServicesCache = Caffeine.newBuilder()
-        .expireAfterWrite(5, TimeUnit.MINUTES)
-        .build();
+    public AccessControlAuthorizationManager(DiscoveryClient discoveryClient, ApplicationProperties appProperties) {
+        this.discoveryClient = discoveryClient;
+        this.appProperties = appProperties;
+        ServicesCache cacheConfig = appProperties.getGateway().getServicesCache();
+        this.registeredServicesCache = cacheConfig.isEnabled()
+            ? Caffeine.newBuilder().expireAfterWrite(cacheConfig.getTtlSeconds(), TimeUnit.SECONDS).build()
+            : null;
+    }
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication,
@@ -114,12 +118,19 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     }
 
     private boolean isRegisteredService(String serviceName) {
-        Set<String> services = registeredServicesCache.get(SERVICES_CACHE_PREFIX + serviceName, _ ->
-            discoveryClient.getServices().stream()
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet())
+        String lowerCaseName = serviceName.toLowerCase();
+        if (registeredServicesCache == null) {
+            return fetchServicesLowerCase().contains(lowerCaseName);
+        }
+        return Boolean.TRUE.equals(
+            registeredServicesCache.get(lowerCaseName, key -> fetchServicesLowerCase().contains(key))
         );
-        return services != null && services.contains(serviceName.toLowerCase());
+    }
+
+    private Set<String> fetchServicesLowerCase() {
+        return discoveryClient.getServices().stream()
+            .map(String::toLowerCase)
+            .collect(Collectors.toSet());
     }
 
     private String getRequestUri(RequestAuthorizationContext ctx) {
