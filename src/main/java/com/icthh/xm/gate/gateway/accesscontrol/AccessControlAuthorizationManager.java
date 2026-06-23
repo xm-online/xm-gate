@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.AuthorizationResult;
@@ -91,7 +92,7 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     }
 
     private boolean isAuthenticated(Authentication auth) {
-        return auth != null && auth.isAuthenticated();
+        return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
     }
 
     private boolean hasAuthority(Authentication auth, String[] required) {
