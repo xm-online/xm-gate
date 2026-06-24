@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.AuthorizationResult;
@@ -35,34 +35,35 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     private static final AuthorizationDecision ALLOW = new AuthorizationDecision(true);
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
-    private final DiscoveryClient discoveryClient;
     private final ApplicationProperties appProperties;
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication,
                                                    RequestAuthorizationContext ctx) {
         String requestUri = getRequestUri(ctx);
-        Authentication auth = authentication.get();
 
-        Boolean isAuthorizedByRule = isAuthorizedByRule(auth, requestUri);
+        Boolean isAuthorizedByRule = isAuthorizedByRule(authentication, requestUri);
         if (isAuthorizedByRule != null) {
-            return new AuthorizationDecision(isAuthorizedByRule);
+            return isAuthorizedByRule ? ALLOW : DENY;
         }
 
         String serviceName = extractServiceName(requestUri);
         if (StringUtils.isBlank(serviceName)) {
-            log.info("Access Control: could not determine service name for {}", requestUri);
+            log.warn("Access Control: could not determine service name for {}", requestUri);
             return DENY;
         }
 
         if (isRegisteredService(serviceName)) {
-            log.warn("Access Control: registered service requested: {}", serviceName);
+            log.debug("Access Control: registered service requested: {}", serviceName);
             return ALLOW;
         }
-        return new AuthorizationDecision(isAuthenticated(auth));
+        log.debug("Access Control: registered service requested: {}", serviceName);
+        Authentication auth = authentication.get();
+        return isAuthenticated(auth) ? ALLOW : DENY;
     }
 
-    private Boolean isAuthorizedByRule(@Nullable Authentication authentication, String requestUri) {
+    private @Nullable Boolean isAuthorizedByRule(Supplier<? extends @Nullable Authentication> authentication,
+                                                 String requestUri) {
         List<AuthRequestMatcherRule> rules = appProperties.getGateway().getAuthRequestMatcherRules();
 
         if (rules.isEmpty()) {
@@ -76,11 +77,13 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
             .orElse(null);
     }
 
-    private boolean evaluateRule(Authentication auth, AuthRequestMatcherRule rule) {
+    private boolean evaluateRule(Supplier<? extends @Nullable Authentication> authentication,
+                                 AuthRequestMatcherRule rule) {
         if (rule.isPermitAll()) {
             log.info("Access Control: allow access, due to permit-all rule");
             return true;
         }
+        Authentication auth = authentication.get();
         boolean authenticated = isAuthenticated(auth);
         if (rule.getAuthorities() != null && rule.getAuthorities().length > 0) {
             boolean granted = authenticated && hasAuthority(auth, rule.getAuthorities());
@@ -91,7 +94,7 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     }
 
     private boolean isAuthenticated(Authentication auth) {
-        return auth != null && auth.isAuthenticated();
+        return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
     }
 
     private boolean hasAuthority(Authentication auth, String[] required) {
@@ -105,9 +108,7 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     }
 
     private boolean isRegisteredService(String serviceName) {
-        return discoveryClient.getServices()
-            .stream()
-            .anyMatch(s -> s.equalsIgnoreCase(serviceName));
+        return appProperties.getGateway().getXmeRoutes().contains(serviceName.toLowerCase());
     }
 
     private String getRequestUri(RequestAuthorizationContext ctx) {
