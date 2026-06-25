@@ -108,7 +108,8 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     }
 
     private boolean isRegisteredService(String serviceName) {
-        return appProperties.getGateway().getXmeRoutes().contains(serviceName.toLowerCase());
+        return appProperties.getGateway().getXmeRoutes().stream()
+            .anyMatch(route -> route.equalsIgnoreCase(serviceName));
     }
 
     private String getRequestUri(RequestAuthorizationContext ctx) {
