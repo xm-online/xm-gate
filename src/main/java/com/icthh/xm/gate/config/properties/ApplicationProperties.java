@@ -61,6 +61,10 @@ public class ApplicationProperties {
     @Getter
     @Setter
     public static class Gateway {
+
+        private Set<String> xmeRoutes = Set.of("config", "uaa", "entity", "dashboard", "scheduler", "activation",
+            "timeline", "search", "websocket", "function", "webhook", "communication");
+
         private Set<String> excludedServices = Set.of("consul", "gate");
         private List<AuthRequestMatcherRule> authRequestMatcherRules = List.of();
 

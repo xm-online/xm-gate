@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
@@ -15,21 +15,21 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.icthh.xm.gate.gateway.accesscontrol.RuleBuilder.*;
-import static java.util.Arrays.*;
+import static com.icthh.xm.gate.gateway.accesscontrol.RuleBuilder.rule;
+import static java.util.Arrays.stream;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccessControlAuthorizationManagerUnitTest {
 
-    @Mock
-    private DiscoveryClient discoveryClient;
     @Mock
     private ApplicationProperties appProperties;
     @Mock
@@ -43,7 +43,7 @@ class AccessControlAuthorizationManagerUnitTest {
 
     @BeforeEach
     void setUp() {
-        manager = new AccessControlAuthorizationManager(discoveryClient, appProperties);
+        manager = new AccessControlAuthorizationManager(appProperties);
         when(ctx.getRequest()).thenReturn(servletRequest);
         when(appProperties.getGateway()).thenReturn(gateway);
     }
@@ -76,6 +76,18 @@ class AccessControlAuthorizationManagerUnitTest {
         ));
 
         assertFalse(isGranted(manager.authorize(unauthenticated(), ctx)));
+    }
+
+    @Test
+    void anonymous_authentication_is_not_authenticated() {
+        when(servletRequest.getRequestURI()).thenReturn("/my-service/api/data");
+        when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
+        when(gateway.getXmeRoutes()).thenReturn(Set.of());
+
+        AnonymousAuthenticationToken anonymous = new AnonymousAuthenticationToken("key", "anonymousUser",
+            List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+
+        assertFalse(isGranted(manager.authorize(() -> anonymous, ctx)));
     }
 
     @Test
@@ -119,6 +131,20 @@ class AccessControlAuthorizationManagerUnitTest {
     }
 
     @Test
+    void authority_rule_denies_authenticated_user_without_authorities() {
+        when(servletRequest.getRequestURI()).thenReturn("/my-service/management/data");
+        when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of(
+            rule("/my-service/management/**").authorities("ROLE_ADMIN")
+        ));
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.isAuthenticated()).thenReturn(true);
+        when(auth.getAuthorities()).thenReturn(List.of());
+
+        assertFalse(isGranted(manager.authorize(() -> auth, ctx)));
+    }
+
+    @Test
     void first_matching_rule_wins_deny_before_later_permitAll() {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/admin/secret");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of(
@@ -135,7 +161,7 @@ class AccessControlAuthorizationManagerUnitTest {
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of(
             rule("/other-service/**").permitAll()
         ));
-        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+        when(gateway.getXmeRoutes()).thenReturn(Set.of("my-service"));
 
         assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
@@ -144,7 +170,7 @@ class AccessControlAuthorizationManagerUnitTest {
     void empty_rules_fall_through_and_allow_registered_service() {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/api/data");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+        when(gateway.getXmeRoutes()).thenReturn(Set.of("my-service"));
 
         assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
@@ -153,7 +179,7 @@ class AccessControlAuthorizationManagerUnitTest {
     void empty_rules_fall_through_and_deny_unregistered_service() {
         when(servletRequest.getRequestURI()).thenReturn("/unknown/api/data");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+        when(gateway.getXmeRoutes()).thenReturn(Set.of("my-service"));
 
         assertFalse(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
@@ -162,7 +188,7 @@ class AccessControlAuthorizationManagerUnitTest {
     void allows_registered_service() {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/api/data");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+        when(gateway.getXmeRoutes()).thenReturn(Set.of("my-service"));
 
         assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
@@ -171,7 +197,7 @@ class AccessControlAuthorizationManagerUnitTest {
     void denies_unregistered_service() {
         when(servletRequest.getRequestURI()).thenReturn("/unknown-service/api/data");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+        when(gateway.getXmeRoutes()).thenReturn(Set.of("my-service"));
 
         assertFalse(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
@@ -180,31 +206,31 @@ class AccessControlAuthorizationManagerUnitTest {
     void service_name_matching_is_case_insensitive() {
         when(servletRequest.getRequestURI()).thenReturn("/MY-SERVICE/api/data");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of("my-service"));
+        when(gateway.getXmeRoutes()).thenReturn(Set.of("my-service"));
 
         assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
 
     @Test
-    void deny_unauthorized_path_for_registered_service() {
+    void deny_unauthorized_path_without_checking_registered_services() {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/admin/secret");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of(
             rule("/my-service/admin/**").authorities("ROLE_ADMIN")
         ));
-        verifyNoInteractions(discoveryClient);
 
         assertFalse(isGranted(manager.authorize(authenticatedWith("ROLE_USER"), ctx)));
+        verify(gateway, never()).getXmeRoutes();
     }
 
     @Test
-    void allow_authorized_path_for_registered_service() {
+    void allow_authorized_path_without_checking_registered_services() {
         when(servletRequest.getRequestURI()).thenReturn("/my-service/admin/secret");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of(
             rule("/my-service/admin/**").authorities("ROLE_ADMIN")
         ));
-        verifyNoInteractions(discoveryClient);
 
         assertTrue(isGranted(manager.authorize(authenticatedWith("ROLE_ADMIN"), ctx)));
+        verify(gateway, never()).getXmeRoutes();
     }
 
     @Test
@@ -219,7 +245,7 @@ class AccessControlAuthorizationManagerUnitTest {
     void denies_unauthenticated_unconfigured_request() {
         when(servletRequest.getRequestURI()).thenReturn("/api/admin/secret");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of());
+        when(gateway.getXmeRoutes()).thenReturn(Set.of());
 
         assertFalse(isGranted(manager.authorize(unauthenticated(), ctx)));
     }
@@ -228,7 +254,7 @@ class AccessControlAuthorizationManagerUnitTest {
     void allow_authenticated_unconfigured_request() {
         when(servletRequest.getRequestURI()).thenReturn("/api/admin/secret");
         when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
-        when(discoveryClient.getServices()).thenReturn(List.of());
+        when(gateway.getXmeRoutes()).thenReturn(Set.of());
 
         assertTrue(isGranted(manager.authorize(authenticated(), ctx)));
     }
