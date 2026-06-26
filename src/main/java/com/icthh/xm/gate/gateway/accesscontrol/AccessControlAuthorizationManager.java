@@ -57,7 +57,7 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
             log.debug("Access Control: registered service requested: {}", serviceName);
             return ALLOW;
         }
-        log.debug("Access Control: registered service requested: {}", serviceName);
+        log.debug("Access Control: external service requested: {}", serviceName);
         Authentication auth = authentication.get();
         return isAuthenticated(auth) ? ALLOW : DENY;
     }
