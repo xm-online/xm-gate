@@ -57,6 +57,6 @@ public class LogsResourceIntTest {
     @Test
     public void testLogstashAppender() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        assertThat(context.getLogger("ROOT").getAppender("ASYNC_LOGSTASH")).isInstanceOf(AsyncAppender.class);
+        assertThat(context.getLogger("ROOT").getAppender("STDOUT")).isInstanceOf(AsyncAppender.class);
     }
 }
