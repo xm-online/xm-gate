@@ -259,6 +259,26 @@ class AccessControlAuthorizationManagerUnitTest {
         assertTrue(isGranted(manager.authorize(authenticated(), ctx)));
     }
 
+    @Test
+    void permitAll_rule_allows_unauthenticated_tenant_request() {
+        manager = new TestTenantAccessControlAuthorizationManager(appProperties);
+
+        when(servletRequest.getRequestURI()).thenReturn("/TEST/public/api");
+        when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
+
+        assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
+    }
+
+    @Test
+    void denies_unauthenticated_tenant_request() {
+        manager = new TestTenantAccessControlAuthorizationManager(appProperties);
+
+        when(servletRequest.getRequestURI()).thenReturn("/TEST/private/api");
+        when(gateway.getAuthRequestMatcherRules()).thenReturn(List.of());
+
+        assertFalse(isGranted(manager.authorize(unauthenticated(), ctx)));
+    }
+
     private static boolean isGranted(AuthorizationResult result) {
         return result instanceof AuthorizationDecision d && d.isGranted();
     }
