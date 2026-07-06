@@ -47,6 +47,11 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
             return isAuthorizedByRule ? ALLOW : DENY;
         }
 
+        Boolean isAuthorizedByTenantRule = isAuthorizedByTenantRule(authentication, requestUri);
+        if (isAuthorizedByTenantRule != null) {
+            return isAuthorizedByTenantRule ? ALLOW : DENY;
+        }
+
         String serviceName = extractServiceName(requestUri);
         if (StringUtils.isBlank(serviceName)) {
             log.warn("Access Control: could not determine service name for {}", requestUri);
@@ -60,6 +65,11 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
         log.debug("Access Control: external service requested: {}", serviceName);
         Authentication auth = authentication.get();
         return isAuthenticated(auth) ? ALLOW : DENY;
+    }
+
+    protected @Nullable Boolean isAuthorizedByTenantRule(Supplier<? extends @Nullable Authentication> authentication,
+                                                         String requestUri) {
+        return null;
     }
 
     private @Nullable Boolean isAuthorizedByRule(Supplier<? extends @Nullable Authentication> authentication,
