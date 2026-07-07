@@ -19,6 +19,7 @@ import org.springframework.util.AntPathMatcher;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -36,20 +37,21 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
     private final ApplicationProperties appProperties;
+    private final List<TenantAuthorizationRule> tenantAuthorizationRules;
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication,
                                                    RequestAuthorizationContext ctx) {
         String requestUri = getRequestUri(ctx);
 
+        Boolean isAuthorizedByTenantRules = isAuthorizedByTenantRules(authentication, requestUri);
+        if (isAuthorizedByTenantRules != null) {
+            return isAuthorizedByTenantRules ? ALLOW : DENY;
+        }
+
         Boolean isAuthorizedByRule = isAuthorizedByRule(authentication, requestUri);
         if (isAuthorizedByRule != null) {
             return isAuthorizedByRule ? ALLOW : DENY;
-        }
-
-        Boolean isAuthorizedByTenantRule = isAuthorizedByTenantRule(authentication, requestUri);
-        if (isAuthorizedByTenantRule != null) {
-            return isAuthorizedByTenantRule ? ALLOW : DENY;
         }
 
         String serviceName = extractServiceName(requestUri);
@@ -67,9 +69,18 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
         return isAuthenticated(auth) ? ALLOW : DENY;
     }
 
-    protected @Nullable Boolean isAuthorizedByTenantRule(Supplier<? extends @Nullable Authentication> authentication,
-                                                         String requestUri) {
-        return null;
+    private @Nullable Boolean isAuthorizedByTenantRules(Supplier<? extends @Nullable Authentication> authentication,
+                                                        String requestUri) {
+        if (tenantAuthorizationRules.isEmpty()) {
+            log.info("Access Control: authorization tenant rules have not been configured");
+            return null;
+        }
+
+        return tenantAuthorizationRules.stream()
+            .map(rule -> rule.authorize(authentication, requestUri))
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
     }
 
     private @Nullable Boolean isAuthorizedByRule(Supplier<? extends @Nullable Authentication> authentication,
