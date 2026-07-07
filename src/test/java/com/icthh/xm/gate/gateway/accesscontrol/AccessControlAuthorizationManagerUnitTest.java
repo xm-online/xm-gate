@@ -22,6 +22,10 @@ import static com.icthh.xm.gate.gateway.accesscontrol.RuleBuilder.rule;
 import static java.util.Arrays.stream;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,14 +42,18 @@ class AccessControlAuthorizationManagerUnitTest {
     private HttpServletRequest servletRequest;
     @Mock
     private RequestAuthorizationContext ctx;
+    @Mock
+    private TenantAuthorizationRule tenantRule;
 
     private AccessControlAuthorizationManager manager;
 
     @BeforeEach
     void setUp() {
-        manager = new AccessControlAuthorizationManager(appProperties);
+        manager = new AccessControlAuthorizationManager(appProperties, List.of(tenantRule));
+
         when(ctx.getRequest()).thenReturn(servletRequest);
-        when(appProperties.getGateway()).thenReturn(gateway);
+        lenient().when(appProperties.getGateway()).thenReturn(gateway);
+        lenient().when(tenantRule.authorize(any(), anyString())).thenReturn(null);
     }
 
     @Test
@@ -257,6 +265,28 @@ class AccessControlAuthorizationManagerUnitTest {
         when(gateway.getXmeRoutes()).thenReturn(Set.of());
 
         assertTrue(isGranted(manager.authorize(authenticated(), ctx)));
+    }
+
+    @Test
+    void permitAll_rule_allows_unauthenticated_tenant_request() {
+        String path = "/TEST/public/api";
+
+        when(servletRequest.getRequestURI()).thenReturn(path);
+        when(tenantRule.authorize(eq(unauthenticated()), eq(path))).thenReturn(true);
+
+        assertTrue(isGranted(manager.authorize(unauthenticated(), ctx)));
+        verify(gateway, never()).getXmeRoutes();
+    }
+
+    @Test
+    void tenant_rule_explicitly_denies_request() {
+        String path = "/TEST/private/api";
+
+        when(servletRequest.getRequestURI()).thenReturn(path);
+        when(tenantRule.authorize(eq(unauthenticated()), eq(path))).thenReturn(false);
+
+        assertFalse(isGranted(manager.authorize(unauthenticated(), ctx)));
+        verify(gateway, never()).getXmeRoutes();
     }
 
     private static boolean isGranted(AuthorizationResult result) {
