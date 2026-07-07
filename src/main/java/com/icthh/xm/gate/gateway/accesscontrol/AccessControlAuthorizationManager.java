@@ -72,7 +72,7 @@ public class AccessControlAuthorizationManager implements AuthorizationManager<R
     private @Nullable Boolean isAuthorizedByTenantRules(Supplier<? extends @Nullable Authentication> authentication,
                                                         String requestUri) {
         if (tenantAuthorizationRules.isEmpty()) {
-            log.info("Access Control: authorization tenant rules have not been configured");
+            log.debug("Access Control: authorization tenant rules have not been configured");
             return null;
         }
 
