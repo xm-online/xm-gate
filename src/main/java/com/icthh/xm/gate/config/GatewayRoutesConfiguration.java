@@ -2,9 +2,7 @@ package com.icthh.xm.gate.config;
 
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.gateway.functions.AddDomainRelayHeadersFunctions;
-import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
-import com.icthh.xm.gate.gateway.functions.LoggingFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.TfaTokenDetectionFilterFunctions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -60,8 +58,6 @@ public class GatewayRoutesConfiguration {
             .route(path("/" + serviceId + "/**"), http())
             .filter(lb(serviceId))
             .before(BeforeFilterFunctions.stripPrefix(1))
-            .filter(HighLogFilterFunctions.addHighLog())
-            .filter(LoggingFilterFunctions.addLogging())
             .filter(TfaTokenDetectionFilterFunctions.tfaTokenDetection())
             .filter(AddDomainRelayHeadersFunctions.addDomainRelayHeaders())
             .filter(IdpStatefulModeFilterFunctions.idpStatefulMode())
