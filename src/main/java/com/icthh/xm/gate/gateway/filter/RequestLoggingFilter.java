@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,7 +29,6 @@ import static com.icthh.xm.gate.config.Constants.FILTER_ORDER_TENANT_INIT;
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private static final String MANAGEMENT_HEALTH_URI = "/management/health";
-    private static final String EXEC_TIME_MDC_KEY = "execTime";
 
     private final TenantContextHolder tenantContextHolder;
 
@@ -60,13 +58,11 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
 
-            MDC.put(EXEC_TIME_MDC_KEY, String.valueOf(MdcUtils.getExecTimeMs()));
             log.info("STOP  {}/{} --> {} {}, status = {}, time = {} ms",
-                remoteAddr, domain, method, requestUri, response.getStatus(), MdcUtils.getExecTimeMs());
+                remoteAddr, domain, method, requestUri, response.getStatus(), MdcUtils.putExecTimeMs());
         } catch (Exception e) {
-            MDC.put(EXEC_TIME_MDC_KEY, String.valueOf(MdcUtils.getExecTimeMs()));
             log.error("STOP  {}/{} --> {} {}, error = {}, time = {} ms",
-                remoteAddr, domain, method, requestUri, LogObjectPrinter.printException(e), MdcUtils.getExecTimeMs());
+                remoteAddr, domain, method, requestUri, LogObjectPrinter.printException(e), MdcUtils.putExecTimeMs());
             throw e;
         } finally {
             MdcUtils.clear();
