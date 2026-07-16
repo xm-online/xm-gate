@@ -1,9 +1,7 @@
 package com.icthh.xm.gate.config;
 
 import com.icthh.xm.gate.gateway.functions.AddDomainRelayHeadersFunctions;
-import com.icthh.xm.gate.gateway.functions.HighLogFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.IdpStatefulModeFilterFunctions;
-import com.icthh.xm.gate.gateway.functions.LoggingFilterFunctions;
 import com.icthh.xm.gate.gateway.functions.TfaTokenDetectionFilterFunctions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,16 +12,6 @@ public class GatewayHandlerFilterConfiguration {
     @Bean
     public AddDomainRelayHeadersFunctions.FilterSupplier domainRelayFunctionsSupplier() {
         return new AddDomainRelayHeadersFunctions.FilterSupplier();
-    }
-
-    @Bean
-    public HighLogFilterFunctions.FilterSupplier highlogFilterSupplier() {
-        return new HighLogFilterFunctions.FilterSupplier();
-    }
-
-    @Bean
-    public LoggingFilterFunctions.FilterSupplier loggingFilterSupplier() {
-        return new LoggingFilterFunctions.FilterSupplier();
     }
 
     @Bean
