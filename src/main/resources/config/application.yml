@@ -171,3 +171,8 @@ application:
     max-connections: 1000
     max-connections-per-route: 500
     connection-timeout-seconds: 60
+    socket-timeout-seconds: 60
+    response-timeout-seconds: 60
+    connection-ttl-seconds: 300
+    evict-idle-seconds: 60
+    validate-after-inactivity-seconds: 5

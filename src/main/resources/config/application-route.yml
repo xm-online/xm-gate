@@ -15,8 +15,6 @@ spring:
                 - Path=/config/**
               filters:
                 - StripPrefix=1
-                - AddHighLog
-                - AddLogging
                 - TfaTokenDetection
                 - AddDomainRelayHeaders
                 - IdpStatefulMode
@@ -26,8 +24,6 @@ spring:
                 - Path=/entity/**
               filters:
                 - StripPrefix=1
-                - AddHighLog
-                - AddLogging
                 - AddDomainRelayHeaders
             - id: uaa
               uri: lb://uaa
@@ -35,6 +31,4 @@ spring:
                 - Path=/uaa/**
               filters:
                 - StripPrefix=1
-                - AddHighLog
-                - AddLogging
                 - AddDomainRelayHeaders

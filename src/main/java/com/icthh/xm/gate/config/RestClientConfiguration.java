@@ -67,7 +67,7 @@ public class RestClientConfiguration {
             .setDefaultConnectionConfig(ConnectionConfig.custom()
                 .setConnectTimeout(Timeout.ofSeconds(propertiesHttpClient.getConnectionTimeoutSeconds()))
                 .setTimeToLive(TimeValue.ofSeconds(propertiesHttpClient.getConnectionTtlSeconds()))
-                .setValidateAfterInactivity(TimeValue.ofSeconds(5))
+                .setValidateAfterInactivity(TimeValue.ofSeconds(propertiesHttpClient.getValidateAfterInactivitySeconds()))
                 .build())
             .build();
 

@@ -108,5 +108,6 @@ public class ApplicationProperties {
         private Integer responseTimeoutSeconds;
         private Integer connectionTtlSeconds;
         private Integer evictIdleSeconds;
+        private Integer validateAfterInactivitySeconds;
     }
 }
