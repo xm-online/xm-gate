@@ -3,10 +3,15 @@ package com.icthh.xm.gate.config;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.gateway.server.mvc.config.GatewayMvcProperties;
 import org.springframework.cloud.gateway.server.mvc.handler.RestClientProxyExchange;
@@ -53,14 +58,26 @@ public class RestClientConfiguration {
     public RestClientProxyExchange restClientProxyExchange() {
         ApplicationProperties.HttpClient propertiesHttpClient = applicationProperties.getHttpClient();
 
-        PoolingHttpClientConnectionManager connectionManager =
-            new PoolingHttpClientConnectionManager();
-        connectionManager.setMaxTotal(propertiesHttpClient.getMaxConnections());
-        connectionManager.setDefaultMaxPerRoute(propertiesHttpClient.getMaxConnectionsPerRoute());
+        PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+            .setMaxConnTotal(propertiesHttpClient.getMaxConnections())
+            .setMaxConnPerRoute(propertiesHttpClient.getMaxConnectionsPerRoute())
+            .setDefaultSocketConfig(SocketConfig.custom()
+                .setSoTimeout(Timeout.ofSeconds(propertiesHttpClient.getSocketTimeoutSeconds()))
+                .build())
+            .setDefaultConnectionConfig(ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.ofSeconds(propertiesHttpClient.getConnectionTimeoutSeconds()))
+                .setTimeToLive(TimeValue.ofSeconds(propertiesHttpClient.getConnectionTtlSeconds()))
+                .setValidateAfterInactivity(TimeValue.ofSeconds(propertiesHttpClient.getValidateAfterInactivitySeconds()))
+                .build())
+            .build();
 
         CloseableHttpClient httpClient = HttpClients.custom()
             .setConnectionManager(connectionManager)
-            .evictIdleConnections(TimeValue.ofSeconds(propertiesHttpClient.getConnectionTimeoutSeconds()))
+            .setDefaultRequestConfig(RequestConfig.custom()
+                .setResponseTimeout(Timeout.ofSeconds(propertiesHttpClient.getResponseTimeoutSeconds()))
+                .build())
+            .evictIdleConnections(TimeValue.ofSeconds(propertiesHttpClient.getEvictIdleSeconds()))
+            .evictExpiredConnections()
             .build();
 
         HttpComponentsClientHttpRequestFactory factory =
