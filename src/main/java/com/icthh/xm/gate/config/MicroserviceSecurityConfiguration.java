@@ -10,6 +10,7 @@ import com.icthh.xm.gate.security.oauth2.idp.IdpClientRepository;
 import com.icthh.xm.gate.security.oauth2.XmAuthorizationRequestResolver;
 import com.icthh.xm.gate.security.oauth2.XmConfigServerService;
 import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -29,10 +30,15 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
+import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
 
 import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
@@ -54,6 +60,9 @@ public class MicroserviceSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        AuthenticationEntryPoint defaultEntryPoint = new BearerTokenAuthenticationEntryPoint();
+        AccessDeniedHandler defaultAccessDeniedHandler = new BearerTokenAccessDeniedHandler();
+
         http
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers
@@ -78,6 +87,15 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
                     .anyRequest().access(authorizationManager)
             )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    defaultEntryPoint.commence(request, response, authException);
+                    writeErrorBody(response, "Unauthorized");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    defaultAccessDeniedHandler.handle(request, response, accessDeniedException);
+                    writeErrorBody(response, "Forbidden");
+                }))
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.decoder(jwtDecoder())))
             .oauth2Client(oauth2Client -> oauth2Client
@@ -125,5 +143,10 @@ public class MicroserviceSecurityConfiguration {
 
     private OAuth2AuthorizationRequestResolver requestResolver() {
         return new XmAuthorizationRequestResolver(idpClientRepository, "/oauth2/authorization");
+    }
+
+    private static void writeErrorBody(HttpServletResponse response, String message) throws IOException {
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
 }
