@@ -87,7 +87,8 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
                     .anyRequest().access(authorizationManager)
             )
-            .exceptionHandling(exceptions -> exceptions
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.decoder(jwtDecoder()))
                 .authenticationEntryPoint((request, response, authException) -> {
                     defaultEntryPoint.commence(request, response, authException);
                     writeErrorBody(response, "Unauthorized");
@@ -96,8 +97,6 @@ public class MicroserviceSecurityConfiguration {
                     defaultAccessDeniedHandler.handle(request, response, accessDeniedException);
                     writeErrorBody(response, "Forbidden");
                 }))
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.decoder(jwtDecoder())))
             .oauth2Client(oauth2Client -> oauth2Client
                 .authorizationCodeGrant(grant -> grant
                     .authorizationRequestResolver(requestResolver())
