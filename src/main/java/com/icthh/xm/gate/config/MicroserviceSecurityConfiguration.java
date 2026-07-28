@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -75,7 +76,6 @@ public class MicroserviceSecurityConfiguration {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz ->
-                // prettier-ignore
                 authz
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
@@ -146,7 +146,7 @@ public class MicroserviceSecurityConfiguration {
     }
 
     private static void writeErrorBody(HttpServletResponse response, String message) throws IOException {
-        response.setContentType("application/json");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(
             "{\"error\": \"" + message + "\", \"requestId\": \"" + MdcUtils.getRid() + "\"}");
     }
