@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.config;
 
+import com.icthh.xm.commons.logging.util.MdcUtils;
 import com.icthh.xm.commons.security.RoleConstant;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
@@ -146,6 +147,7 @@ public class MicroserviceSecurityConfiguration {
 
     private static void writeErrorBody(HttpServletResponse response, String message) throws IOException {
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"" + message + "\"}");
+        response.getWriter().write(
+            "{\"error\": \"" + message + "\", \"requestId\": \"" + MdcUtils.getRid() + "\"}");
     }
 }
