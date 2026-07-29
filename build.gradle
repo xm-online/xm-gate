@@ -168,6 +168,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation "org.springframework.boot:spring-boot-starter-security-oauth2-client"
     implementation "org.springframework.boot:spring-boot-starter-security-oauth2-resource-server"
+    implementation "org.springframework.cloud:spring-cloud-starter-bootstrap"
     implementation "org.springframework.cloud:spring-cloud-starter-consul-discovery"
     implementation "org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc"
     implementation "org.bitbucket.b_c:jose4j:${bitbucket_version}"
