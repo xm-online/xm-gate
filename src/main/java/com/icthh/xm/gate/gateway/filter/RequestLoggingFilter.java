@@ -53,6 +53,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             String oldRid = MdcUtils.getRid();
             String rid = oldRid == null ? MdcUtils.generateRid() : oldRid;
             MdcUtils.putRid(rid + ":" + userLogin + ":" + tenant);
+            MdcUtils.putTenant(tenant);
 
             log.info("START {}/{} --> {} {}, contentLength = {} ", remoteAddr, domain, method, requestUri, contentLength);
 
