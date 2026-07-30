@@ -69,6 +69,7 @@ public class MicroserviceSecurityConfiguration {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz ->
+                // prettier-ignore
                 authz
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
