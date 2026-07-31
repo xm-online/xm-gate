@@ -1,6 +1,8 @@
 package com.icthh.xm.gate.config;
 
 import com.icthh.xm.commons.security.RoleConstant;
+import com.icthh.xm.commons.security.spring.config.ForbiddenAccessDeniedHandler;
+import com.icthh.xm.commons.security.spring.config.UnauthorizedEntryPoint;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.gateway.accesscontrol.AccessControlAuthorizationManager;
@@ -79,7 +81,9 @@ public class MicroserviceSecurityConfiguration {
                     .anyRequest().access(authorizationManager)
             )
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.decoder(jwtDecoder())))
+                .jwt(jwt -> jwt.decoder(jwtDecoder()))
+                .authenticationEntryPoint(new UnauthorizedEntryPoint())
+                .accessDeniedHandler(new ForbiddenAccessDeniedHandler()))
             .oauth2Client(oauth2Client -> oauth2Client
                 .authorizationCodeGrant(grant -> grant
                     .authorizationRequestResolver(requestResolver())
