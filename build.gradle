@@ -189,6 +189,9 @@ dependencies {
     testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
     testImplementation "org.projectlombok:lombok:${lombok_version}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombok_version}"
+    // Gradle 9 no longer puts the JUnit Platform launcher on the test runtime
+    // classpath implicitly, so it has to be declared explicitly.
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 spotbugs {
