@@ -141,6 +141,8 @@ aspects:
   rest-call-logging: true
 
 application:
+  gateway:
+    api-prefix: /xm-api
   tenant-ignored-path-list: /v2/api-docs, /v3/api-docs, /api/profile-info, /swagger-resources/configuration/ui, /management/health
   tenant-properties-path-pattern: /config/tenants/{tenantName}/gate/${application.tenant-properties-name}
   tenant-properties-name: gate.yml

@@ -44,6 +44,58 @@ public class ServerRequestUtils {
     }
 
     /**
+     * Remove the optional api prefix (see {@code application.gateway.api-prefix}) from a request URI.
+     * The prefix is optional, so a URI that does not carry it is returned as is - both forms stay usable.
+     * Examples with the /xm-api prefix:
+     * <pre>
+     *   /xm-api/uaa/oauth/token -> /uaa/oauth/token
+     *   /xm-api                 -> /
+     *   /uaa/oauth/token        -> /uaa/oauth/token  (no prefix, returned as is)
+     * </pre>
+     */
+    public static String stripApiPrefix(String requestUri, String apiPrefix) {
+        String prefix = normalizeApiPrefix(apiPrefix);
+        if (requestUri == null || prefix == null) {
+            return requestUri;
+        }
+        if (requestUri.equals(prefix)) {
+            return "/";
+        }
+        if (requestUri.startsWith(prefix + "/")) {
+            return requestUri.substring(prefix.length());
+        }
+        return requestUri;
+    }
+
+    /**
+     * Bring the configured api prefix to a canonical path: no surrounding blanks, one leading slash,
+     * no trailing slash.
+     * <pre>
+     *   "  /xm-api  " -> "/xm-api"
+     *   "xm-api"      -> "/xm-api"
+     *   "/xm-api/"    -> "/xm-api"
+     *   "", "/", null -> null       (not configured, the prefixed form is off)
+     * </pre>
+     */
+    public static String normalizeApiPrefix(String apiPrefix) {
+        if (apiPrefix == null) {
+            return null;
+        }
+
+        String prefix = apiPrefix.trim();
+        while (prefix.endsWith("/")) {
+            prefix = prefix.substring(0, prefix.length() - 1);
+        }
+        if (prefix.isEmpty()) {
+            return null;
+        }
+        if (!prefix.startsWith("/")) {
+            prefix = "/" + prefix;
+        }
+        return prefix;
+    }
+
+    /**
      * Extract service name from request URI.
      * Example: /serviceName/api/smth -> serviceName
      */
