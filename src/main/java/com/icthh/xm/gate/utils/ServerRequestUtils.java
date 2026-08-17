@@ -44,6 +44,34 @@ public class ServerRequestUtils {
     }
 
     /**
+     * Remove the optional api prefix (see {@code application.gateway.api-prefix}) from a request URI.
+     * The prefix is optional, so a URI that does not carry it is returned as is - both forms stay usable.
+     * Example: /xm-api/serviceName/api/smth -> /serviceName/api/smth
+     */
+    public static String stripApiPrefix(String requestUri, String apiPrefix) {
+        String prefix = normalizeApiPrefix(apiPrefix);
+        if (requestUri == null || prefix == null) {
+            return requestUri;
+        }
+        if (requestUri.equals(prefix)) {
+            return "/";
+        }
+        return requestUri.startsWith(prefix + "/") ? requestUri.substring(prefix.length()) : requestUri;
+    }
+
+    /**
+     * @return api prefix as a single leading-slash, no-trailing-slash path, or {@code null} when not configured
+     */
+    public static String normalizeApiPrefix(String apiPrefix) {
+        String prefix = StringUtils.trimToNull(apiPrefix);
+        if (prefix == null) {
+            return null;
+        }
+        prefix = StringUtils.removeEnd(StringUtils.prependIfMissing(prefix, "/"), "/");
+        return StringUtils.isEmpty(prefix) ? null : prefix;
+    }
+
+    /**
      * Extract service name from request URI.
      * Example: /serviceName/api/smth -> serviceName
      */

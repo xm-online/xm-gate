@@ -62,6 +62,8 @@ public class ApplicationProperties {
     @Setter
     public static class Gateway {
 
+        private String apiPrefix = "/xm-api";
+
         private Set<String> xmeRoutes = Set.of("config", "uaa", "entity", "dashboard", "scheduler", "activation",
             "timeline", "search", "websocket", "function", "webhook", "communication");
 

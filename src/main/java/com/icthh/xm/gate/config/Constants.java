@@ -36,6 +36,7 @@ public final class Constants {
     public static final int FILTER_ORDER_RATE_LIMITING = 10;
     public static final int FILTER_ORDER_CUSTOM_ERROR = -1;
     public static final int FILTER_ORDER_TFA_TOKEN_DETECTION = FILTER_ORDER_TENANT_INIT + 1;
+    public static final int FILTER_ORDER_API_PREFIX_STRIPPING = FILTER_ORDER_TENANT_INIT + 2;
 
     public static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
 
