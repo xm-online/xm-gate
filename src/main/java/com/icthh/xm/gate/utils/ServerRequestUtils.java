@@ -46,7 +46,12 @@ public class ServerRequestUtils {
     /**
      * Remove the optional api prefix (see {@code application.gateway.api-prefix}) from a request URI.
      * The prefix is optional, so a URI that does not carry it is returned as is - both forms stay usable.
-     * Example: /xm-api/serviceName/api/smth -> /serviceName/api/smth
+     * Examples with the /xm-api prefix:
+     * <pre>
+     *   /xm-api/uaa/oauth/token -> /uaa/oauth/token
+     *   /xm-api                 -> /
+     *   /uaa/oauth/token        -> /uaa/oauth/token  (no prefix, returned as is)
+     * </pre>
      */
     public static String stripApiPrefix(String requestUri, String apiPrefix) {
         String prefix = normalizeApiPrefix(apiPrefix);
@@ -56,19 +61,38 @@ public class ServerRequestUtils {
         if (requestUri.equals(prefix)) {
             return "/";
         }
-        return requestUri.startsWith(prefix + "/") ? requestUri.substring(prefix.length()) : requestUri;
+        if (requestUri.startsWith(prefix + "/")) {
+            return requestUri.substring(prefix.length());
+        }
+        return requestUri;
     }
 
     /**
-     * @return api prefix as a single leading-slash, no-trailing-slash path, or {@code null} when not configured
+     * Bring the configured api prefix to a canonical path: no surrounding blanks, one leading slash,
+     * no trailing slash.
+     * <pre>
+     *   "  /xm-api  " -> "/xm-api"
+     *   "xm-api"      -> "/xm-api"
+     *   "/xm-api/"    -> "/xm-api"
+     *   "", "/", null -> null       (not configured, the prefixed form is off)
+     * </pre>
      */
     public static String normalizeApiPrefix(String apiPrefix) {
-        String prefix = StringUtils.trimToNull(apiPrefix);
-        if (prefix == null) {
+        if (apiPrefix == null) {
             return null;
         }
-        prefix = StringUtils.removeEnd(StringUtils.prependIfMissing(prefix, "/"), "/");
-        return StringUtils.isEmpty(prefix) ? null : prefix;
+
+        String prefix = apiPrefix.trim();
+        while (prefix.endsWith("/")) {
+            prefix = prefix.substring(0, prefix.length() - 1);
+        }
+        if (prefix.isEmpty()) {
+            return null;
+        }
+        if (!prefix.startsWith("/")) {
+            prefix = "/" + prefix;
+        }
+        return prefix;
     }
 
     /**

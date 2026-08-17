@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.server.RequestPath;
 import org.springframework.stereotype.Component;
@@ -48,8 +47,7 @@ public class ApiPrefixStrippingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
 
-        String pathWithinApplication = pathWithinApplication(request);
-        if (apiPrefix == null || pathWithinApplication.equals(stripApiPrefix(pathWithinApplication, apiPrefix))) {
+        if (!startsWithApiPrefix(request)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,24 +56,39 @@ public class ApiPrefixStrippingFilter extends OncePerRequestFilter {
         log.debug("Api prefix [{}] stripped: {} -> {}", apiPrefix, request.getRequestURI(),
             strippedRequest.getRequestURI());
 
-        // an earlier filter may have already parsed and cached the un-stripped path, re-parse it for the wrapper
-        RequestPath cachedPath = ServletRequestPathUtils.hasParsedRequestPath(request)
-            ? ServletRequestPathUtils.getParsedRequestPath(request)
-            : null;
-        if (cachedPath != null) {
-            ServletRequestPathUtils.parseAndCache(strippedRequest);
+        RequestPath pathParsedBeforeUs = parsedRequestPathOf(request);
+        if (pathParsedBeforeUs == null) {
+            filterChain.doFilter(strippedRequest, response);
+            return;
         }
+
+        // an earlier filter already parsed and cached the un-stripped path, re-parse it for the wrapped request
+        ServletRequestPathUtils.parseAndCache(strippedRequest);
         try {
             filterChain.doFilter(strippedRequest, response);
         } finally {
-            if (cachedPath != null) {
-                ServletRequestPathUtils.setParsedRequestPath(cachedPath, request);
-            }
+            ServletRequestPathUtils.setParsedRequestPath(pathParsedBeforeUs, request);
         }
     }
 
+    private boolean startsWithApiPrefix(HttpServletRequest request) {
+        if (apiPrefix == null) {
+            return false;
+        }
+        String path = pathWithinApplication(request);
+        return path.equals(apiPrefix) || path.startsWith(apiPrefix + "/");
+    }
+
+    private static RequestPath parsedRequestPathOf(HttpServletRequest request) {
+        return ServletRequestPathUtils.hasParsedRequestPath(request)
+            ? ServletRequestPathUtils.getParsedRequestPath(request)
+            : null;
+    }
+
     private static String pathWithinApplication(HttpServletRequest request) {
-        return StringUtils.removeStart(request.getRequestURI(), request.getContextPath());
+        String contextPath = request.getContextPath();
+        String requestUri = request.getRequestURI();
+        return requestUri.startsWith(contextPath) ? requestUri.substring(contextPath.length()) : requestUri;
     }
 
     /**
@@ -94,7 +107,11 @@ public class ApiPrefixStrippingFilter extends OncePerRequestFilter {
         @Override
         public String getRequestURI() {
             String contextPath = super.getContextPath();
-            String pathWithinApplication = StringUtils.removeStart(super.getRequestURI(), contextPath);
+            String originalUri = super.getRequestURI();
+            if (!originalUri.startsWith(contextPath)) {
+                return stripApiPrefix(originalUri, apiPrefix);
+            }
+            String pathWithinApplication = originalUri.substring(contextPath.length());
             return contextPath + stripApiPrefix(pathWithinApplication, apiPrefix);
         }
 
@@ -105,13 +122,16 @@ public class ApiPrefixStrippingFilter extends OncePerRequestFilter {
 
         @Override
         public StringBuffer getRequestURL() {
-            StringBuffer url = super.getRequestURL();
+            // the url is "scheme://host:port" followed by the request uri, so replace that tail
+            StringBuffer originalUrl = super.getRequestURL();
             String originalUri = super.getRequestURI();
-            int uriStart = url.length() - originalUri.length();
-            if (uriStart < 0 || url.indexOf(originalUri, uriStart) != uriStart) {
-                return url;
+
+            int uriStart = originalUrl.length() - originalUri.length();
+            if (uriStart < 0 || !originalUrl.substring(uriStart).equals(originalUri)) {
+                return originalUrl;
             }
-            return new StringBuffer(url.substring(0, uriStart)).append(getRequestURI());
+            String schemeHostAndPort = originalUrl.substring(0, uriStart);
+            return new StringBuffer(schemeHostAndPort).append(getRequestURI());
         }
     }
 }
