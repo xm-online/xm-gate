@@ -32,6 +32,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.interfaces.RSAPublicKey;
 
@@ -52,6 +53,11 @@ public class MicroserviceSecurityConfiguration {
     private final ApplicationProperties applicationProperties;
     private final AccessControlAuthorizationManager authorizationManager;
 
+    private static final RequestMatcher ANONYMOUS_PATHS = request -> {
+        String uri = request.getRequestURI();
+        return uri != null && (uri.contains("/anonymous/") || uri.endsWith("/anonymous"));
+    };
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -68,6 +74,7 @@ public class MicroserviceSecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers("/*/api/public/**").permitAll()
+                    .requestMatchers(ANONYMOUS_PATHS).permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
                     .requestMatchers("/login/oauth2/code/**").permitAll()
                     .requestMatchers("/api/**").authenticated()
