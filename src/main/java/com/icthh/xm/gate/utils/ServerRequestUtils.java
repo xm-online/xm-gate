@@ -21,20 +21,26 @@ public class ServerRequestUtils {
 
     private static final BearerTokenResolver tokenResolver = new DefaultBearerTokenResolver();
 
+    private static final JwtConsumer JWT_CLAIMS_READER = new JwtConsumerBuilder()
+        .setSkipSignatureVerification()
+        .setSkipAllValidators()
+        .build();
+
+    /**
+     * Read the claims of the bearer token without validating it. The token is authenticated by the security
+     * chain, so an expired or malformed token here must not fail the request: it yields empty claims instead.
+     */
     public static JwtClaims getJwtTokenClaims(HttpServletRequest request) {
         String jwtToken = tokenResolver.resolve(request);
         if (jwtToken == null) {
             return new JwtClaims();
         }
         try {
-            JwtConsumer jwtConsumer = new JwtConsumerBuilder()
-                .setSkipSignatureVerification()
-                .setSkipDefaultAudienceValidation()
-                .build();
-            return jwtConsumer.processToClaims(jwtToken.replace(BEARER_PREFIX, StringUtils.EMPTY));
+            return JWT_CLAIMS_READER.processToClaims(jwtToken.replace(BEARER_PREFIX, StringUtils.EMPTY));
 
         } catch (InvalidJwtException e) {
-            throw new RuntimeException(e);
+            log.debug("Could not read claims from the bearer token: {}", e.getMessage());
+            return new JwtClaims();
         }
     }
 

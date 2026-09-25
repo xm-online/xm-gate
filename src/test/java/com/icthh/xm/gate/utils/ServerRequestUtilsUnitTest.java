@@ -1,20 +1,31 @@
 package com.icthh.xm.gate.utils;
 
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.NumericDate;
+import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import static com.icthh.xm.gate.utils.ServerRequestUtils.extractServiceName;
+import static com.icthh.xm.gate.utils.ServerRequestUtils.getClientIdFromToken;
 import static com.icthh.xm.gate.utils.ServerRequestUtils.normalizeApiPrefix;
 import static com.icthh.xm.gate.utils.ServerRequestUtils.stripApiPrefix;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 class ServerRequestUtilsUnitTest {
 
     private static final String API_PREFIX = "/xm-api";
+    private static final String CLIENT_ID = "webapp";
 
     // ==================== normalizeApiPrefix ====================
 
@@ -100,5 +111,56 @@ class ServerRequestUtilsUnitTest {
     void extractServiceName_ofPrefixAloneHasNoService() {
         assertNull(extractServiceName(stripApiPrefix("/xm-api", API_PREFIX)));
         assertNull(extractServiceName(stripApiPrefix("/xm-api/", API_PREFIX)));
+    }
+
+    // ==================== getClientIdFromToken ====================
+
+    /**
+     * Guards XM1-36738: an expired token failed claim parsing, the rate-limit filter got a RuntimeException and the
+     * gate answered 500 instead of letting the downstream service reply 401.
+     */
+    @Test
+    void getClientIdFromToken_readsExpiredToken() throws JoseException {
+        NumericDate expiredTwoDaysAgo = NumericDate.now();
+        expiredTwoDaysAgo.addSeconds(-2 * 24 * 60 * 60);
+
+        assertEquals(CLIENT_ID, getClientIdFromToken(requestWithBearer(signedToken(expiredTwoDaysAgo))));
+    }
+
+    @Test
+    void getClientIdFromToken_readsValidToken() throws JoseException {
+        NumericDate inOneHour = NumericDate.now();
+        inOneHour.addSeconds(60 * 60);
+
+        assertEquals(CLIENT_ID, getClientIdFromToken(requestWithBearer(signedToken(inOneHour))));
+    }
+
+    @Test
+    void getClientIdFromToken_isNullForMalformedToken() {
+        assertNull(getClientIdFromToken(requestWithBearer("not-a-jwt")));
+    }
+
+    @Test
+    void getClientIdFromToken_isNullWithoutToken() {
+        assertNull(getClientIdFromToken(new MockHttpServletRequest()));
+    }
+
+    private static MockHttpServletRequest requestWithBearer(String token) {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(AUTHORIZATION, "Bearer " + token);
+        return request;
+    }
+
+    private static String signedToken(NumericDate expiration) throws JoseException {
+        JwtClaims claims = new JwtClaims();
+        claims.setClaim("client_id", CLIENT_ID);
+        claims.setExpirationTime(expiration);
+
+        RsaJsonWebKey key = RsaJwkGenerator.generateJwk(2048);
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(claims.toJson());
+        jws.setKey(key.getPrivateKey());
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+        return jws.getCompactSerialization();
     }
 }
