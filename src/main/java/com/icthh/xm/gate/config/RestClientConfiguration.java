@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
@@ -56,6 +57,17 @@ public class RestClientConfiguration {
 
     @Bean
     public RestClientProxyExchange restClientProxyExchange() {
+        HttpComponentsClientHttpRequestFactory factory =
+            new HttpComponentsClientHttpRequestFactory(proxyHttpClient());
+
+        RestClient restClient = RestClient.builder()
+            .requestFactory(factory)
+            .build();
+
+        return new RestClientProxyExchange(restClient, gatewayMvcProperties);
+    }
+
+    CloseableHttpClient proxyHttpClient() {
         ApplicationProperties.HttpClient propertiesHttpClient = applicationProperties.getHttpClient();
 
         PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
@@ -71,22 +83,22 @@ public class RestClientConfiguration {
                 .build())
             .build();
 
-        CloseableHttpClient httpClient = HttpClients.custom()
+        HttpClientBuilder builder = HttpClients.custom()
             .setConnectionManager(connectionManager)
             .setDefaultRequestConfig(RequestConfig.custom()
                 .setResponseTimeout(Timeout.ofSeconds(propertiesHttpClient.getResponseTimeoutSeconds()))
                 .build())
             .evictIdleConnections(TimeValue.ofSeconds(propertiesHttpClient.getEvictIdleSeconds()))
-            .evictExpiredConnections()
-            .build();
+            .evictExpiredConnections();
 
-        HttpComponentsClientHttpRequestFactory factory =
-            new HttpComponentsClientHttpRequestFactory(httpClient);
+        if (!propertiesHttpClient.isDecompressResponses()) {
+            // proxy passes the upstream body and Content-Encoding to the client as is
+            builder.disableContentCompression();
+        }
+        if (!propertiesHttpClient.isFollowRedirects()) {
+            builder.disableRedirectHandling();
+        }
 
-        RestClient restClient = RestClient.builder()
-            .requestFactory(factory)
-            .build();
-
-        return new RestClientProxyExchange(restClient, gatewayMvcProperties);
+        return builder.build();
     }
 }

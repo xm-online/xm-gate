@@ -178,3 +178,5 @@ application:
     connection-ttl-seconds: 300
     evict-idle-seconds: 60
     validate-after-inactivity-seconds: 5
+    follow-redirects: false # true: gate follows upstream redirects itself (legacy behavior)
+    decompress-responses: false # true: gate decompresses upstream responses itself (legacy behavior)
