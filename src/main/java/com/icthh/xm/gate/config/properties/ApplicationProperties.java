@@ -111,5 +111,13 @@ public class ApplicationProperties {
         private Integer connectionTtlSeconds;
         private Integer evictIdleSeconds;
         private Integer validateAfterInactivitySeconds;
+        /**
+         * Legacy switch: when true the gate follows upstream redirects itself instead of returning them to the client.
+         */
+        private boolean followRedirects = false;
+        /**
+         * Legacy switch: when true the gate decompresses upstream responses instead of passing them to the client as is.
+         */
+        private boolean decompressResponses = false;
     }
 }
