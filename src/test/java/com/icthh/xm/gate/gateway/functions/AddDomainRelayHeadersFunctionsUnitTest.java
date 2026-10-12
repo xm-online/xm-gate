@@ -19,6 +19,8 @@ import org.springframework.web.servlet.function.HandlerFunction;
 import org.springframework.web.servlet.function.ServerRequest;
 import org.springframework.web.servlet.function.ServerResponse;
 
+import java.util.List;
+
 import static com.icthh.xm.gate.config.Constants.HEADER_DOMAIN;
 import static com.icthh.xm.gate.config.Constants.HEADER_PORT;
 import static com.icthh.xm.gate.config.Constants.HEADER_SCHEME;
@@ -97,6 +99,90 @@ class AddDomainRelayHeadersFunctionsUnitTest {
         assertEquals("443", capturedRequest.headers().firstHeader(HEADER_PORT));
         assertEquals("TEST", capturedRequest.headers().firstHeader(HEADER_TENANT));
         assertEquals(mockResponse, response);
+    }
+
+    @Test
+    void addDomainRelayHeaders_shouldReplaceClientSuppliedRelayHeaders() throws Exception {
+        HttpHeaders clientHeaders = new HttpHeaders();
+        clientHeaders.add(HEADER_TENANT, "OTHER");
+        clientHeaders.add(HEADER_SCHEME, "http");
+        clientHeaders.add(HEADER_DOMAIN, "evil.example.com");
+        clientHeaders.add(HEADER_PORT, "8080");
+        clientHeaders.add(HEADER_WEBAPP_URL, "https://evil.example.com");
+        when(requestHeaders.asHttpHeaders()).thenReturn(clientHeaders);
+        when(servletRequest.getServerName()).thenReturn("test.example.com");
+        when(servletRequest.getScheme()).thenReturn("https");
+        when(servletRequest.getServerPort()).thenReturn(443);
+        when(servletRequest.getHeader(HttpHeaders.REFERER)).thenReturn("https://webapp.example.com/some/path");
+        when(tenantMappingService.getTenantKey("test.example.com")).thenReturn("TEST");
+        when(next.handle(any(ServerRequest.class))).thenReturn(mockResponse);
+
+        ServerRequest.Headers headers = filterAndCaptureHeaders();
+
+        assertEquals(List.of("TEST"), headers.header(HEADER_TENANT));
+        assertEquals(List.of("https"), headers.header(HEADER_SCHEME));
+        assertEquals(List.of("test.example.com"), headers.header(HEADER_DOMAIN));
+        assertEquals(List.of("443"), headers.header(HEADER_PORT));
+        assertEquals(List.of("https://webapp.example.com"), headers.header(HEADER_WEBAPP_URL));
+    }
+
+    @Test
+    void addDomainRelayHeaders_shouldSetSingleValues_whenClientSendsNoRelayHeaders() throws Exception {
+        when(servletRequest.getServerName()).thenReturn("test.example.com");
+        when(servletRequest.getScheme()).thenReturn("https");
+        when(servletRequest.getServerPort()).thenReturn(443);
+        when(servletRequest.getHeader(HttpHeaders.REFERER)).thenReturn("https://webapp.example.com/some/path");
+        when(tenantMappingService.getTenantKey("test.example.com")).thenReturn("TEST");
+        when(next.handle(any(ServerRequest.class))).thenReturn(mockResponse);
+
+        ServerRequest.Headers headers = filterAndCaptureHeaders();
+
+        assertEquals(List.of("TEST"), headers.header(HEADER_TENANT));
+        assertEquals(List.of("https"), headers.header(HEADER_SCHEME));
+        assertEquals(List.of("test.example.com"), headers.header(HEADER_DOMAIN));
+        assertEquals(List.of("443"), headers.header(HEADER_PORT));
+        assertEquals(List.of("https://webapp.example.com"), headers.header(HEADER_WEBAPP_URL));
+    }
+
+    @Test
+    void addDomainRelayHeaders_shouldKeepClientTenant_whenTenantIsNotResolved() throws Exception {
+        HttpHeaders clientHeaders = new HttpHeaders();
+        clientHeaders.add(HEADER_TENANT, "OTHER");
+        when(requestHeaders.asHttpHeaders()).thenReturn(clientHeaders);
+        when(servletRequest.getServerName()).thenReturn("unknown.example.com");
+        when(servletRequest.getScheme()).thenReturn("https");
+        when(servletRequest.getServerPort()).thenReturn(443);
+        when(tenantMappingService.getTenantKey("unknown.example.com")).thenReturn(null);
+        when(next.handle(any(ServerRequest.class))).thenReturn(mockResponse);
+
+        ServerRequest.Headers headers = filterAndCaptureHeaders();
+
+        assertEquals(List.of("OTHER"), headers.header(HEADER_TENANT));
+        assertEquals(List.of("unknown.example.com"), headers.header(HEADER_DOMAIN));
+    }
+
+    @Test
+    void addDomainRelayHeaders_shouldKeepClientWebappUrl_whenRefererIsAbsent() throws Exception {
+        HttpHeaders clientHeaders = new HttpHeaders();
+        clientHeaders.add(HEADER_WEBAPP_URL, "https://client.example.com");
+        when(requestHeaders.asHttpHeaders()).thenReturn(clientHeaders);
+        when(servletRequest.getServerName()).thenReturn("test.example.com");
+        when(servletRequest.getScheme()).thenReturn("https");
+        when(servletRequest.getServerPort()).thenReturn(443);
+        when(tenantMappingService.getTenantKey("test.example.com")).thenReturn("TEST");
+        when(next.handle(any(ServerRequest.class))).thenReturn(mockResponse);
+
+        ServerRequest.Headers headers = filterAndCaptureHeaders();
+
+        assertEquals(List.of("https://client.example.com"), headers.header(HEADER_WEBAPP_URL));
+        assertEquals(List.of("TEST"), headers.header(HEADER_TENANT));
+    }
+
+    private ServerRequest.Headers filterAndCaptureHeaders() throws Exception {
+        filter.filter(serverRequest, next);
+        ArgumentCaptor<ServerRequest> requestCaptor = ArgumentCaptor.forClass(ServerRequest.class);
+        verify(next).handle(requestCaptor.capture());
+        return requestCaptor.getValue().headers();
     }
 
     @Test

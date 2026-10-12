@@ -37,6 +37,11 @@ public class ApplicationProperties {
     private MonitoringApi monitoring = new MonitoringApi();
     private String objectStorageFileRoot = "/";
     private HttpClient httpClient = new HttpClient();
+    /**
+     * Enables deprecated multipart upload proxy /upload/** (UploadResource), disabled by default.
+     * It also requires spring.servlet.multipart.enabled=true, gateway webmvc disables multipart otherwise.
+     */
+    private boolean enableUploadResource = false;
 
     @Getter
     @Setter

@@ -224,8 +224,8 @@ public class IdpConfigRepository implements RefreshableConfiguration {
         try {
             parsedConfig = objectMapper.readValue(config, configType);
         } catch (JsonProcessingException e) {
-            log.error("Something went wrong during attempt to read config [{}] for tenant [{}]. " +
-                "Creating default config.", config, tenantKey, e);
+            log.error("Something went wrong during attempt to read config (length {}) for tenant [{}]. " +
+                "Creating default config.", config == null ? 0 : config.length(), tenantKey, e);
             parsedConfig = objectMapper.readValue(IDP_EMPTY_CONFIG, configType);
         }
 
