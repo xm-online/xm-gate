@@ -161,8 +161,8 @@ application:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
       token-service-id: uaa
-      client-id: internal
-      client-secret: internal
+      client-id: webapp
+      client-secret: webapp
   logging:
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
       enabled: true

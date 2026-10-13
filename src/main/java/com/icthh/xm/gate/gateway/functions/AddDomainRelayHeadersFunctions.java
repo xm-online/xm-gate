@@ -35,13 +35,11 @@ public class AddDomainRelayHeadersFunctions {
                 String tenantKey = tenantMappingService.getTenantKey(servletRequest.getServerName());
 
                 log.debug("Set domain related filters, tenant={}", tenantKey);
-                builder
-                    .header(HEADER_SCHEME, servletRequest.getScheme())
-                    .header(HEADER_DOMAIN, servletRequest.getServerName())
-                    .header(HEADER_PORT, String.valueOf(servletRequest.getServerPort()))
-                    .header(HEADER_TENANT, tenantKey);
-
-                getRefererUri(servletRequest).ifPresent(uri -> builder.header(HEADER_WEBAPP_URL, uri));
+                replaceHeader(builder, HEADER_SCHEME, servletRequest.getScheme());
+                replaceHeader(builder, HEADER_DOMAIN, servletRequest.getServerName());
+                replaceHeader(builder, HEADER_PORT, String.valueOf(servletRequest.getServerPort()));
+                replaceHeader(builder, HEADER_TENANT, tenantKey);
+                getRefererUri(servletRequest).ifPresent(uri -> replaceHeader(builder, HEADER_WEBAPP_URL, uri));
 
             } catch (Exception e) {
                 log.error("Exception during domain relay filtering", e);
@@ -49,6 +47,16 @@ public class AddDomainRelayHeadersFunctions {
             }
             return next.handle(builder.build());
         };
+    }
+
+    /**
+     * Replaces client supplied value, otherwise backend reads the first (client) one.
+     * Client value is kept when gate has nothing to put instead.
+     */
+    private static void replaceHeader(ServerRequest.Builder builder, String name, String value) {
+        if (StringUtils.isNotBlank(value)) {
+            builder.headers(headers -> headers.set(name, value));
+        }
     }
 
     private static Optional<String> getRefererUri(HttpServletRequest request) {

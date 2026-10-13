@@ -39,13 +39,13 @@ public class TenantInitFilter extends OncePerRequestFilter {
         String tenantKeyValue = tenantMappingService.getTenantKey(domain);
 
         if (!tenantMappingService.isTenantPresent(tenantKeyValue) && !DEFAULT_TENANT.equalsIgnoreCase(tenantKeyValue)) {
-            log.error("Tenant {} is not present", tenantKeyValue);
+            log.error("Tenant {} is not present, domain: [{}]", tenantKeyValue, domain);
             response(response, "SERVICE-NOT-FOUND");
             return;
         }
 
         if (!tenantMappingService.isTenantActive(tenantKeyValue) && !DEFAULT_TENANT.equalsIgnoreCase(tenantKeyValue)) {
-            log.error("Tenant {} is not active", tenantKeyValue);
+            log.error("Tenant {} is not active, domain: [{}]", tenantKeyValue, domain);
             response(response, "SERVICE-SUSPENDED");
             return;
         }
