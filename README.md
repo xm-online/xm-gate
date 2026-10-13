@@ -412,6 +412,11 @@ Run with test coverage:
 ./gradlew test jacocoTestReport
 ```
 
+Run test against remote Testcontainer (com.xmedigital.gradle.remotetc):
+```bash
+./gradlew test -PremoteTc
+```
+
 ## Docker Support
 
 ### Build Docker Image

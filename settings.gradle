@@ -8,6 +8,7 @@ pluginManagement {
     id "io.spring.nohttp" version "${spring_no_http_plugin_version}"
     id 'com.github.spotbugs' version "${spotbugs_plugin_version}"
     id 'io.spring.dependency-management' version "${spring_dependency_management_version}"
+    id 'com.xmedigital.gradle.remotetc' version "${xme_digital_remotetc_version}"
   }
 }
 
