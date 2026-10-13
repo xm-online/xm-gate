@@ -35,13 +35,11 @@ public class GatewayServiceInstanceService {
     private static final String STATUS_DOWN = "DOWN";
 
     private final RestClient restClient;
-    private final HttpHeaders headers;
     private final XmAuthenticationContextHolder authContextHolder;
 
     public GatewayServiceInstanceService(XmAuthenticationContextHolder authContextHolder) {
         this.authContextHolder = authContextHolder;
         this.restClient = RestClient.builder().build();
-        this.headers = new HttpHeaders();
     }
 
     public Map<String, String> receiveServiceStatus(List<ServiceInstance> instances) {
@@ -91,7 +89,7 @@ public class GatewayServiceInstanceService {
         if (tokenValue.isEmpty() || tokenType.isEmpty()) {
             throw new IllegalStateException("Authentication not initialized yet, can't create request");
         }
-        headers.clear();
+        HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", tokenType.get() + " " + tokenValue.get());
 
         try {

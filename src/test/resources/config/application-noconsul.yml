@@ -68,5 +68,5 @@ application:
     client-authorization:
       access-token-uri: http://uaa/oauth/token
       token-service-id: uaa
-      client-id: internal
-      client-secret: internal
+      client-id: webapp
+      client-secret: webapp

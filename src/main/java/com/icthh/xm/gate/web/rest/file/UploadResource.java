@@ -3,6 +3,7 @@ package com.icthh.xm.gate.web.rest.file;
 import com.icthh.xm.gate.service.file.upload.UploadFileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +28,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.PUT;
  */
 @Slf4j
 @RestController
+@ConditionalOnProperty(prefix = "application", name = "enable-upload-resource", havingValue = "true")
 @RequiredArgsConstructor
 public class UploadResource {
 
