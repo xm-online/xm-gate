@@ -46,7 +46,12 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(
     classes = { GateApp.class, TestSecurityConfiguration.class, AsyncSyncConfiguration.class },
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = { "application.enable-upload-resource=true", "spring.servlet.multipart.enabled=true" }
+    properties = {
+        "application.enable-upload-resource=true",
+        "spring.servlet.multipart.enabled=true",
+        // real web server start triggers consul registration, there is no consul on CI
+        "spring.cloud.service-registry.auto-registration.enabled=false"
+    }
 )
 class UploadResourceHttpIntTest {
 
