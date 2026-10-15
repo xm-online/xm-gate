@@ -412,7 +412,8 @@ Run with test coverage:
 ./gradlew test jacocoTestReport
 ```
 
-Run test against remote Testcontainer (com.xmedigital.gradle.remotetc):
+Run test against remote Testcontainer (com.xmedigital.gradle.remotetc).
+Before start, add ```remoteTc.host=ssh://user@host in ~/.gradle/gradle.properties```
 ```bash
 ./gradlew test -PremoteTc
 ```
