@@ -111,6 +111,7 @@ public class ApplicationProperties {
         private Integer maxConnections;
         private Integer maxConnectionsPerRoute;
         private Integer connectionTimeoutSeconds;
+        private Integer connectionRequestTimeoutSeconds;
         private Integer socketTimeoutSeconds;
         private Integer responseTimeoutSeconds;
         private Integer connectionTtlSeconds;
