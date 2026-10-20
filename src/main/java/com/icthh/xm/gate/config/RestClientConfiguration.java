@@ -86,6 +86,7 @@ public class RestClientConfiguration {
         HttpClientBuilder builder = HttpClients.custom()
             .setConnectionManager(connectionManager)
             .setDefaultRequestConfig(RequestConfig.custom()
+                .setConnectionRequestTimeout(Timeout.ofSeconds(propertiesHttpClient.getConnectionRequestTimeoutSeconds()))
                 .setResponseTimeout(Timeout.ofSeconds(propertiesHttpClient.getResponseTimeoutSeconds()))
                 .build())
             .evictIdleConnections(TimeValue.ofSeconds(propertiesHttpClient.getEvictIdleSeconds()))

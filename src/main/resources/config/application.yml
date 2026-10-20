@@ -173,6 +173,7 @@ application:
     max-connections: 1000
     max-connections-per-route: 500
     connection-timeout-seconds: 21
+    connection-request-timeout-seconds: 17
     socket-timeout-seconds: 64
     response-timeout-seconds: 66
     connection-ttl-seconds: 300
