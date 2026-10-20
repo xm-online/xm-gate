@@ -125,6 +125,7 @@ public class RestClientConfigurationUnitTest {
         httpClientProperties.setMaxConnections(10);
         httpClientProperties.setMaxConnectionsPerRoute(10);
         httpClientProperties.setConnectionTimeoutSeconds(5);
+        httpClientProperties.setConnectionRequestTimeoutSeconds(5);
         httpClientProperties.setSocketTimeoutSeconds(5);
         httpClientProperties.setResponseTimeoutSeconds(5);
         httpClientProperties.setConnectionTtlSeconds(60);
