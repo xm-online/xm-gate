@@ -178,11 +178,12 @@ configurations {
 }
 
 repositories {
-  mavenLocal()
-  mavenCentral()
   maven {
+    name = "reposiliteRepository"
     url = "https://reposilite.jevera.software/releases"
   }
+  mavenLocal()
+  mavenCentral()
 }
 
 dependencies {
