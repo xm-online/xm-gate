@@ -74,6 +74,7 @@ public class MicroserviceSecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers("/config/api/private/**").denyAll()
+                    .requestMatchers("/*/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers(ANONYMOUS_PATHS).permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
