@@ -29,10 +29,31 @@ plugins {
     // jhipster-needle-gradle-plugins - JHipster will add additional gradle plugins here
 }
 
+// Overrides of Spring Boot managed versions
+ext["tomcat.version"] = tomcat_version
+ext["jackson-bom.version"] = jackson_version
+ext["jackson-2-bom.version"] = jackson2_version
+
 dependencyManagement {
   imports {
     mavenBom "org.springframework.boot:spring-boot-dependencies:${spring_boot_version}"
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${spring_cloud_version}"
+  }
+  // Overrides of transitive dependency versions
+  dependencies {
+    dependencySet(group: "org.bouncycastle", version: bouncycastle_version) {
+      entry "bcprov-jdk18on"
+      entry "bcpkix-jdk18on"
+      entry "bcutil-jdk18on"
+    }
+    dependencySet(group: "org.apache.ant", version: ant_version) {
+      entry "ant"
+      entry "ant-launcher"
+      entry "ant-antlr"
+      entry "ant-junit"
+    }
+    dependency "com.github.luben:zstd-jni:${zstd_jni_version}"
+    dependency "at.yawk.lz4:lz4-java:${lz4_java_version}"
   }
 }
 
@@ -157,11 +178,12 @@ configurations {
 }
 
 repositories {
-  mavenLocal()
-  mavenCentral()
   maven {
+    name = "reposiliteRepository"
     url = "https://reposilite.jevera.software/releases"
   }
+  mavenLocal()
+  mavenCentral()
 }
 
 dependencies {
