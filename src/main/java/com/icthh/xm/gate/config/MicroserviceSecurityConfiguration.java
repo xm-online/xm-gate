@@ -73,6 +73,7 @@ public class MicroserviceSecurityConfiguration {
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
                 authz
+                    .requestMatchers("/config/api/private/**").denyAll()
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers(ANONYMOUS_PATHS).permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
