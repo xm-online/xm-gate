@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.config.properties;
 
+import com.icthh.xm.commons.security.RoleConstant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +26,8 @@ public class ApplicationProperties {
     private final Gateway gateway = new Gateway();
     private final CorsConfiguration cors = new CorsConfiguration();
     private final Security security = new Security();
+    private final Prometheus prometheus = new Prometheus();
+    private final Management management = new Management();
 
     private List<String> hosts = new ArrayList<>();
     private boolean kafkaEnabled;
@@ -42,6 +45,27 @@ public class ApplicationProperties {
      * It also requires spring.servlet.multipart.enabled=true, gateway webmvc disables multipart otherwise.
      */
     private boolean enableUploadResource = false;
+
+    @Getter
+    @Setter
+    public static class Prometheus {
+        /**
+         * application.prometheus.public: /management/prometheus is available without authentication.
+         */
+        private boolean isPublic;
+    }
+
+    @Getter
+    @Setter
+    public static class Management {
+        private final Access access = new Access();
+
+        @Getter
+        @Setter
+        public static class Access {
+            private String role = RoleConstant.SYSTEM_ADMIN;
+        }
+    }
 
     @Getter
     @Setter

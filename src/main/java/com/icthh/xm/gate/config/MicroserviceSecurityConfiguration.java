@@ -1,6 +1,5 @@
 package com.icthh.xm.gate.config;
 
-import com.icthh.xm.commons.security.RoleConstant;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.gateway.accesscontrol.AccessControlAuthorizationManager;
@@ -14,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,6 +32,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -74,7 +77,7 @@ public class MicroserviceSecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers("/config/api/private/**").denyAll()
-                    .requestMatchers("/*/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
+                    .requestMatchers("/*/management/**").access(managementAccess())
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers(ANONYMOUS_PATHS).permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
@@ -83,8 +86,11 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers("/*/public/**").permitAll()
                     .requestMatchers("/*/oauth/**").permitAll()
                     .requestMatchers("/management/health").permitAll()
-                    .requestMatchers("/management/prometheus/**").permitAll()
-                    .requestMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
+                    .requestMatchers("/management/health/liveness").permitAll()
+                    .requestMatchers("/management/health/readiness").permitAll()
+                    .requestMatchers("/management/prometheus").access(prometheusAccess())
+                    .requestMatchers("/management/prometheus/**").access(prometheusAccess())
+                    .requestMatchers("/management/**").access(managementAccess())
                     .anyRequest().access(authorizationManager)
             )
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -126,6 +132,19 @@ public class MicroserviceSecurityConfiguration {
         var provider = new OidcAuthorizationCodeAuthenticationProvider(tokenResponseClient, oidcUserService);
         provider.setJwtDecoderFactory(new XmJwtDecoderFactory(tenantContextHolder));
         return provider;
+    }
+
+    /**
+     * Allows the request when the current user has the role of application.management.access.role.
+     */
+    private AuthorizationManager<RequestAuthorizationContext> managementAccess() {
+        return AuthorityAuthorizationManager.hasAuthority(applicationProperties.getManagement().getAccess().getRole());
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> prometheusAccess() {
+        return applicationProperties.getPrometheus().isPublic()
+            ? (authentication, context) -> new AuthorizationDecision(true)
+            : managementAccess();
     }
 
     private LogoutHandler logoutHandler() {
