@@ -14,8 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authorization.AuthorityAuthorizationManager;
-import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.SingleResultAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -134,16 +134,13 @@ public class MicroserviceSecurityConfiguration {
         return provider;
     }
 
-    /**
-     * Allows the request when the current user has the role of application.management.access.role.
-     */
     private AuthorizationManager<RequestAuthorizationContext> managementAccess() {
         return AuthorityAuthorizationManager.hasAuthority(applicationProperties.getManagement().getAccess().getRole());
     }
 
     private AuthorizationManager<RequestAuthorizationContext> prometheusAccess() {
         return applicationProperties.getPrometheus().isPublic()
-            ? (authentication, context) -> new AuthorizationDecision(true)
+            ? SingleResultAuthorizationManager.permitAll()
             : managementAccess();
     }
 
