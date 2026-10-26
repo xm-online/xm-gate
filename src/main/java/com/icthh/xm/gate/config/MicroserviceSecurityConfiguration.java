@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.config;
 
+import com.icthh.xm.commons.security.XmPermissionCheckService;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.gateway.accesscontrol.AccessControlAuthorizationManager;
@@ -13,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.SingleResultAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -55,6 +58,10 @@ public class MicroserviceSecurityConfiguration {
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
     private final ApplicationProperties applicationProperties;
     private final AccessControlAuthorizationManager authorizationManager;
+    private final XmPermissionCheckService permissionCheckService;
+
+    private static final String LOGS_GET_PRIVILEGE = "LOGS.GET";
+    private static final String LOGS_UPDATE_PRIVILEGE = "LOGS.UPDATE";
 
     private static final RequestMatcher ANONYMOUS_PATHS = request -> {
         String uri = request.getRequestURI();
@@ -90,6 +97,8 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers("/management/health/readiness").permitAll()
                     .requestMatchers("/management/prometheus").access(prometheusAccess())
                     .requestMatchers("/management/prometheus/**").access(prometheusAccess())
+                    .requestMatchers(HttpMethod.GET, "/management/logs").access(logsAccess(LOGS_GET_PRIVILEGE))
+                    .requestMatchers(HttpMethod.PUT, "/management/logs").access(logsAccess(LOGS_UPDATE_PRIVILEGE))
                     .requestMatchers("/management/**").access(managementAccess())
                     .anyRequest().access(authorizationManager)
             )
@@ -142,6 +151,12 @@ public class MicroserviceSecurityConfiguration {
         return applicationProperties.getPrometheus().isPublic()
             ? SingleResultAuthorizationManager.permitAll()
             : managementAccess();
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> logsAccess(String privilege) {
+        return applicationProperties.getManagement().getLogs().isSystemAdminOnly()
+            ? managementAccess()
+            : (authentication, context) -> new AuthorizationDecision(permissionCheckService.hasPermission(privilege));
     }
 
     private LogoutHandler logoutHandler() {
