@@ -375,7 +375,7 @@ xm-config:
 ### Kafka connection
 
 The connection to Kafka (SASL login and password, SSL, OAUTHBEARER, GSSAPI, `spring.ssl.bundle`) is set by the environment
-variables listed in `application.yml` under `spring.kafka`. The full sets of variables for each `security.protocol` and
+variables listed in `application.yml` under `spring.kafka` and `spring.ssl`. The full sets of variables for each `security.protocol` and
 the broker setup are described in
 [xm-ms-template: Kafka connection](https://github.com/xm-online/xm-ms-template/blob/main/README.md#kafka-connection).
 
