@@ -37,6 +37,13 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState
     jhimetrics:
       access: read-only
   info:
