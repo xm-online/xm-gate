@@ -84,6 +84,8 @@ public class MicroserviceSecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers("/config/api/private/**").denyAll()
+                    // only authentication here, LOGS.GET / LOGS.UPDATE privileges are checked by the target microservice
+                    .requestMatchers("/*/management/logs").authenticated()
                     .requestMatchers("/*/management/**").access(managementAccess())
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers(ANONYMOUS_PATHS).permitAll()
