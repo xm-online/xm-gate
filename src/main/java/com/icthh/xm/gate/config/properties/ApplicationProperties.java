@@ -1,6 +1,6 @@
 package com.icthh.xm.gate.config.properties;
 
-import com.icthh.xm.commons.security.RoleConstant;
+import com.icthh.xm.commons.config.XmCommonsApplicationProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,14 +20,12 @@ import java.util.Set;
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "application")
-public class ApplicationProperties {
+public class ApplicationProperties extends XmCommonsApplicationProperties {
 
     private final Retry retry = new Retry();
     private final Gateway gateway = new Gateway();
     private final CorsConfiguration cors = new CorsConfiguration();
     private final Security security = new Security();
-    private final Prometheus prometheus = new Prometheus();
-    private final Management management = new Management();
 
     private List<String> hosts = new ArrayList<>();
     private boolean kafkaEnabled;
@@ -45,37 +43,6 @@ public class ApplicationProperties {
      * It also requires spring.servlet.multipart.enabled=true, gateway webmvc disables multipart otherwise.
      */
     private boolean enableUploadResource = false;
-
-    public static class Prometheus {
-        private boolean publicAccess;
-
-        public boolean isPublic() {
-            return publicAccess;
-        }
-
-        public void setPublic(boolean publicAccess) {
-            this.publicAccess = publicAccess;
-        }
-    }
-
-    @Getter
-    @Setter
-    public static class Management {
-        private final Access access = new Access();
-        private final Logs logs = new Logs();
-
-        @Getter
-        @Setter
-        public static class Access {
-            private String role = RoleConstant.SYSTEM_ADMIN;
-        }
-
-        @Getter
-        @Setter
-        public static class Logs {
-            private boolean systemAdminOnly;
-        }
-    }
 
     @Getter
     @Setter
