@@ -1,5 +1,6 @@
 package com.icthh.xm.gate.config.properties;
 
+import com.icthh.xm.commons.config.XmCommonsApplicationProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,7 +20,7 @@ import java.util.Set;
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "application")
-public class ApplicationProperties {
+public class ApplicationProperties extends XmCommonsApplicationProperties {
 
     private final Retry retry = new Retry();
     private final Gateway gateway = new Gateway();

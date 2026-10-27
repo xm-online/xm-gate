@@ -41,7 +41,7 @@ class GatewayServiceInstanceServiceUnitTest {
             // request path starts with the caller name: /<user>/management/info
             receivedRequests.add(exchange.getRequestURI().getPath().split("/")[1] + "|"
                 + exchange.getRequestHeaders().getFirst("Authorization"));
-            byte[] body = "{\"build\":{}}".getBytes(StandardCharsets.UTF_8);
+            byte[] body = "{\"status\":\"UP\",\"build\":{}}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
             exchange.getResponseBody().write(body);
@@ -56,7 +56,7 @@ class GatewayServiceInstanceServiceUnitTest {
             when(context.getTokenType()).thenReturn(Optional.of("Bearer"));
             return context;
         });
-        service = new GatewayServiceInstanceService(holder);
+        service = new GatewayServiceInstanceService(holder, "");
     }
 
     @AfterEach
@@ -82,6 +82,34 @@ class GatewayServiceInstanceServiceUnitTest {
             String[] parts = request.split("\\|", 2);
             assertThat(parts[1]).isEqualTo("Bearer token-" + parts[0]);
         });
+    }
+
+    @Test
+    void managementPortReplacesInstancePortForHealthAndInfo() {
+        currentUser.set("M");
+        int port = backend.getAddress().getPort();
+        GatewayServiceInstanceService withManagementPort = new GatewayServiceInstanceService(
+            mockHolder("M"), String.valueOf(port));
+        ServiceInstance instance = new DefaultServiceInstance("svc-M", "svc", "localhost", 1, false) {
+            @Override
+            public URI getUri() {
+                return URI.create("http://localhost:1/M");
+            }
+        };
+
+        assertThat(withManagementPort.receiveServiceStatus(instance)).isEqualTo("UP");
+        assertThat(withManagementPort.extractServiceMetaData(List.of(instance), Map.of("http://localhost:1/M", "UP")))
+            .containsKey("http://localhost:1/M");
+        assertThat(receivedRequests).hasSize(2);
+    }
+
+    private XmAuthenticationContextHolder mockHolder(String user) {
+        XmAuthenticationContextHolder holder = mock(XmAuthenticationContextHolder.class);
+        XmAuthenticationContext context = mock(XmAuthenticationContext.class);
+        when(context.getTokenValue()).thenReturn(Optional.of("token-" + user));
+        when(context.getTokenType()).thenReturn(Optional.of("Bearer"));
+        when(holder.getContext()).thenReturn(context);
+        return holder;
     }
 
     private void callInstanceInfo(String user, CyclicBarrier barrier, ConcurrentLinkedQueue<Throwable> errors) {

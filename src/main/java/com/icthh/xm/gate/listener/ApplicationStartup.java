@@ -7,8 +7,8 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -17,6 +17,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -29,7 +30,7 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 
     private final ApplicationProperties applicationProperties;
     private final SystemTopicConsumer systemTopicConsumer;
-    private final KafkaProperties kafkaProperties;
+    private final ConsumerFactory<String, String> consumerFactory;
     private final PrivilegeInspector privilegeInspector;
 
     private ConcurrentMessageListenerContainer<String, String> systemTopicContainer;
@@ -52,10 +53,11 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
         ContainerProperties containerProps = new ContainerProperties(topic);
         containerProps.setObservationEnabled(true);
 
-        Map<String, Object> props = kafkaProperties.buildConsumerProperties();
+        Map<String, Object> props = new HashMap<>(consumerFactory.getConfigurationProperties());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, SYSTEM_TOPIC_CONSUMER_GROUP_ID);
         props.put(ConsumerConfig.METADATA_MAX_AGE_CONFIG, applicationProperties.getKafkaMetadataMaxAge());
-        ConsumerFactory<String, String> factory = new DefaultKafkaConsumerFactory<>(props);
+        ConsumerFactory<String, String> factory = new DefaultKafkaConsumerFactory<>(props,
+            new StringDeserializer(), new StringDeserializer());
 
         MessageListener<String, String> listener = systemTopicConsumer::consumeEvent;
 
