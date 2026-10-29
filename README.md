@@ -1,6 +1,6 @@
 # XM Gate
 
-XM Gate is an API Gateway microservice built with Spring Boot 4.0.1 and Spring Cloud Gateway Server MVC. It serves as the central entry point for the XM Online microservices architecture, providing routing, security, multi-tenancy support, and file handling capabilities.
+XM Gate is an API Gateway microservice built with Spring Boot 4.1 and Spring Cloud Gateway Server MVC (servlet stack). It serves as the central entry point for the XM Online microservices architecture, providing routing, security, multi-tenancy support, and file handling capabilities.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ XM Gate is an API Gateway microservice built with Spring Boot 4.0.1 and Spring C
   - [Path Pattern Strategies](#path-pattern-strategies)
 - [Identity Provider (IDP) Configuration](#identity-provider-idp-configuration)
 - [Multi-Tenancy](#multi-tenancy)
-- [Rate Limiting](#rate-limiting)
+- [Access Control](#access-control)
 - [Application Properties](#application-properties)
 - [Building for Production](#building-for-production)
 - [Testing](#testing)
@@ -31,30 +31,33 @@ XM Gate is an API Gateway microservice built with Spring Boot 4.0.1 and Spring C
 | Technology | Version |
 |------------|---------|
 | Java | 25 |
-| Spring Boot | 4.0.1 |
-| Spring Cloud | 2025.1.0 |
-| Spring Cloud Gateway Server MVC | 5.0.0 |
+| Spring Boot | 4.1.0 |
+| Spring Cloud | 2025.1.3 |
+| Spring Cloud Gateway | Server MVC (managed by Spring Cloud BOM) |
+| XM Commons | 5.0.46 |
 | JHipster | 9.0.0-beta.0 |
-| Gradle | 9.1.0 |
+| Gradle (wrapper) | 9.2.1 |
+
+Exact versions are defined in `gradle.properties`.
 
 ## Features
 
 - **API Gateway** - Routes requests to backend microservices
 - **Multi-tenancy** - Domain-based tenant resolution
 - **Service Discovery** - Consul integration with no-consul fallback mode
-- **File Upload** - Multipart file upload proxy to microservices
+- **API Prefix** - Optional public prefix (default `/xm-api`) stripped before security and routing
+- **File Upload** - Multipart file upload proxy to microservices (deprecated, disabled by default)
 - **File Download** - Secure file download with configurable path patterns
 - **IDP Integration** - External Identity Provider support (OAuth2/OIDC)
-- **Access Control** - Endpoint-level authorization
-- **Rate Limiting** - Request rate limiting with Bucket4j
-- **Observability** - Metrics, tracing, and logging support
+- **Access Control** - Path-based authorization rules
+- **Observability** - Metrics, tracing, request logging and Logstash support
 
 ## Getting Started
 
 ### Prerequisites
 
 - Java 25
-- Gradle 9.1.0 or use the Gradle wrapper (`./gradlew`)
+- Gradle wrapper (`./gradlew`)
 - Consul (optional, for service discovery)
 - Keycloak or other OIDC provider (for authentication)
 
@@ -115,7 +118,12 @@ The no-consul mode uses Spring Cloud's simple discovery client to define static 
 
 ## Routes Configuration
 
-Gateway routes are configured in `application-route.yml` using Spring Cloud Gateway Server MVC YAML configuration.
+Routes come from two sources:
+
+- **Static routes** in `application-route.yml` (Spring Cloud Gateway Server MVC YAML configuration).
+- **Discovered routes** (profile `client-discovery`): `GatewayRoutesConfiguration` creates a `/{serviceId}/**` route for every service registered in Consul, except `application.gateway.excluded-services`. These routes apply `StripPrefix=1`, `TfaTokenDetection`, `AddDomainRelayHeaders` and `IdpStatefulMode`.
+
+Current routes are available at `GET /api/gateway/routes`.
 
 ### Route Definition
 
@@ -134,10 +142,9 @@ spring:
                 - Path=/entity/**
               filters:
                 - StripPrefix=1
+                - TfaTokenDetection
                 - AddDomainRelayHeaders
-                - AddHighLog
-                - TenantInit
-                - AccessControl
+                - IdpStatefulMode
                 - AddRequestHeader=X-Request-service, [ENTITY]
 ```
 
@@ -149,17 +156,17 @@ spring:
 
 ### Available Gateway Filters
 
+Custom XM filters (registered in `GatewayHandlerFilterConfiguration`):
+
 | Filter | Description |
 |--------|-------------|
-| `StripPrefix=N` | Removes N path segments from the request |
 | `AddDomainRelayHeaders` | Adds tenant context headers (`x-domain`, `x-tenant`, `x-scheme`, `x-port`, `x-webapp-url`) |
-| `AddHighLog` | Enables detailed logging for requests |
-| `TenantInit` | Initializes tenant context from domain mapping |
-| `AccessControl` | Enforces endpoint-level access control |
-| `AddLogging` | Adds request/response logging |
 | `IdpStatefulMode` | Handles IDP stateful authentication mode |
 | `TfaTokenDetection` | Detects two-factor authentication tokens |
-| `AddRequestHeader` | Adds custom headers to requests |
+
+Standard Spring Cloud Gateway filters such as `StripPrefix=N` and `AddRequestHeader` are available as well.
+
+Tenant initialization, request logging and access control are not route filters: they run for every request as servlet filters / Spring Security (see [Multi-Tenancy](#multi-tenancy) and [Access Control](#access-control)). The former `TenantInit`, `AccessControl`, `AddHighLog` and `AddLogging` route filters no longer exist.
 
 **Excluding Services from Routing:**
 
@@ -174,7 +181,9 @@ application:
 
 ## File Upload
 
-XM Gate provides a dedicated endpoint for proxying multipart file uploads to backend microservices. This avoids memory issues with large file uploads by streaming files directly.
+> **Deprecated, disabled by default.** Enable with `application.enable-upload-resource: true`. It also requires `spring.servlet.multipart.enabled: true`, because gateway webmvc disables multipart parsing otherwise.
+
+XM Gate provides a dedicated endpoint for proxying multipart file uploads to backend microservices.
 
 **Endpoint:** `POST /upload/{service}/{path}`
 
@@ -298,11 +307,14 @@ idp:
 
 XM Gate provides domain-based multi-tenancy. Tenants are resolved from the request domain.
 
-**Tenant Resolution Flow:**
+**Tenant Resolution Flow** (`TenantInitFilter`, runs first for every request):
 1. Extract domain from `Host` header
-2. Look up tenant mapping in configuration
-3. Set tenant context for the request
-4. Add `x-tenant` header to downstream requests
+2. Look up tenant mapping in configuration (unmapped domains resolve to the default tenant `XM`)
+3. Reject unknown tenants with `400 {"error": "SERVICE-NOT-FOUND"}` and inactive ones with `400 {"error": "SERVICE-SUSPENDED"}`
+4. Set tenant context for the request
+5. `AddDomainRelayHeaders` route filter adds tenant headers to downstream requests
+
+**Tenant Management API:** `/api/tenants` (create, list, get, update state, delete), protected by `GATE.TENANT.*` permissions.
 
 **Configure Host-to-Tenant Mapping:**
 ```yaml
@@ -322,6 +334,40 @@ application:
 | `x-port` | Request port |
 | `x-webapp-url` | Referer-based webapp URL |
 
+## Access Control
+
+Authorization is configured in `MicroserviceSecurityConfiguration`. Matchers are evaluated in order:
+
+| Path | Access |
+|------|--------|
+| `/config/api/private/**` | denied |
+| `/*/management/**` | `SUPER_ADMIN` |
+| `/*/api/public/**`, paths containing `/anonymous` | permit all |
+| `/oauth2/authorization/**`, `/login/oauth2/code/**` | permit all |
+| `/api/**` (gate's own API) | authenticated |
+| `/*/public/**`, `/*/oauth/**` | permit all |
+| `/management/health`, `/management/prometheus/**` | permit all |
+| `/management/**` | `SUPER_ADMIN` |
+| any other request | `AccessControlAuthorizationManager` |
+
+`AccessControlAuthorizationManager` decides in this order, the first rule that matches wins:
+1. `TenantAuthorizationRule` beans (extension point).
+2. `application.gateway.auth-request-matcher-rules`:
+   ```yaml
+   application:
+     gateway:
+       auth-request-matcher-rules:
+         - path-pattern: /entity/api/reports/**
+           authorities: [ROLE_ADMIN]
+         - path-pattern: /entity/api/open/**
+           permit-all: true
+   ```
+3. Service name (first path segment) listed in `application.gateway.xme-routes` is allowed and the downstream service enforces security. Any other service requires an authenticated user.
+
+## API Prefix
+
+`ApiPrefixStrippingFilter` strips `application.gateway.api-prefix` (default `/xm-api`) before security and routing, so `/xm-api/uaa/oauth/token` and `/uaa/oauth/token` are served the same way. Requests without the prefix pass unchanged.
+
 ## Application Properties
 
 Key application properties in `application.yml`:
@@ -335,7 +381,7 @@ application:
 
   # Kafka configuration
   kafka-enabled: true
-  kafka-system-queue: system_queue
+  kafka-system-topic: system_topic
 
   # Retry configuration
   retry:
@@ -355,13 +401,26 @@ application:
   disable-idp-cookie-usage: false
   redirect-to-default-tenant-enabled: false
 
+  # Deprecated multipart upload proxy
+  enable-upload-resource: false
+
   # Gateway settings
   gateway:
-    authorized-microservices-endpoints:
-      entity: /api/**
+    api-prefix: /xm-api
+    xme-routes: [config, uaa, entity, dashboard, scheduler, activation, timeline, search, websocket, function, webhook, communication]
     excluded-services:
       - consul
       - gate
+    auth-request-matcher-rules: []
+
+  # Outgoing HTTP client (timeouts in seconds)
+  http-client:
+    max-connections: 1000
+    max-connections-per-route: 500
+    connection-timeout-seconds: 21
+    response-timeout-seconds: 66
+    follow-redirects: false      # true: legacy behavior, gate follows upstream redirects
+    decompress-responses: false  # true: legacy behavior, gate decompresses upstream responses
 
 # XM Config client
 xm-config:
@@ -395,6 +454,13 @@ java -jar build/libs/*.jar
 Run all tests:
 ```bash
 ./gradlew test
+```
+
+Only classes matching `*UnitTest*` or `*IntTest*` are executed.
+
+Run a single test class:
+```bash
+./gradlew test --tests 'com.icthh.xm.gate.gateway.filter.ApiPrefixIntTest'
 ```
 
 Run unit tests only:
@@ -447,8 +513,8 @@ docker compose -f src/main/docker/app.yml up -d
 | File | Description |
 |------|-------------|
 | `app.yml` | Main application |
+| `services.yml` | Dependencies for local development |
 | `consul.yml` | Consul service discovery |
-| `keycloak.yml` | Keycloak identity provider |
 | `monitoring.yml` | Prometheus + Grafana |
 | `sonar.yml` | SonarQube code analysis |
 | `zipkin.yml` | Distributed tracing |
@@ -469,9 +535,9 @@ Run analysis:
 
 ### Static Analysis Tools
 
-- **Checkstyle** - Code style validation
-- **PMD** - Static code analysis
+- **PMD** - Static code analysis (`qa/pmd.xml`)
 - **SpotBugs** - Bug pattern detection
+- **Checkstyle** - configured (`qa/checkstyle.xml`) but currently disabled in `build.gradle`
 
 Run all checks:
 ```bash
