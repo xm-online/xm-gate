@@ -295,6 +295,12 @@ idp:
           - email
 ```
 
+**Login security:**
+- PKCE (S256) is always on for IdP logins. `idp.config.features.pkce` has no effect.
+- `/oauth2/authorization/{key}` answers 400 when the query contains `code_verifier`, `code_challenge` or `code_challenge_method`. Other query parameters are appended to the callback `redirect_uri`.
+- The `oauth2_request` cookie is `HttpOnly`, `SameSite=Lax` and `Secure` on HTTPS requests. With `application.disable-idp-cookie-usage: true` the HTTP session is used instead.
+- A bean of type `AuthorizationRequestRepository<OAuth2AuthorizationRequest>` replaces the default cookie or session storage. `OAuth2AuthorizationRequestCodec` converts a request to bytes and back.
+
 ## Multi-Tenancy
 
 XM Gate provides domain-based multi-tenancy. Tenants are resolved from the request domain.

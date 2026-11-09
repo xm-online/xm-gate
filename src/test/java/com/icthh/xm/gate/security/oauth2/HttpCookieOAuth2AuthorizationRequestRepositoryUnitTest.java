@@ -6,8 +6,6 @@ import jakarta.servlet.http.Cookie;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -18,37 +16,34 @@ import java.util.Set;
 
 import static com.icthh.xm.gate.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository.OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpCookieOAuth2AuthorizationRequestRepositoryUnitTest {
 
     private HttpCookieOAuth2AuthorizationRequestRepository repository;
 
-    @Mock
     private MockHttpServletRequest request;
 
-    @Mock
     private MockHttpServletResponse response;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.initMocks(this);
+        request = new MockHttpServletRequest();
+        response = new MockHttpServletResponse();
         repository = new HttpCookieOAuth2AuthorizationRequestRepository();
     }
 
     @Test
     void loadAuthorizationRequestReturnsNullWhenNoCookie() {
-        when(request.getCookies()).thenReturn(null);
         assertNull(repository.loadAuthorizationRequest(request));
     }
 
     @Test
     void loadAuthorizationRequestReturnsNullWhenCookieInvalid() {
         Cookie cookie = new Cookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, "invalid");
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
+        request.setCookies(cookie);
         assertNull(repository.loadAuthorizationRequest(request));
     }
 
@@ -60,7 +55,7 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryUnitTest {
         OAuth2AuthorizationRequestDto mockRequestDto = mockRequestDto();
         String value = Base64.getEncoder().encodeToString(mockRequestDto.toByteArray());
         Cookie cookie = new Cookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, value);
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
+        request.setCookies(cookie);
         var om = new ObjectMapper();
         assertEquals(om.writeValueAsString(mockRequest), om.writeValueAsString(repository.loadAuthorizationRequest(request)));
     }
@@ -73,7 +68,21 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryUnitTest {
         repository.saveAuthorizationRequest(mockRequest, request, response);
 
         String exprected = Base64.getEncoder().encodeToString(mockRequestDto.toByteArray());
-        verify(response).addCookie(argThat(it -> it.getMaxAge() > 0 && it.getName().equals(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME) && it.getValue().equals(exprected)));
+        String header = response.getHeader("Set-Cookie");
+        assertTrue(header.startsWith(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME + "=" + exprected + ";"));
+        assertTrue(header.contains("Max-Age=300"));
+        assertTrue(header.contains("HttpOnly"));
+        assertTrue(header.contains("SameSite=Lax"));
+        assertFalse(header.contains("Secure"));
+    }
+
+    @Test
+    void saveAuthorizationRequestAddsSecureOnHttps() {
+        request.setSecure(true);
+
+        repository.saveAuthorizationRequest(mockRequest(), request, response);
+
+        assertTrue(response.getHeader("Set-Cookie").contains("Secure"));
     }
 
     private static OAuth2AuthorizationRequest mockRequest() {
@@ -108,11 +117,17 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryUnitTest {
         String value = Base64.getEncoder().encodeToString(mockRequestDto.toByteArray());
 
         Cookie cookie = new Cookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, value);
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
+        request.setCookies(cookie);
+        request.setSecure(true);
 
         repository.removeAuthorizationRequest(request, response);
 
-        verify(response).addCookie(argThat(it -> it.getMaxAge() == 0 && it.getName().equals(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME) && it.getValue().isEmpty()));
+        String header = response.getHeader("Set-Cookie");
+        assertTrue(header.startsWith(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME + "=;"));
+        assertTrue(header.contains("Max-Age=0"));
+        assertTrue(header.contains("HttpOnly"));
+        assertTrue(header.contains("SameSite=Lax"));
+        assertTrue(header.contains("Secure"));
     }
 
 }

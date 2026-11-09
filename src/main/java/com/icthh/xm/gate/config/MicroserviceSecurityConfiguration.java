@@ -10,8 +10,13 @@ import com.icthh.xm.gate.security.oauth2.idp.IdpClientRepository;
 import com.icthh.xm.gate.security.oauth2.XmAuthorizationRequestResolver;
 import com.icthh.xm.gate.security.oauth2.XmConfigServerService;
 import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +37,7 @@ import org.springframework.security.oauth2.client.oidc.authentication.OidcAuthor
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -41,8 +47,11 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
+import java.util.List;
 
 import static com.icthh.xm.commons.security.RoleConstant.ADMIN;
 import static com.icthh.xm.commons.security.RoleConstant.SUPER_ADMIN;
@@ -78,7 +87,12 @@ public class MicroserviceSecurityConfiguration {
     };
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        ObjectProvider<AuthorizationRequestRepository<OAuth2AuthorizationRequest>> repositoryProvider) throws Exception {
+        OAuth2AuthorizationRequestResolver resolver = requestResolver();
+        AuthorizationRequestRepository<OAuth2AuthorizationRequest> repository =
+            repositoryProvider.getIfAvailable(this::defaultAuthorizationRequestRepository);
         http
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers
@@ -123,13 +137,15 @@ public class MicroserviceSecurityConfiguration {
                 .jwt(jwt -> jwt.decoder(jwtDecoder())))
             .oauth2Client(oauth2Client -> oauth2Client
                 .authorizationCodeGrant(grant -> grant
-                    .authorizationRequestResolver(requestResolver())
-                    .authorizationRequestRepository(authorizationRequestRepository())))
+                    .authorizationRequestResolver(resolver)
+                    .authorizationRequestRepository(repository)))
             .authenticationProvider(provider())
             .oauth2Login(oauth2Login -> oauth2Login
                 .successHandler(idpSuccessHandler)
                 .authorizationEndpoint(endpoint -> endpoint
-                    .authorizationRequestRepository(authorizationRequestRepository())));
+                    .authorizationRequestResolver(resolver)
+                    .authorizationRequestRepository(repository)))
+            .addFilterBefore(new ReservedPkceParametersFilter(), OAuth2AuthorizationRequestRedirectFilter.class);
         return http.build();
     }
 
@@ -144,8 +160,11 @@ public class MicroserviceSecurityConfiguration {
         }
     }
 
-    @Bean
-    public AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository() {
+    /**
+     * Used when no bean of type {@code AuthorizationRequestRepository<OAuth2AuthorizationRequest>} is defined:
+     * any such bean replaces this default.
+     */
+    private AuthorizationRequestRepository<OAuth2AuthorizationRequest> defaultAuthorizationRequestRepository() {
         return TRUE.equals(applicationProperties.getDisableIdpCookieUsage()) ?
             new HttpSessionOAuth2AuthorizationRequestRepository() :
             new HttpCookieOAuth2AuthorizationRequestRepository();
@@ -204,5 +223,28 @@ public class MicroserviceSecurityConfiguration {
 
     private OAuth2AuthorizationRequestResolver requestResolver() {
         return new XmAuthorizationRequestResolver(idpClientRepository, "/oauth2/authorization");
+    }
+
+    private static final class ReservedPkceParametersFilter extends OncePerRequestFilter {
+
+        private static final List<String> RESERVED = List.of("code_verifier", "code_challenge", "code_challenge_method");
+
+        @Override
+        protected boolean shouldNotFilter(HttpServletRequest request) {
+            return !request.getRequestURI().startsWith("/oauth2/authorization/");
+        }
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                        FilterChain chain) throws ServletException, IOException {
+            for (String name : RESERVED) {
+                if (request.getParameter(name) != null) {
+                    log.warn("IdP authorization request rejected: reserved parameter {}", name);
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
+            }
+            chain.doFilter(request, response);
+        }
     }
 }
