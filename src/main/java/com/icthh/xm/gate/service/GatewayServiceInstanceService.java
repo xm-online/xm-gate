@@ -8,15 +8,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
@@ -36,9 +38,12 @@ public class GatewayServiceInstanceService {
 
     private final RestClient restClient;
     private final XmAuthenticationContextHolder authContextHolder;
+    private final String managementPort;
 
-    public GatewayServiceInstanceService(XmAuthenticationContextHolder authContextHolder) {
+    public GatewayServiceInstanceService(XmAuthenticationContextHolder authContextHolder,
+                                         @Value("${management.server.port:}") String managementPort) {
         this.authContextHolder = authContextHolder;
+        this.managementPort = managementPort;
         this.restClient = RestClient.builder().build();
     }
 
@@ -49,7 +54,7 @@ public class GatewayServiceInstanceService {
     }
 
     public String receiveServiceStatus(ServiceInstance instance) {
-        String uri = instance.getUri().toString();
+        String uri = managementUri(instance);
         try {
             Map<String, Object> body = restClient.get()
                 .uri(format(HEALTH_CHECK_URL, uri))
@@ -76,10 +81,17 @@ public class GatewayServiceInstanceService {
 
         return serviceInstances.stream()
             .filter(Objects::nonNull)
-            .map(instance -> instance.getUri().toString())
-            .filter(StringUtils::isNotBlank)
-            .filter(uri -> STATUS_UP.equals(serviceInstancesStatus.get(uri)))
-            .collect(toMap(Function.identity(), this::getInstanceInfo));
+            .filter(instance -> StringUtils.isNotBlank(instance.getUri().toString()))
+            .filter(instance -> STATUS_UP.equals(serviceInstancesStatus.get(instance.getUri().toString())))
+            .collect(toMap(instance -> instance.getUri().toString(), instance -> getInstanceInfo(managementUri(instance))));
+    }
+
+    private String managementUri(ServiceInstance instance) {
+        URI uri = instance.getUri();
+        if (StringUtils.isBlank(managementPort)) {
+            return uri.toString();
+        }
+        return UriComponentsBuilder.fromUri(uri).port(managementPort).toUriString();
     }
 
     private Map getInstanceInfo(String uri) {

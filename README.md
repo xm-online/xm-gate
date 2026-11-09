@@ -21,6 +21,7 @@ XM Gate is an API Gateway microservice built with Spring Boot 4.0.1 and Spring C
 - [Multi-Tenancy](#multi-tenancy)
 - [Rate Limiting](#rate-limiting)
 - [Application Properties](#application-properties)
+  - [Kafka connection](#kafka-connection)
 - [Building for Production](#building-for-production)
 - [Testing](#testing)
 - [Docker Support](#docker-support)
@@ -370,6 +371,13 @@ xm-config:
   kafka-config-topic: config_topic
 
 ```
+
+### Kafka connection
+
+The connection to Kafka (SASL login and password, SSL, OAUTHBEARER, GSSAPI, `spring.ssl.bundle`) is set by environment
+variables, `PLAINTEXT` when they are not set. The full sets of variables for each `security.protocol` and
+the broker setup are described in
+[xm-ms-template: Kafka connection](https://github.com/xm-online/xm-ms-template/blob/main/README.md#kafka-connection).
 
 ## Building for Production
 

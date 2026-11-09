@@ -37,6 +37,13 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState
     jhimetrics:
       access: read-only
   info:
@@ -113,6 +120,7 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    # Kafka connection by environment variables, PLAINTEXT when not set: https://github.com/xm-online/xm-ms-template/blob/main/README.md#kafka-connection
   servlet:
     multipart:
       maxFileSize: 20MB
@@ -143,7 +151,7 @@ aspects:
 application:
   gateway:
     api-prefix: /xm-api
-  tenant-ignored-path-list: /v2/api-docs, /v3/api-docs, /api/profile-info, /swagger-resources/configuration/ui, /management/health
+  tenant-ignored-path-list: /v2/api-docs, /v3/api-docs, /api/profile-info, /swagger-resources/configuration/ui, /management/health, /management/health/liveness, /management/health/readiness, /error
   tenant-properties-path-pattern: /config/tenants/{tenantName}/gate/${application.tenant-properties-name}
   tenant-properties-name: gate.yml
   lep-message-handling:

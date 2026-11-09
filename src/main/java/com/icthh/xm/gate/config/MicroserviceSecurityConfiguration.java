@@ -1,6 +1,6 @@
 package com.icthh.xm.gate.config;
 
-import com.icthh.xm.commons.security.RoleConstant;
+import com.icthh.xm.commons.security.XmPermissionCheckService;
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.gate.config.properties.ApplicationProperties;
 import com.icthh.xm.gate.gateway.accesscontrol.AccessControlAuthorizationManager;
@@ -14,6 +14,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.SingleResultAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,6 +35,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -52,6 +58,10 @@ public class MicroserviceSecurityConfiguration {
     private final IdpAuthenticationSuccessHandler idpSuccessHandler;
     private final ApplicationProperties applicationProperties;
     private final AccessControlAuthorizationManager authorizationManager;
+    private final XmPermissionCheckService permissionCheckService;
+
+    private static final String LOGS_GET_PRIVILEGE = "LOGS.GET";
+    private static final String LOGS_UPDATE_PRIVILEGE = "LOGS.UPDATE";
 
     private static final RequestMatcher ANONYMOUS_PATHS = request -> {
         String uri = request.getRequestURI();
@@ -74,7 +84,9 @@ public class MicroserviceSecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers("/config/api/private/**").denyAll()
-                    .requestMatchers("/*/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
+                    // only authentication here, LOGS.GET / LOGS.UPDATE privileges are checked by the target microservice
+                    .requestMatchers("/*/management/logs").authenticated()
+                    .requestMatchers("/*/management/**").access(managementAccess())
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers(ANONYMOUS_PATHS).permitAll()
                     .requestMatchers("/oauth2/authorization/**").permitAll()
@@ -83,8 +95,13 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers("/*/public/**").permitAll()
                     .requestMatchers("/*/oauth/**").permitAll()
                     .requestMatchers("/management/health").permitAll()
-                    .requestMatchers("/management/prometheus/**").permitAll()
-                    .requestMatchers("/management/**").hasAuthority(RoleConstant.SUPER_ADMIN)
+                    .requestMatchers("/management/health/liveness").permitAll()
+                    .requestMatchers("/management/health/readiness").permitAll()
+                    .requestMatchers("/management/prometheus").access(prometheusAccess())
+                    .requestMatchers("/management/prometheus/**").access(prometheusAccess())
+                    .requestMatchers(HttpMethod.GET, "/management/logs").access(logsAccess(LOGS_GET_PRIVILEGE))
+                    .requestMatchers(HttpMethod.PUT, "/management/logs").access(logsAccess(LOGS_UPDATE_PRIVILEGE))
+                    .requestMatchers("/management/**").access(managementAccess())
                     .anyRequest().access(authorizationManager)
             )
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -126,6 +143,22 @@ public class MicroserviceSecurityConfiguration {
         var provider = new OidcAuthorizationCodeAuthenticationProvider(tokenResponseClient, oidcUserService);
         provider.setJwtDecoderFactory(new XmJwtDecoderFactory(tenantContextHolder));
         return provider;
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> managementAccess() {
+        return AuthorityAuthorizationManager.hasAuthority(applicationProperties.getManagement().getAccess().getRole());
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> prometheusAccess() {
+        return applicationProperties.getPrometheus().isPublic()
+            ? SingleResultAuthorizationManager.permitAll()
+            : managementAccess();
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> logsAccess(String privilege) {
+        return applicationProperties.getManagement().getLogs().isSystemAdminOnly()
+            ? managementAccess()
+            : (authentication, context) -> new AuthorizationDecision(permissionCheckService.hasPermission(privilege));
     }
 
     private LogoutHandler logoutHandler() {
