@@ -12,9 +12,11 @@ import com.icthh.xm.gate.security.oauth2.XmConfigServerService;
 import com.icthh.xm.gate.security.oauth2.XmJwtDecoderFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
 import org.springframework.security.authorization.AuthorityAuthorizationManager;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -42,8 +44,11 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.interfaces.RSAPublicKey;
 
+import static com.icthh.xm.commons.security.RoleConstant.ADMIN;
+import static com.icthh.xm.commons.security.RoleConstant.SUPER_ADMIN;
 import static com.icthh.xm.gate.config.Constants.JSESSIONID_COOKIE_NAME;
 import static java.lang.Boolean.TRUE;
+import static org.springframework.security.authorization.AuthorizationManagers.anyOf;
 
 @Slf4j
 @Configuration
@@ -62,6 +67,10 @@ public class MicroserviceSecurityConfiguration {
 
     private static final String LOGS_GET_PRIVILEGE = "LOGS.GET";
     private static final String LOGS_UPDATE_PRIVILEGE = "LOGS.UPDATE";
+    private static final String API_DOCS_PRIVILEGE = "API_DOCS.GET";
+
+    @Value("${application.api-docs.privilege-check:true}")
+    private boolean apiDocsPrivilegeCheck = true;
 
     private static final RequestMatcher ANONYMOUS_PATHS = request -> {
         String uri = request.getRequestURI();
@@ -85,7 +94,7 @@ public class MicroserviceSecurityConfiguration {
                 authz
                     .requestMatchers("/config/api/private/**").denyAll()
                     // only authentication here, LOGS.GET / LOGS.UPDATE privileges are checked by the target microservice
-                    .requestMatchers("/*/management/logs").authenticated()
+                    .requestMatchers("/*/management/logs").access(routedLogsAccess())
                     .requestMatchers("/*/management/**").access(managementAccess())
                     .requestMatchers("/*/api/public/**").permitAll()
                     .requestMatchers(ANONYMOUS_PATHS).permitAll()
@@ -102,6 +111,12 @@ public class MicroserviceSecurityConfiguration {
                     .requestMatchers(HttpMethod.GET, "/management/logs").access(logsAccess(LOGS_GET_PRIVILEGE))
                     .requestMatchers(HttpMethod.PUT, "/management/logs").access(logsAccess(LOGS_UPDATE_PRIVILEGE))
                     .requestMatchers("/management/**").access(managementAccess())
+                    .requestMatchers("/v3/api-docs/**").access(apiDocsAccess())
+                    .requestMatchers("/v3/api-docs.yaml").access(apiDocsAccess())
+                    .requestMatchers("/swagger-ui/**").access(swaggerUiConfigAccess())
+                    .requestMatchers("/swagger-ui.html").access(swaggerUiConfigAccess())
+                    .requestMatchers("/swagger-resources/configuration/ui").access(swaggerUiConfigAccess())
+                    .requestMatchers("/swagger-resources").access(swaggerUiConfigAccess())
                     .anyRequest().access(authorizationManager)
             )
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -158,7 +173,29 @@ public class MicroserviceSecurityConfiguration {
     private AuthorizationManager<RequestAuthorizationContext> logsAccess(String privilege) {
         return applicationProperties.getManagement().getLogs().isSystemAdminOnly()
             ? managementAccess()
-            : (authentication, context) -> new AuthorizationDecision(permissionCheckService.hasPermission(privilege));
+            : anyOf(managementAccess(), privilegeAccess(privilege));
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> routedLogsAccess() {
+        return applicationProperties.getManagement().getLogs().isSystemAdminOnly()
+            ? managementAccess()
+            : AuthenticatedAuthorizationManager.authenticated();
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> apiDocsAccess() {
+        return apiDocsPrivilegeCheck
+            ? privilegeAccess(API_DOCS_PRIVILEGE)
+            : AuthorityAuthorizationManager.hasAnyAuthority(SUPER_ADMIN, ADMIN);
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> swaggerUiConfigAccess() {
+        return apiDocsPrivilegeCheck
+            ? privilegeAccess(API_DOCS_PRIVILEGE)
+            : SingleResultAuthorizationManager.permitAll();
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> privilegeAccess(String privilege) {
+        return (authentication, context) -> new AuthorizationDecision(permissionCheckService.hasPermission(privilege));
     }
 
     private LogoutHandler logoutHandler() {

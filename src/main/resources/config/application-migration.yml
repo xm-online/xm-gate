@@ -1,0 +1,4 @@
+application:
+  management:
+    logs:
+      system-admin-only: true
