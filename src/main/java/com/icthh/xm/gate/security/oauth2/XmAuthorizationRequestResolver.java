@@ -7,8 +7,6 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,10 +55,8 @@ public class XmAuthorizationRequestResolver implements OAuth2AuthorizationReques
         Map<String, String> queryParams = getNormalizedParametrMap(request);
 
         String redirectUri = getAppendedRedirectUri(authorizationRequest, queryParams);
-        Map<String, Object> attributes = getAppendedAttributes(authorizationRequest, queryParams);
 
         return OAuth2AuthorizationRequest.from(authorizationRequest)
-            .attributes(attributes)
             .redirectUri(redirectUri)
             .build();
     }
@@ -80,11 +76,5 @@ public class XmAuthorizationRequestResolver implements OAuth2AuthorizationReques
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(redirectUri);
         queryParams.forEach(builder::queryParam);
         return builder.toUriString();
-    }
-
-    private Map<String, Object> getAppendedAttributes(OAuth2AuthorizationRequest authorizationRequest, Map<String, String> queryParams) {
-        Map<String, Object> attributes = new HashMap<>(authorizationRequest.getAttributes());
-        attributes.putAll(queryParams);
-        return Collections.unmodifiableMap(attributes);
     }
 }

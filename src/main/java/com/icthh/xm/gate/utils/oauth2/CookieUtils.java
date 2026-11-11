@@ -3,7 +3,10 @@ package com.icthh.xm.gate.utils.oauth2;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,25 +22,21 @@ public class CookieUtils {
             .findFirst();
     }
 
-    public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
+    public static void addCookie(HttpServletRequest request, HttpServletResponse response,
+                                 String name, String value, int maxAge) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+            .path("/")
+            .httpOnly(true)
+            .secure(request.isSecure())
+            .sameSite("Lax")
+            .maxAge(Duration.ofSeconds(maxAge))
+            .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals(name)) {
-                    cookie.setValue("");
-                    cookie.setPath("/");
-                    cookie.setMaxAge(0);
-                    response.addCookie(cookie);
-                }
-            }
+        if (getCookie(request, name).isPresent()) {
+            addCookie(request, response, name, "", 0);
         }
     }
 }
