@@ -2,6 +2,8 @@ package com.icthh.xm.gate.gateway.filter;
 
 import com.icthh.xm.commons.tenant.TenantContextHolder;
 import com.icthh.xm.commons.tenant.TenantContextUtils;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +41,7 @@ class RequestLoggingFilterUnitTest {
     @Mock
     private FilterChain filterChain;
 
+    private MeterRegistry meterRegistry;
     private RequestLoggingFilter filter;
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
@@ -46,7 +49,8 @@ class RequestLoggingFilterUnitTest {
 
     @BeforeEach
     void setUp() {
-        filter = new RequestLoggingFilter(tenantContextHolder);
+        meterRegistry = new SimpleMeterRegistry();
+        filter = new RequestLoggingFilter(tenantContextHolder, meterRegistry);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         request.setServerName("test.example.com");
@@ -135,5 +139,51 @@ class RequestLoggingFilterUnitTest {
 
         assertNull(MDC.get("rid"));
         assertNull(MDC.get(EXEC_TIME_MDC_KEY));
+    }
+
+    @Test
+    void activeRequestsGauge_countsInFlightRequest_andResetsAfter() throws Exception {
+        request.setRequestURI("/api/some-resource");
+
+        double[] activeDuringRequest = new double[1];
+        doAnswer(invocation -> {
+            activeDuringRequest[0] = activeRequestsGauge();
+            return null;
+        }).when(filterChain).doFilter(request, response);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(1.0, activeDuringRequest[0]);
+        assertEquals(0.0, activeRequestsGauge());
+    }
+
+    @Test
+    void activeRequestsGauge_resetsAfterException() throws Exception {
+        request.setRequestURI("/api/some-resource");
+        doThrow(new ServletException("downstream failure")).when(filterChain).doFilter(request, response);
+
+        assertThrows(ServletException.class,
+            () -> filter.doFilterInternal(request, response, filterChain));
+
+        assertEquals(0.0, activeRequestsGauge());
+    }
+
+    @Test
+    void activeRequestsGauge_ignoresHealthCheck() throws Exception {
+        request.setRequestURI(HEALTH_URI);
+
+        double[] activeDuringRequest = new double[1];
+        doAnswer(invocation -> {
+            activeDuringRequest[0] = activeRequestsGauge();
+            return null;
+        }).when(filterChain).doFilter(request, response);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(0.0, activeDuringRequest[0]);
+    }
+
+    private double activeRequestsGauge() {
+        return meterRegistry.get(RequestLoggingFilter.ACTIVE_REQUESTS_METRIC).gauge().value();
     }
 }
